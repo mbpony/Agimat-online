@@ -1,0 +1,53 @@
+{
+ "heroes": {
+  "babaylan": {
+   "baseModel": null,
+   "advancedModel": null,
+   "portrait": "img/p_babaylan.png"
+  },
+  "arnisador": {
+   "baseModel": null,
+   "advancedModel": null,
+   "portrait": "img/p_arnisador.png"
+  },
+  "tirador": {
+   "baseModel": null,
+   "advancedModel": null,
+   "portrait": "img/p_tirador.png"
+  },
+  "alim": {
+   "baseModel": null,
+   "advancedModel": null,
+   "portrait": "img/p_alim.png"
+  },
+  "mandirigma": {
+   "baseModel": null,
+   "advancedModel": null,
+   "portrait": "img/p_mandirigma.png"
+  },
+  "mamamana": {
+   "baseModel": null,
+   "advancedModel": null,
+   "portrait": "img/p_mamamana.png"
+  },
+  "anino": {
+   "baseModel": null,
+   "advancedModel": null,
+   "portrait": "img/p_anino.png"
+  },
+  "mangkukulam": {
+   "baseModel": "assets/characters/base/mangkukulam.glb",
+   "advancedModel": null,
+   "portrait": "img/p_mangkukulam.png"
+  },
+  "panday": {
+   "baseModel": null,
+   "advancedModel": null,
+   "portrait": "img/p_panday.png"
+  }
+ },
+ "enemies": {},
+ "pets": {},
+ "npcs": {},
+ "_comment": "Model registry (restructure spec §19). baseModel/advancedModel = GLB path or null (null => procedural mesh). Add entries as the artist delivers — no code changes needed."
+}

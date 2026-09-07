@@ -1,0 +1,90 @@
+[
+ {
+  "id": 0,
+  "npc": "Aling Rosa",
+  "icon": "⚖️",
+  "title": "Ang Unang Alay",
+  "text": "Anak, ang mga tiyanak ay pumapasok na sa mga palayan. Maglinis ka — tumumba ka ng LIMANG Tiyanak.",
+  "type": "kill",
+  "target": "tiyanak",
+  "n": 5,
+  "reward": {
+   "gold": 300,
+   "xp": 400
+  }
+ },
+ {
+  "id": 1,
+  "npc": "Panday Iko",
+  "icon": "⚒️",
+  "title": "Bakal at Bato",
+  "text": "Kailangan ko ng materyales para sa bagong sandata. Dalhan mo ako ng 120 Bato.",
+  "type": "collect",
+  "target": "bato",
+  "n": 120,
+  "reward": {
+   "gold": 450,
+   "xp": 600
+  }
+ },
+ {
+  "id": 2,
+  "npc": "Ka Bining",
+  "icon": "🛡️",
+  "title": "Mga Multo ng Kawayanan",
+  "text": "May mga duwendeng nangunguha sa mga manggagawa sa kawayanan. Itaboy mo — WALONG Duwende.",
+  "type": "kill",
+  "target": "duwende",
+  "n": 8,
+  "reward": {
+   "gold": 600,
+   "xp": 900
+  }
+ },
+ {
+  "id": 3,
+  "npc": "Ang Kubrador",
+  "icon": "🌑",
+  "title": "Anino sa Dilim",
+  "text": "May mga sigbin na naglalakad nang paatras sa mga anino. Hulihin sila bago sila humuli sa iyo — APAT na Sigbin.",
+  "type": "kill",
+  "target": "sigbin",
+  "n": 4,
+  "reward": {
+   "gold": 900,
+   "xp": 1400
+  }
+ },
+ {
+  "id": 4,
+  "npc": "Aling Rosa",
+  "icon": "⚖️",
+  "title": "Ang Halimaw ng Bulkan",
+  "text": "Narinig mo na ba ang pagaspas ng pakpak sa gabi? Ang MANANANGGAL ay totoo. Ibagsak mo siya, bayani.",
+  "type": "kill",
+  "target": "manananggal",
+  "n": 1,
+  "reward": {
+   "gold": 2500,
+   "xp": 4000
+  }
+ },
+ {
+  "id": 5,
+  "npc": "Panday Iko",
+  "icon": "⚒️",
+  "title": "Ang Lagusan",
+  "text": "Ang sinaunang lagusan sa plaza ay gumigising. Kapag umabot ka sa Level 10, tumawid ka — at bumalik nang buhay mula sa Isla ng Bathala. Tumumba ka ng TATLONG halimaw doon.",
+  "type": "killAny",
+  "targets": [
+   "wakwak",
+   "bungisngis",
+   "berberoka"
+  ],
+  "n": 3,
+  "reward": {
+   "gold": 5000,
+   "xp": 8000
+  }
+ }
+]

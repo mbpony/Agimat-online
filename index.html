@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Agimat Online 3D</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== 3D VIEW ===== -->
+  <canvas id="game"></canvas>
+  <div id="labels"></div>
+  <div id="boss-banner"><div class="bb-name"></div><div class="bb-bar"><i></i></div><div class="bb-sub"></div></div>
+  <div id="hurt-vignette"></div>
+  <div id="death-overlay"><span>✨ The anito spirits carry you home…</span></div>
+  <div id="cam-zone"></div>
+
+  <!-- ===== TOP HUD ===== -->
+  <header id="hud">
+    <div class="hud-left">
+      <div class="portrait-ring"><img src="img/p_babaylan.png" alt="hero" id="hud-portrait"></div>
+      <div class="hud-stats">
+        <div class="hud-name"><span id="hud-class">Babaylan</span> <span id="hud-level" class="lvl-badge">Lv 1</span> <span id="hud-gold" class="gold-badge">🪙 0</span></div>
+        <div class="bar hp-bar"><div id="hp-fill" class="fill"></div><span id="hp-text" class="bar-text"></span></div>
+        <div class="bar xp-bar"><div id="xp-fill" class="fill"></div><span id="xp-text" class="bar-text"></span></div>
+      </div>
+    </div>
+    <div class="hud-right">
+      <button id="btn-open-gear" class="menu-btn" title="Equipment">⚔️<em id="badge-gear" class="badge hidden">!</em></button>
+      <button id="btn-open-tiangge" class="menu-btn" title="Grand Tiangge">🏮<em id="badge-forge" class="badge hidden">!</em></button>
+      <button id="btn-open-inventory" class="menu-btn" title="Alay Pouch">🎒</button>
+      <button id="btn-open-bestiary" class="menu-btn" title="Aklat ng Lahi">📖</button>
+      <button id="btn-info" class="menu-btn" title="Stats">🧙</button>
+      <button id="btn-friends" class="menu-btn" title="Mga Kaibigan">🫂</button>
+      <button id="btn-lead" class="menu-btn" title="Leaderboard">🏆</button>
+      <button id="btn-settings" class="menu-btn" title="Settings">⚙️</button>
+    </div>
+  </header>
+
+  <!-- ===== MINIMAP ===== -->
+  <div id="minimap-wrap" class="hidden"><canvas id="minimap" width="150" height="120"></canvas><div id="mm-title">Banaue</div></div>
+
+  <!-- ===== TOUCH CONTROLS ===== -->
+  <div id="joy-zone">
+    <div id="joy-base" class="hidden"><div id="joy-knob"></div></div>
+  </div>
+  <div id="action-cluster">
+    <button id="btn-interact" class="ctl-btn interact hidden">🏮<span>Tiangge</span></button>
+    <button id="btn-autoforage" class="ctl-btn tiny autoforage hidden" title="Auto-Forage">🤖</button>
+    <div class="skill-col">
+      <div class="skill-row">
+        <button id="btn-skill1" class="ctl-btn skill" data-key="1"><b class="sk-ic"></b><div class="cd-overlay"></div></button>
+        <button id="btn-skill2" class="ctl-btn skill" data-key="2"><b class="sk-ic"></b><div class="cd-overlay"></div></button>
+        <button id="btn-skill3" class="ctl-btn skill" data-key="3"><b class="sk-ic"></b><div class="cd-overlay"></div></button>
+      </div>
+      <div class="skill-row main">
+        <button id="btn-dodge" class="ctl-btn dodge" data-key="⇧">💨<div class="cd-overlay" id="dodge-cd"></div></button>
+        <button id="btn-attack" class="ctl-btn attack" data-key="␣">🗡️<div class="cd-overlay" id="attack-cd"></div></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== WELCOME / TITLE SCREEN (Tagalog) ===== -->
+  <div id="welcome-screen" class="hidden">
+    <div class="ws-bg"></div>
+    <div class="ws-vig"></div>
+    <div class="ws-topbar">
+      <select id="ws-lang" title="Wika / Language">
+        <option value="fil">Filipino</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+    <div class="ws-layout">
+      <div class="ws-left">
+        <div class="ws-logo">⚜️ AGIMAT <span>ONLINE</span> ⚜️</div>
+        <div class="ws-tagline" id="ws-tagline">Ang Alamat ng Kapuluan</div>
+        <p class="ws-sub" id="ws-sub">Gumising ka, mandirigma. Tinatawag ka ng mga anito —<br>ang kapuluan ay nangangailangan ng bagong bayani.</p>
+        <div class="ws-words"><span>BAYAN</span><span>DIWA</span><span>KAPANGYARIHAN</span><span>PAGLALAKBAY</span><span>IKAW</span><span>AGIMAT</span></div>
+        <button id="btn-start" class="ws-start">▶ SIMULAN ANG ALAMAT</button>
+      </div>
+      <div class="ws-right">
+        <div id="ws-account" class="ws-panel">
+          <div id="acct-tabs">
+            <button id="acct-tab-login" class="acct-tab sel">MAG-LOG IN</button>
+            <button id="acct-tab-reg" class="acct-tab">GUMAWA NG ACCOUNT</button>
+          </div>
+          <div id="acct-form">
+            <div class="ws-field"><span class="ws-fic">👤</span><input id="acct-user" type="text" maxlength="20" placeholder="Username" autocomplete="username"></div>
+            <div class="ws-field"><span class="ws-fic">🔒</span><input id="acct-pass" type="password" maxlength="64" placeholder="Password" autocomplete="current-password"><button id="ws-eye" type="button" title="Ipakita">👁</button></div>
+            <div class="ws-optrow">
+              <label class="ws-remember"><input type="checkbox" id="ws-remember" checked><span id="ws-remember-txt">Tandaan ako</span></label>
+              <a id="ws-forgot" href="javascript:void(0)">Nakalimutan ang password?</a>
+            </div>
+            <button id="acct-go" class="acct-btn gold big">🔑 MAG-LOG IN</button>
+            <div id="acct-msg"></div>
+          </div>
+          <div id="acct-charsel" class="hidden"></div>
+          <div id="acct-skip">o maglaro nang <b>walang account</b> (lokal na save lamang)</div>
+          <div class="ws-quote" id="ws-quote">“Mula sa ating pinagmulan,<br>hanggang sa iyong sariling alamat.”</div>
+        </div>
+      </div>
+    </div>
+    <div class="ws-credits">Barangay Liwanag · Ang Dakilang Tiangge · Gubat ng Balete</div>
+  </div>
+
+  <!-- ===== CHARACTER CREATION (LANDAS → ANYO → DIWA → AGIMAT) ===== -->
+  <div id="char-create" class="hidden">
+    <div class="cc-bg"></div>
+    <div class="cc2-inner">
+      <div class="cc2-head">
+        <div class="cc2-title" id="cc-step-title">Piliin ang Iyong Landas</div>
+        <div class="cc-stepper" id="cc-stepper">
+          <span data-s="0" class="on">◆ LANDAS</span><i></i>
+          <span data-s="1">◇ ANYO</span><i></i>
+          <span data-s="2">◇ DIWA</span><i></i>
+          <span data-s="3">◇ AGIMAT</span>
+        </div>
+      </div>
+      <div class="cc2-cols">
+        <div class="cc2-preview">
+          <div id="cc-aura"></div>
+          <canvas id="cc-canvas" width="360" height="420"></canvas>
+          <div id="cc-fxlabel"></div>
+          <div class="cc2-rotate-hint">⟲ i-drag para paikutin</div>
+        </div>
+        <div class="cc2-form">
+          <div class="cc-step" id="cc-step-0">
+            <div class="cc2-classes" id="cc-classes"></div>
+            <div class="cc2-classinfo" id="cc-classinfo">Piliin ang isang landas upang makita ang detalye.</div>
+          </div>
+          <div class="cc-step hidden" id="cc-step-1">
+            <label class="cc2-label">Pangalan ng Bayani</label>
+            <div class="cc2-name-row">
+              <input id="cc-name" type="text" maxlength="16" placeholder="Ilagay ang pangalan…" autocomplete="off">
+              <button id="cc-dice" title="Random na pangalan">🎲</button>
+            </div>
+            <label class="cc2-label">Kasarian</label>
+            <div class="cc2-opts" id="cc-gender">
+              <button data-v="male" class="sel">👨 Lalaki</button>
+              <button data-v="female">👩 Babae</button>
+            </div>
+            <label class="cc2-label">Kulay ng Balat</label>
+            <div class="cc2-swatches" id="cc-skin"></div>
+            <label class="cc2-label">Buhok</label>
+            <div class="cc2-opts" id="cc-hair"></div>
+            <div class="cc2-swatches" id="cc-haircolor"></div>
+          </div>
+          <div class="cc-step hidden" id="cc-step-2">
+            <p class="cc-stepnote">Ang <b>Diwa</b> ang espiritwal na ugat ng iyong bayani — maliit na biyaya, malaking kahulugan.</p>
+            <div class="cc-pickgrid" id="cc-diwa"></div>
+            <div class="cc2-classinfo" id="cc-diwainfo">Piliin ang iyong diwa.</div>
+          </div>
+          <div class="cc-step hidden" id="cc-step-3">
+            <p class="cc-stepnote">Bawat bayani ay may unang <b>Agimat</b> — mana mula sa mga ninuno.</p>
+            <div class="cc-pickgrid" id="cc-agimat"></div>
+            <div class="cc2-classinfo" id="cc-agimatinfo">Piliin ang iyong unang agimat.</div>
+            <div id="cc-summary"></div>
+          </div>
+          <div class="cc-nav">
+            <button id="cc-back" class="cc-navbtn">← BALIK</button>
+            <button id="cc-next" class="cc-navbtn gold">SUSUNOD →</button>
+            <button id="cc-confirm" class="ws-start cc2-confirm hidden" disabled>⚔️ HANDA NA!</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BIRTH-OF-LEGEND CINEMATIC ===== -->
+  <div id="cc-cine" class="hidden">
+    <div class="cine-inner">
+      <div class="cine-glyphs">✦ ᜀ ᜄ ᜁ ᜋ ᜆ ✦</div>
+      <div class="cine-title" id="cine-title">ISINISILANG ANG IYONG ALAMAT</div>
+      <div id="cine-card" class="hidden"></div>
+    </div>
+  </div>
+
+  <!-- ===== CLASS SELECT ===== -->
+  <div id="class-select" class="hidden">
+    <div class="cs-inner">
+      <div class="cs-logo">⚜️ AGIMAT <span>ONLINE</span> ⚜️</div>
+      <h1>Choose Your Path</h1>
+      <p class="cs-sub">Nine warriors answer the call of the fractured archipelago</p>
+      <div id="class-cards"></div>
+    </div>
+  </div>
+
+  <!-- ===== PANELS ===== -->
+  <section id="panel-gear" class="panel">
+    <div class="panel-head"><h2>⚔️ Equipment</h2><button class="close-panel">✕</button></div>
+    <div class="panel-body">
+      <div id="gear-stats" class="gear-stats"></div>
+      <h3 class="cat-title">Equipped</h3>
+      <div id="gear-slots"></div>
+      <h3 class="cat-title">Loot Bag <span class="small-note" id="bag-count"></span></h3>
+      <div id="gear-bag" class="card-list"></div>
+    </div>
+  </section>
+
+  <section id="panel-tiangge" class="panel">
+    <div class="panel-head"><h2>🏮 The Grand Tiangge</h2><button class="close-panel">✕</button></div>
+    <div class="panel-body">
+      <p class="screen-sub">Trade your Alay at the Anting-Anting Forge for <b>permanent</b> Agimats.</p>
+      <div class="tiangge-locked hidden" id="tiangge-lock-msg">🔒 The Grand Tiangge opens at <b>Level 2</b>. Keep exploring the terraces!</div>
+      <h3 class="cat-title">⚒️ Anting-Anting Forge</h3>
+      <div id="forge-list" class="card-list"></div>
+      <h3 class="cat-title">🎊 Fiesta Stall <span class="small-note" id="fiesta-note">(unlocks at Level 10)</span></h3>
+      <div id="fiesta-list" class="card-list"></div>
+    </div>
+  </section>
+
+  <section id="panel-inventory" class="panel">
+    <div class="panel-head"><h2>🎒 Alay Pouch</h2><button class="close-panel">✕</button></div>
+    <div class="panel-body">
+      <p class="screen-sub">Materials gathered as offerings. Tap an item for its story.</p>
+      <div id="inv-grid"></div>
+      <h3 class="cat-title">📿 Forged Agimats</h3>
+      <div id="agimat-list" class="card-list"></div>
+    </div>
+  </section>
+
+  <section id="panel-bestiary" class="panel">
+    <div class="panel-head"><h2>📖 Aklat ng Lahi</h2><button class="close-panel">✕</button></div>
+    <div class="panel-body">
+      <p class="screen-sub">The Book of Lineage — every spirit you meet is recorded here.</p>
+      <div id="bestiary-list"></div>
+    </div>
+  </section>
+
+  <!-- ===== FLOATERS / TOASTS ===== -->
+  <div id="toast-stack"></div>
+
+  <!-- ===== MODALS ===== -->
+  <div id="modal-backdrop" class="hidden">
+    <div id="modal-box"></div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "./three.module.min.js" } }
+</script>
+<script type="module" src="game.js"></script>
+</body>
+</html>

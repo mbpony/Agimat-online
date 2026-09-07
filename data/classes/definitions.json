@@ -1,0 +1,442 @@
+{
+ "classes": {
+  "babaylan": {
+   "name": "Babaylan",
+   "role": "Hybrid Support",
+   "weapon": "Bolo + Agimat",
+   "img": "img/p_babaylan.png",
+   "portrait": "img/p_babaylan.png",
+   "desc": "Spirit-healer of the old faith. Sustain, wards, and spirit damage.",
+   "base": {
+    "hp": 100,
+    "atk": 10,
+    "def": 2,
+    "spd": 16
+   },
+   "growth": {
+    "hp": 14,
+    "atk": 2.6,
+    "def": 1
+   },
+   "melee": true,
+   "range": 5.8,
+   "skills": [
+    {
+     "id": "spirit_strike",
+     "name": "Spirit Strike",
+     "icon": "🔮",
+     "cd": 4,
+     "desc": "Hurl a bolt of spirit fire (180% dmg)."
+    },
+    {
+     "id": "agimat_shield",
+     "name": "Agimat Shield",
+     "icon": "🛡️",
+     "cd": 14,
+     "desc": "Block all damage for 5s."
+    },
+    {
+     "id": "huling_hininga",
+     "name": "Huling Hininga",
+     "icon": "💗",
+     "cd": 18,
+     "desc": "Breathe with the ancestors: heal 35% HP."
+    }
+   ]
+  },
+  "arnisador": {
+   "name": "Arnisador",
+   "role": "Melee DPS",
+   "weapon": "Dual Arnis Sticks",
+   "img": "img/p_arnisador.png",
+   "portrait": "img/p_arnisador.png",
+   "desc": "Master of Filipino stick fighting. Fast combos and relentless movement.",
+   "base": {
+    "hp": 95,
+    "atk": 12,
+    "def": 2,
+    "spd": 17
+   },
+   "growth": {
+    "hp": 12,
+    "atk": 3.1,
+    "def": 0.8
+   },
+   "melee": true,
+   "range": 5.5,
+   "skills": [
+    {
+     "id": "sinawali",
+     "name": "Sinawali",
+     "icon": "🥢",
+     "cd": 5,
+     "desc": "Weaving flurry: 3 rapid strikes (80% each)."
+    },
+    {
+     "id": "abanico",
+     "name": "Abanico",
+     "icon": "🌀",
+     "cd": 8,
+     "desc": "Fan spin: hit ALL nearby enemies (150%)."
+    },
+    {
+     "id": "redonda",
+     "name": "Redonda",
+     "icon": "⚡",
+     "cd": 10,
+     "desc": "Dash forward, striking through enemies (200%)."
+    }
+   ]
+  },
+  "tirador": {
+   "name": "Tirador",
+   "role": "Ranged DPS",
+   "weapon": "Slingshot",
+   "img": "img/p_tirador.png",
+   "portrait": "img/p_tirador.png",
+   "desc": "Deadeye of the provinces. Aimed shots, stones, and traps.",
+   "base": {
+    "hp": 85,
+    "atk": 11,
+    "def": 1,
+    "spd": 16.3
+   },
+   "growth": {
+    "hp": 10,
+    "atk": 3,
+    "def": 0.7
+   },
+   "melee": false,
+   "range": 27,
+   "projSpeed": 33,
+   "skills": [
+    {
+     "id": "precision",
+     "name": "Precision Shot",
+     "icon": "🎯",
+     "cd": 6,
+     "desc": "Aimed shot: 260% dmg, always crits."
+    },
+    {
+     "id": "scatter",
+     "name": "Scatter Shot",
+     "icon": "💥",
+     "cd": 9,
+     "desc": "Fan of 5 stones (90% each)."
+    },
+    {
+     "id": "snare",
+     "name": "Bato Snare",
+     "icon": "🕸️",
+     "cd": 12,
+     "desc": "Trap zone that roots enemies for 3s."
+    }
+   ]
+  },
+  "alim": {
+   "name": "Alim",
+   "role": "Elemental Caster",
+   "weapon": "Staff + Talisman",
+   "img": "img/p_alim.png",
+   "portrait": "img/p_alim.png",
+   "desc": "Keeper of elemental sigils. Area control through fire, water, and wind.",
+   "base": {
+    "hp": 80,
+    "atk": 13,
+    "def": 1,
+    "spd": 15.6
+   },
+   "growth": {
+    "hp": 9,
+    "atk": 3.4,
+    "def": 0.6
+   },
+   "melee": false,
+   "range": 26,
+   "projSpeed": 28,
+   "skills": [
+    {
+     "id": "fire_sigil",
+     "name": "Fire Sigil",
+     "icon": "🔥",
+     "cd": 9,
+     "desc": "Burn the ground: fire zone (60%/tick, 4s)."
+    },
+    {
+     "id": "water_ward",
+     "name": "Water Ward",
+     "icon": "💧",
+     "cd": 14,
+     "desc": "Absorb shield equal to 30% max HP."
+    },
+    {
+     "id": "wind_burst",
+     "name": "Wind Burst",
+     "icon": "🌪️",
+     "cd": 10,
+     "desc": "Blast all nearby enemies away (130%)."
+    }
+   ]
+  },
+  "mandirigma": {
+   "name": "Mandirigma",
+   "role": "Tank",
+   "weapon": "Kampilan + Shield",
+   "img": "img/p_mandirigma.png",
+   "portrait": "img/p_mandirigma.png",
+   "desc": "Unbreakable wall of the tribe. Aggro control and protection.",
+   "base": {
+    "hp": 130,
+    "atk": 9,
+    "def": 4,
+    "spd": 15
+   },
+   "growth": {
+    "hp": 18,
+    "atk": 2.2,
+    "def": 1.5
+   },
+   "melee": true,
+   "range": 6,
+   "skills": [
+    {
+     "id": "shield_bash",
+     "name": "Shield Bash",
+     "icon": "🛡️",
+     "cd": 7,
+     "desc": "Bash & stun enemies in front (160%, 2s stun)."
+    },
+    {
+     "id": "taunt",
+     "name": "Taunt",
+     "icon": "📢",
+     "cd": 12,
+     "desc": "Enrage all nearby foes; +50% defense 6s."
+    },
+    {
+     "id": "iron_stance",
+     "name": "Iron Stance",
+     "icon": "🗿",
+     "cd": 16,
+     "desc": "Take 70% less damage for 5s."
+    }
+   ]
+  },
+  "mamamana": {
+   "name": "Mamamana",
+   "role": "Ranged DPS",
+   "weapon": "Tribal Longbow",
+   "img": "img/p_mamamana.png",
+   "portrait": "img/p_mamamana.png",
+   "desc": "Feathered huntress of the highlands. Arrow storms from impossible range.",
+   "base": {
+    "hp": 82,
+    "atk": 12,
+    "def": 1,
+    "spd": 16.5
+   },
+   "growth": {
+    "hp": 10,
+    "atk": 3.2,
+    "def": 0.6
+   },
+   "melee": false,
+   "range": 28,
+   "projSpeed": 36,
+   "skills": [
+    {
+     "id": "ulan_palaso",
+     "name": "Ulan ng Palaso",
+     "icon": "🏹",
+     "cd": 9,
+     "desc": "Arrow rain zone ahead (75%/hit ×5 waves)."
+    },
+    {
+     "id": "tudla_diwata",
+     "name": "Tudlang Diwata",
+     "icon": "🪶",
+     "cd": 6,
+     "desc": "Spirit arrow: pierces ALL enemies (220%)."
+    },
+    {
+     "id": "amihan",
+     "name": "Ihip ng Amihan",
+     "icon": "🌬️",
+     "cd": 11,
+     "desc": "Leap back + fire a 3-arrow fan (110% each)."
+    }
+   ]
+  },
+  "anino": {
+   "name": "Anino",
+   "role": "Assassin",
+   "weapon": "Twin Shadow Daggers",
+   "img": "img/p_anino.png",
+   "portrait": "img/p_anino.png",
+   "desc": "Blade of the dark. Blink behind prey and vanish in violet smoke.",
+   "base": {
+    "hp": 90,
+    "atk": 13,
+    "def": 1.5,
+    "spd": 17.5
+   },
+   "growth": {
+    "hp": 11,
+    "atk": 3.3,
+    "def": 0.7
+   },
+   "melee": true,
+   "range": 5.2,
+   "skills": [
+    {
+     "id": "dilim_dash",
+     "name": "Lagos sa Dilim",
+     "icon": "🗡️",
+     "cd": 7,
+     "desc": "Blink behind the nearest foe: backstab (250%)."
+    },
+    {
+     "id": "ulap_anino",
+     "name": "Ulap ng Anino",
+     "icon": "💨",
+     "cd": 13,
+     "desc": "Shadow veil: untouchable + faster for 2.5s."
+    },
+    {
+     "id": "abaniko_patalim",
+     "name": "Abanikong Patalim",
+     "icon": "🌀",
+     "cd": 9,
+     "desc": "Fan of 5 shadow daggers (95% each)."
+    }
+   ]
+  },
+  "mangkukulam": {
+   "name": "Mangkukulam",
+   "role": "Curse Mage",
+   "weapon": "Munyeka at Karayom (Cursed Doll & Needles)",
+   "img": "img/p_mangkukulam.png",
+   "portrait": "img/p_mangkukulam.png",
+   "desc": "Witch of whispered hexes. Her needles find the soul through the doll.",
+   "base": {
+    "hp": 88,
+    "atk": 13.5,
+    "def": 1.4,
+    "spd": 16
+   },
+   "growth": {
+    "hp": 11,
+    "atk": 3.3,
+    "def": 0.7
+   },
+   "melee": false,
+   "range": 24,
+   "projSpeed": 26,
+   "skills": [
+    {
+     "id": "kulam_karayom",
+     "name": "Kulam na Karayom",
+     "icon": "🪡",
+     "cd": 5,
+     "desc": "Cursed needle (160%): target BLEEDS + kalat ang sumpa sa kalapit kapag namatay."
+    },
+    {
+     "id": "usok_lason",
+     "name": "Usok ng Lason",
+     "icon": "🟢",
+     "cd": 11,
+     "desc": "Poison smoke zone: sunog-lason sa lahat ng tumapak (4s)."
+    },
+    {
+     "id": "sumpa_dugo",
+     "name": "Sumpa ng Dugo",
+     "icon": "🩸",
+     "cd": 16,
+     "desc": "Blood curse (300%): bawat pinsala ay bumabalik sa iyo bilang buhay (50%)."
+    }
+   ]
+  },
+  "panday": {
+   "name": "Panday",
+   "role": "Bruiser",
+   "weapon": "Runic Great Hammer",
+   "img": "img/p_panday.png",
+   "portrait": "img/p_panday.png",
+   "desc": "Forge-born juggernaut. His hammer carries the volcano's heartbeat.",
+   "base": {
+    "hp": 120,
+    "atk": 11,
+    "def": 3,
+    "spd": 14.5
+   },
+   "growth": {
+    "hp": 16,
+    "atk": 2.8,
+    "def": 1.3
+   },
+   "melee": true,
+   "range": 6.2,
+   "skills": [
+    {
+     "id": "bayo_bulkan",
+     "name": "Bayo ng Bulkan",
+     "icon": "🔨",
+     "cd": 8,
+     "desc": "Leaping slam: 200% + 1.5s stun in a wide ring."
+    },
+    {
+     "id": "pandayan",
+     "name": "Apoy ng Pandayan",
+     "icon": "🔥",
+     "cd": 14,
+     "desc": "Forge fury: +50% damage for 6s."
+    },
+    {
+     "id": "lindol",
+     "name": "Lindol",
+     "icon": "🌋",
+     "cd": 12,
+     "desc": "Earthquake: 170% + knockback to ALL nearby."
+    }
+   ]
+  }
+ },
+ "tagalog": {
+  "babaylan": {
+   "tl": "Babaylan",
+   "desc": "Manggagamot at tagapamagitan sa mga anito. Balanse ng atake at suporta."
+  },
+  "arnisador": {
+   "tl": "Arnisador",
+   "desc": "Mabilis na mandirigmang may dalawang baston. Malakas sa malapitan."
+  },
+  "tirador": {
+   "tl": "Tirador",
+   "desc": "Tirador ng bato mula sa malayo. Tumpak at nakamamatay."
+  },
+  "alim": {
+   "tl": "Alim",
+   "desc": "Matandang pantas ng apoy, tubig, at hangin. Makapangyarihang salamangka."
+  },
+  "mandirigma": {
+   "tl": "Mandirigma",
+   "desc": "Tangke ng hukbo — kalasag at kampilan. Halos hindi matibag."
+  },
+  "mamamana": {
+   "tl": "Mamamana",
+   "desc": "Mangangaso ng kabundukan — pana at balahibo. Ulan ng palaso mula sa malayo."
+  },
+  "anino": {
+   "tl": "Anino",
+   "desc": "Patalim ng kadiliman. Naglalaho sa usok at sumasaksak mula sa likuran."
+  },
+  "panday": {
+   "tl": "Panday",
+   "desc": "Anak ng pandayan — dambuhalang maso na may init ng bulkan."
+  },
+  "mangkukulam": {
+   "tl": "Mangkukulam",
+   "desc": "Bruha ng mga sumpa — munyeka, karayom, at lason. Mag-ingat sa kanyang bulong."
+  }
+ }
+}

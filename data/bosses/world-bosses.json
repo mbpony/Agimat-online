@@ -1,0 +1,198 @@
+{
+ "definitions": {
+  "bakunawa": {
+   "name": "BAKUNAWA",
+   "img": "img/e_manananggal.png",
+   "tier": "Boss",
+   "role": "Moon-eating serpent — scheduled night terror",
+   "xp": 6000,
+   "hp": 12000,
+   "minLevel": 1,
+   "dmg": [
+    20,
+    32
+   ],
+   "speed": 7.5,
+   "aggro": 60,
+   "atkRange": 4.5,
+   "atkCd": 1.8,
+   "scale": 3.2,
+   "r": 2.2,
+   "ai": "charger",
+   "boss": true,
+   "worldBoss": true,
+   "lore": "The colossal sea-serpent that rises from the deep to swallow the moon itself. Seven moons it has eaten; the eighth is defended by the noise of the people — bang your drums, strike your blades.",
+   "drops": [
+    {
+     "id": "mutya",
+     "chance": 1,
+     "qty": [
+      2,
+      3
+     ]
+    },
+    {
+     "id": "anito_dust",
+     "chance": 1,
+     "qty": [
+      10,
+      16
+     ]
+    },
+    {
+     "id": "diwata_dew",
+     "chance": 1,
+     "qty": [
+      6,
+      10
+     ]
+    }
+   ],
+   "dropText": "Mutya ×3, Anito Dust, Diwata Dew",
+   "gearChance": 1,
+   "gold": [
+    900,
+    1500
+   ],
+   "nightOnly": true
+  },
+  "minokawa": {
+   "name": "MINOKAWA",
+   "img": "img/e_aswang.png",
+   "tier": "Boss",
+   "role": "Giant sky-raptor — scheduled day terror",
+   "xp": 5000,
+   "hp": 9500,
+   "minLevel": 1,
+   "dmg": [
+    18,
+    28
+   ],
+   "speed": 10,
+   "aggro": 60,
+   "atkRange": 3.8,
+   "atkCd": 1.6,
+   "scale": 2.8,
+   "r": 1.9,
+   "ai": "flyer",
+   "boss": true,
+   "worldBoss": true,
+   "lore": "A bird the size of an island, with beak and talons of steel and eyes of burning mirrors. It waits at the edge of the sky to swallow the sun — and anything that glitters below.",
+   "drops": [
+    {
+     "id": "mutya",
+     "chance": 1,
+     "qty": [
+      1,
+      3
+     ]
+    },
+    {
+     "id": "anito_dust",
+     "chance": 1,
+     "qty": [
+      8,
+      14
+     ]
+    },
+    {
+     "id": "santelmo_flame",
+     "chance": 1,
+     "qty": [
+      3,
+      6
+     ]
+    }
+   ],
+   "dropText": "Mutya, Anito Dust, Santelmo Flame",
+   "gearChance": 1,
+   "gold": [
+    800,
+    1300
+   ]
+  },
+  "sarangay": {
+   "name": "SARANGAY",
+   "img": "img/e_tikbalang.png",
+   "tier": "Boss",
+   "role": "Bull demon of the jewel — scheduled terror",
+   "xp": 5500,
+   "hp": 11000,
+   "minLevel": 1,
+   "dmg": [
+    22,
+    34
+   ],
+   "speed": 8.5,
+   "aggro": 60,
+   "atkRange": 4.2,
+   "atkCd": 2,
+   "scale": 2.6,
+   "r": 1.8,
+   "ai": "charger",
+   "boss": true,
+   "worldBoss": true,
+   "lore": "A towering bull-man with a precious jewel embedded in each ear. He asks every trespasser one question: \"Did you come for my jewels?\" There is no safe answer.",
+   "drops": [
+    {
+     "id": "mutya",
+     "chance": 1,
+     "qty": [
+      2,
+      2
+     ]
+    },
+    {
+     "id": "anito_dust",
+     "chance": 1,
+     "qty": [
+      8,
+      14
+     ]
+    },
+    {
+     "id": "nuno_stone",
+     "chance": 1,
+     "qty": [
+      1,
+      2
+     ]
+    }
+   ],
+   "dropText": "Mutya ×2, Anito Dust, Nuno Stone",
+   "gearChance": 1,
+   "gold": [
+    850,
+    1400
+   ]
+  }
+ },
+ "schedule": {
+  "queue": [
+   "sarangay",
+   "minokawa",
+   "bakunawa"
+  ],
+  "firstSpawnDelayS": 900,
+  "respawnDelayS": 1800,
+  "warningLeadS": 120,
+  "spots": {
+   "bakunawa": {
+    "tx": 70,
+    "ty": 80,
+    "label": "Dalampasigan (timog na baybayin)"
+   },
+   "minokawa": {
+    "tx": 90,
+    "ty": 14,
+    "label": "Parang ng Tala (hilagang parang)"
+   },
+   "sarangay": {
+    "tx": 50,
+    "ty": 58,
+    "label": "parang sa timog-kanluran ng bayan"
+   }
+  }
+ },
+ "_comment": "World bosses (spec §32) — SEPARATE category, never in normal spawn pools (worldBoss:true + boss:true keep them out of spawnEnemy). nightOnly:true = held until dusk/night. Spot coords in tiles."
+}

@@ -1,0 +1,96 @@
+[
+ {
+  "id": "balon",
+  "name": "Balon ng mga Duwende",
+  "icon": "🕳️",
+  "minLv": 5,
+  "waves": [
+   [
+    "duwende",
+    "duwende",
+    "nuno",
+    "tiyanak"
+   ],
+   [
+    "nuno",
+    "sigbin",
+    "duwende",
+    "duwende"
+   ],
+   [
+    "sigbin",
+    "sigbin",
+    "nuno",
+    "duwende"
+   ]
+  ],
+  "champ": "tikbalang",
+  "mult": 1,
+  "rw": {
+   "gold": 800,
+   "xpMult": 1.6
+  }
+ },
+ {
+  "id": "yungib",
+  "name": "Yungib ng mga Anino",
+  "icon": "🌑",
+  "minLv": 12,
+  "waves": [
+   [
+    "tikbalang",
+    "tikbalang",
+    "wakwak",
+    "wakwak"
+   ],
+   [
+    "berberoka",
+    "wakwak",
+    "tikbalang"
+   ],
+   [
+    "berberoka",
+    "berberoka",
+    "tikbalang",
+    "wakwak"
+   ]
+  ],
+  "champ": "kapre",
+  "mult": 1.35,
+  "rw": {
+   "gold": 2000,
+   "xpMult": 1.8
+  }
+ },
+ {
+  "id": "pusod",
+  "name": "Pusod ng Bulkan",
+  "icon": "🌋",
+  "minLv": 20,
+  "waves": [
+   [
+    "santelmo",
+    "santelmo",
+    "kapre",
+    "kapre"
+   ],
+   [
+    "aswang",
+    "aswang",
+    "santelmo"
+   ],
+   [
+    "bungisngis",
+    "aswang",
+    "aswang",
+    "santelmo"
+   ]
+  ],
+  "champ": "manananggal",
+  "mult": 1.7,
+  "rw": {
+   "gold": 5000,
+   "xpMult": 2.2
+  }
+ }
+]

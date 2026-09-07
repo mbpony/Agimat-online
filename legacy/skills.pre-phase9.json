@@ -1,0 +1,2596 @@
+{
+ "config": {
+  "version": 1,
+  "pointsPerLevel": 1,
+  "firstPointAtLevel": 2,
+  "activeSlots": 3,
+  "rankCosts": {
+   "active": 1,
+   "passive": 1,
+   "ultimate": 1
+  },
+  "branchLabels": {
+   "core": "UGAT (Core)",
+   "offense": "PAG-ATAKE (Offense)",
+   "defense": "DEPENSA (Defense)",
+   "specialty": "KAKAIBA (Specialty)",
+   "ultimate": "DAKILA (Ultimate)"
+  },
+  "_comment": "Skill system v1 (skill-system spec 00-10). 10 skills/class now; schema reserves capacity for 20/class — skills 11-20 are PLANNED, listed in docs/CLASS_DESIGN.md. Save IDs of classes never change; advancement stays display-only."
+ },
+ "skills": [
+  {
+   "id": "md_hampas",
+   "classId": "mandirigma",
+   "name": "Hampas ng Sandata",
+   "icon": "⚔️",
+   "type": "active",
+   "branch": "core",
+   "requiredLevel": 1,
+   "cooldown": 5,
+   "maxRank": 5,
+   "pointCost": 1,
+   "free": true,
+   "requires": null,
+   "description": "Heavy melee blow in a cone (150% +15%/rank).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "cone",
+     "r": 7,
+     "mult": 1.5,
+     "pr": 0.15
+    }
+   ]
+  },
+  {
+   "id": "md_sugod",
+   "classId": "mandirigma",
+   "name": "Sugod-Bagani",
+   "icon": "🐗",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 3,
+   "cooldown": 9,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "md_hampas": 1
+   },
+   "description": "Charge forward and slam — brief stun (120% +15%/rank, 1.2s stun).",
+   "effects": [
+    {
+     "t": "dash",
+     "dist": 7
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 4.5,
+     "mult": 1.2,
+     "pr": 0.15,
+     "stun": 1.2
+    }
+   ]
+  },
+  {
+   "id": "md_walis",
+   "classId": "mandirigma",
+   "name": "Walis ng Mandirigma",
+   "icon": "🌀",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 5,
+   "cooldown": 8,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "md_sugod": 1
+   },
+   "description": "Wide sweep around you with knockback (130% +15%/rank).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 7,
+     "mult": 1.3,
+     "pr": 0.15,
+     "knock": 1.2
+    }
+   ]
+  },
+  {
+   "id": "md_panangga",
+   "classId": "mandirigma",
+   "name": "Panangga ng Ninuno",
+   "icon": "🛡️",
+   "type": "active",
+   "branch": "defense",
+   "requiredLevel": 9,
+   "cooldown": 16,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "md_hampas": 1
+   },
+   "description": "Ancestral stance: take 45% (+5%/rank) less damage for 5s.",
+   "effects": [
+    {
+     "t": "buff",
+     "stat": "dr",
+     "val": 45,
+     "pr": 5,
+     "dur": 5
+    }
+   ]
+  },
+  {
+   "id": "md_sigaw",
+   "classId": "mandirigma",
+   "name": "Sigaw ng Hamon",
+   "icon": "📢",
+   "type": "active",
+   "branch": "defense",
+   "requiredLevel": 12,
+   "cooldown": 14,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "md_panangga": 1
+   },
+   "description": "Taunt all nearby foes; +50% defense for 6s.",
+   "effects": [
+    {
+     "t": "taunt",
+     "r": 20,
+     "dur": 6
+    }
+   ]
+  },
+  {
+   "id": "md_durog",
+   "classId": "mandirigma",
+   "name": "Durog-Bato",
+   "icon": "🪨",
+   "type": "active",
+   "branch": "specialty",
+   "requiredLevel": 15,
+   "cooldown": 10,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "md_hampas": 1
+   },
+   "description": "Armor-breaking strike (180% +20%/rank); −25% (−5/rank) enemy defense 6s.",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "cone",
+     "r": 6,
+     "mult": 1.8,
+     "pr": 0.2,
+     "shred": [
+      25,
+      6
+     ]
+    }
+   ]
+  },
+  {
+   "id": "md_dugo",
+   "classId": "mandirigma",
+   "name": "Dugong Mandirigma",
+   "icon": "❤️",
+   "type": "passive",
+   "branch": "defense",
+   "requiredLevel": 7,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "+8% (+4%/rank) maximum HP.",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "maxHpPct",
+     "val": 8,
+     "pr": 4
+    }
+   ]
+  },
+  {
+   "id": "md_tibay",
+   "classId": "mandirigma",
+   "name": "Tibay ng Loob",
+   "icon": "🪵",
+   "type": "passive",
+   "branch": "defense",
+   "requiredLevel": 14,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "md_dugo": 1
+   },
+   "description": "Below 35% HP take 15% (+5%/rank) less damage.",
+   "effects": [
+    {
+     "t": "cond",
+     "when": "hpBelow",
+     "thresh": 0.35,
+     "stat": "dr",
+     "val": 15,
+     "pr": 5
+    }
+   ]
+  },
+  {
+   "id": "md_galit",
+   "classId": "mandirigma",
+   "name": "Galit ng Bagani",
+   "icon": "🔥",
+   "type": "passive",
+   "branch": "offense",
+   "requiredLevel": 18,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "Dealing or taking damage builds Fury (max 5): +3% (+1%/rank) attack per stack.",
+   "effects": [
+    {
+     "t": "stack",
+     "name": "fury",
+     "on": "both",
+     "max": 5,
+     "per": 3,
+     "pr": 1,
+     "dur": 6
+    }
+   ]
+  },
+  {
+   "id": "md_ninuno",
+   "classId": "mandirigma",
+   "name": "Galit ng Ninuno",
+   "icon": "🌋",
+   "type": "ultimate",
+   "branch": "ultimate",
+   "requiredLevel": 20,
+   "cooldown": 60,
+   "maxRank": 1,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "md_hampas": 3
+   },
+   "description": "ULTIMATE: ancestral war-state — +35% attack, 35% damage reduction, +15% speed for 10s.",
+   "effects": [
+    {
+     "t": "buff",
+     "stat": "atkMult",
+     "val": 35,
+     "pr": 0,
+     "dur": 10
+    },
+    {
+     "t": "buff",
+     "stat": "dr",
+     "val": 35,
+     "pr": 0,
+     "dur": 10
+    },
+    {
+     "t": "buff",
+     "stat": "haste",
+     "val": 15,
+     "pr": 0,
+     "dur": 10
+    }
+   ]
+  },
+  {
+   "id": "ar_hagod",
+   "classId": "arnisador",
+   "name": "Unang Hagod",
+   "icon": "🥢",
+   "type": "active",
+   "branch": "core",
+   "requiredLevel": 1,
+   "cooldown": 4,
+   "maxRank": 5,
+   "pointCost": 1,
+   "free": true,
+   "requires": null,
+   "description": "Lightning-fast strike (140% +12%/rank).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "cone",
+     "r": 6,
+     "mult": 1.4,
+     "pr": 0.12
+    }
+   ]
+  },
+  {
+   "id": "ar_dalawa",
+   "classId": "arnisador",
+   "name": "Dalawang Palo",
+   "icon": "🥋",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 3,
+   "cooldown": 7,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ar_hagod": 1
+   },
+   "description": "Two-hit combo; the second hits harder (90% then 130%, +10%/rank each).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "cone",
+     "r": 6,
+     "mult": 0.9,
+     "pr": 0.1
+    },
+    {
+     "t": "melee",
+     "shape": "cone",
+     "r": 6,
+     "mult": 1.3,
+     "pr": 0.1,
+     "delayMs": 220
+    }
+   ]
+  },
+  {
+   "id": "ar_ikot",
+   "classId": "arnisador",
+   "name": "Ikot-Arnis",
+   "icon": "🌪️",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 5,
+   "cooldown": 9,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ar_dalawa": 1
+   },
+   "description": "Spinning attack around you (130% +15%/rank).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 6,
+     "mult": 1.3,
+     "pr": 0.15
+    }
+   ]
+  },
+  {
+   "id": "ar_likaw",
+   "classId": "arnisador",
+   "name": "Hakbang-Likaw",
+   "icon": "💨",
+   "type": "active",
+   "branch": "defense",
+   "requiredLevel": 9,
+   "cooldown": 8,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ar_hagod": 1
+   },
+   "description": "Evasive slip: dash with brief invulnerability.",
+   "effects": [
+    {
+     "t": "dash",
+     "dist": 8
+    }
+   ]
+  },
+  {
+   "id": "ar_salag",
+   "classId": "arnisador",
+   "name": "Salag at Ganti",
+   "icon": "🤺",
+   "type": "active",
+   "branch": "defense",
+   "requiredLevel": 12,
+   "cooldown": 14,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ar_likaw": 1
+   },
+   "description": "Guard 2s: reflect 60% (+15%/rank) of blocked damage to the attacker.",
+   "effects": [
+    {
+     "t": "buff",
+     "stat": "reflect",
+     "val": 60,
+     "pr": 15,
+     "dur": 2
+    },
+    {
+     "t": "buff",
+     "stat": "dr",
+     "val": 50,
+     "pr": 0,
+     "dur": 2
+    }
+   ]
+  },
+  {
+   "id": "ar_bagwis",
+   "classId": "arnisador",
+   "name": "Bagwis ng Kawayan",
+   "icon": "🎋",
+   "type": "active",
+   "branch": "specialty",
+   "requiredLevel": 15,
+   "cooldown": 12,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ar_ikot": 1
+   },
+   "description": "Rapid 3-hit flurry ending in knockback (3× 80% +10%/rank).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "cone",
+     "r": 6,
+     "mult": 0.8,
+     "pr": 0.1
+    },
+    {
+     "t": "melee",
+     "shape": "cone",
+     "r": 6,
+     "mult": 0.8,
+     "pr": 0.1,
+     "delayMs": 160
+    },
+    {
+     "t": "melee",
+     "shape": "cone",
+     "r": 6,
+     "mult": 0.8,
+     "pr": 0.1,
+     "knock": 1.5,
+     "delayMs": 320
+    }
+   ]
+  },
+  {
+   "id": "ar_kamay",
+   "classId": "arnisador",
+   "name": "Mabilis na Kamay",
+   "icon": "🖐️",
+   "type": "passive",
+   "branch": "offense",
+   "requiredLevel": 7,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "Landing hits builds Flow (max 5): +2% (+1%/rank) attack per stack.",
+   "effects": [
+    {
+     "t": "stack",
+     "name": "flow",
+     "on": "hit",
+     "max": 5,
+     "per": 2,
+     "pr": 1,
+     "dur": 5
+    }
+   ]
+  },
+  {
+   "id": "ar_puso",
+   "classId": "arnisador",
+   "name": "Pusong Mandirigma",
+   "icon": "💢",
+   "type": "passive",
+   "branch": "offense",
+   "requiredLevel": 14,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "Below 40% HP deal +10% (+5%/rank) damage.",
+   "effects": [
+    {
+     "t": "cond",
+     "when": "hpBelow",
+     "thresh": 0.4,
+     "stat": "atkPct",
+     "val": 10,
+     "pr": 5
+    }
+   ]
+  },
+  {
+   "id": "ar_daloy",
+   "classId": "arnisador",
+   "name": "Daloy ng Arnis",
+   "icon": "♻️",
+   "type": "passive",
+   "branch": "specialty",
+   "requiredLevel": 18,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "+4% (+2%/rank) cooldown reduction.",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "cdr",
+     "val": 4,
+     "pr": 2
+    }
+   ]
+  },
+  {
+   "id": "ar_sayaw",
+   "classId": "arnisador",
+   "name": "Sayaw ng Dalawang Talim",
+   "icon": "⚡",
+   "type": "ultimate",
+   "branch": "ultimate",
+   "requiredLevel": 20,
+   "cooldown": 55,
+   "maxRank": 1,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ar_hagod": 3
+   },
+   "description": "ULTIMATE: blinding 5-strike dance (5× 80%) with 40% damage reduction during it.",
+   "effects": [
+    {
+     "t": "buff",
+     "stat": "dr",
+     "val": 40,
+     "pr": 0,
+     "dur": 3
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 7,
+     "mult": 0.8
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 7,
+     "mult": 0.8,
+     "delayMs": 200
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 7,
+     "mult": 0.8,
+     "delayMs": 400
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 7,
+     "mult": 0.8,
+     "delayMs": 600
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 7,
+     "mult": 0.8,
+     "delayMs": 800
+    }
+   ]
+  },
+  {
+   "id": "mm_pana",
+   "classId": "mamamana",
+   "name": "Pana ng Mangangaso",
+   "icon": "🏹",
+   "type": "active",
+   "branch": "core",
+   "requiredLevel": 1,
+   "cooldown": 4,
+   "maxRank": 5,
+   "pointCost": 1,
+   "free": true,
+   "requires": null,
+   "description": "Reliable hunting shot (150% +15%/rank).",
+   "effects": [
+    {
+     "t": "proj",
+     "mult": 1.5,
+     "pr": 0.15,
+     "color": 9109456,
+     "size": 0.3
+    }
+   ]
+  },
+  {
+   "id": "mm_bitag",
+   "classId": "mamamana",
+   "name": "Bitag ng Kawayan",
+   "icon": "🪤",
+   "type": "active",
+   "branch": "specialty",
+   "requiredLevel": 3,
+   "cooldown": 12,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "mm_pana": 1
+   },
+   "description": "Bamboo snare zone: slows enemies 60% for 5s (+1s/rank).",
+   "effects": [
+    {
+     "t": "zone",
+     "kind": "slow",
+     "at": "aim",
+     "r": 4,
+     "dur": 5,
+     "prDur": 1,
+     "slowPct": 60,
+     "color": 6990650
+    }
+   ]
+  },
+  {
+   "id": "mm_lason",
+   "classId": "mamamana",
+   "name": "Lason na Tinik",
+   "icon": "🧪",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 5,
+   "cooldown": 8,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "mm_pana": 1
+   },
+   "description": "Poisoned dart (100%): poison 3 (+1.5/rank) dmg/s for 5s.",
+   "effects": [
+    {
+     "t": "proj",
+     "mult": 1,
+     "pr": 0.05,
+     "color": 10157914,
+     "size": 0.28,
+     "dot": [
+      "poison",
+      3,
+      1.5,
+      5
+     ]
+    }
+   ]
+  },
+  {
+   "id": "mm_hayop",
+   "classId": "mamamana",
+   "name": "Tawag-Hayop",
+   "icon": "🦅",
+   "type": "active",
+   "branch": "specialty",
+   "requiredLevel": 9,
+   "cooldown": 20,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "mm_bitag": 1
+   },
+   "description": "Summon a hunting hawk for 10s that strikes nearby foes (4 +2/rank dmg/s).",
+   "effects": [
+    {
+     "t": "summon",
+     "dur": 10,
+     "dps": 4,
+     "pr": 2,
+     "color": 14198842
+    }
+   ]
+  },
+  {
+   "id": "mm_tanda",
+   "classId": "mamamana",
+   "name": "Pana ng Pagsubaybay",
+   "icon": "🎯",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 12,
+   "cooldown": 10,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "mm_lason": 1
+   },
+   "description": "Mark a target (120%): marked enemies take +25% (+5%/rank) damage for 8s.",
+   "effects": [
+    {
+     "t": "proj",
+     "mult": 1.2,
+     "pr": 0.1,
+     "color": 15905076,
+     "size": 0.3,
+     "mark": [
+      25,
+      8
+     ]
+    }
+   ]
+  },
+  {
+   "id": "mm_ulan",
+   "classId": "mamamana",
+   "name": "Ulan ng Tinik",
+   "icon": "🌧️",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 15,
+   "cooldown": 11,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "mm_tanda": 1
+   },
+   "description": "Fan of 5 thorns (each 80% +10%/rank).",
+   "effects": [
+    {
+     "t": "proj",
+     "mult": 0.8,
+     "pr": 0.1,
+     "color": 10157914,
+     "size": 0.26,
+     "count": 5,
+     "spread": 30
+    }
+   ]
+  },
+  {
+   "id": "mm_amoy",
+   "classId": "mamamana",
+   "name": "Pang-amoy ng Mangangaso",
+   "icon": "👃",
+   "type": "passive",
+   "branch": "offense",
+   "requiredLevel": 7,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "Marked targets take an extra +10% (+5%/rank) damage from you.",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "markExtra",
+     "val": 10,
+     "pr": 5
+    }
+   ]
+  },
+  {
+   "id": "mm_liksi",
+   "classId": "mamamana",
+   "name": "Liksi sa Gubat",
+   "icon": "🍃",
+   "type": "passive",
+   "branch": "specialty",
+   "requiredLevel": 14,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "+5% (+2%/rank) movement speed.",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "moveSpd",
+     "val": 5,
+     "pr": 2
+    }
+   ]
+  },
+  {
+   "id": "mm_mata",
+   "classId": "mamamana",
+   "name": "Mata ng Mangangaso",
+   "icon": "👁️",
+   "type": "passive",
+   "branch": "offense",
+   "requiredLevel": 18,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "+5% (+2%/rank) critical chance.",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "critCh",
+     "val": 5,
+     "pr": 2
+    }
+   ]
+  },
+  {
+   "id": "mm_dakila",
+   "classId": "mamamana",
+   "name": "Dakilang Pangangaso",
+   "icon": "🐺",
+   "type": "ultimate",
+   "branch": "ultimate",
+   "requiredLevel": 20,
+   "cooldown": 60,
+   "maxRank": 1,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "mm_pana": 3
+   },
+   "description": "ULTIMATE: spectral hunting pack (12s, 10 dmg/s) and +20% attack for 8s.",
+   "effects": [
+    {
+     "t": "summon",
+     "dur": 12,
+     "dps": 10,
+     "pr": 0,
+     "color": 8253695
+    },
+    {
+     "t": "buff",
+     "stat": "atkMult",
+     "val": 20,
+     "pr": 0,
+     "dur": 8
+    }
+   ]
+  },
+  {
+   "id": "ti_tumpak",
+   "classId": "tirador",
+   "name": "Tumpak na Putok",
+   "icon": "💥",
+   "type": "active",
+   "branch": "core",
+   "requiredLevel": 1,
+   "cooldown": 4,
+   "maxRank": 5,
+   "pointCost": 1,
+   "free": true,
+   "requires": null,
+   "description": "Precision shot (160% +15%/rank).",
+   "effects": [
+    {
+     "t": "proj",
+     "mult": 1.6,
+     "pr": 0.15,
+     "color": 16765562,
+     "size": 0.3
+    }
+   ]
+  },
+  {
+   "id": "ti_mabilis",
+   "classId": "tirador",
+   "name": "Mabilis na Putok",
+   "icon": "🔫",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 3,
+   "cooldown": 8,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ti_tumpak": 1
+   },
+   "description": "Rapid triple shot (each 70% +8%/rank).",
+   "effects": [
+    {
+     "t": "proj",
+     "mult": 0.7,
+     "pr": 0.08,
+     "color": 16765562,
+     "size": 0.26,
+     "count": 3,
+     "spread": 8
+    }
+   ]
+  },
+  {
+   "id": "ti_pigil",
+   "classId": "tirador",
+   "name": "Pana ng Pagpigil",
+   "icon": "🧊",
+   "type": "active",
+   "branch": "specialty",
+   "requiredLevel": 5,
+   "cooldown": 9,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ti_tumpak": 1
+   },
+   "description": "Crippling shot (110%): slows the target 50% for 4s.",
+   "effects": [
+    {
+     "t": "proj",
+     "mult": 1.1,
+     "pr": 0.1,
+     "color": 8048895,
+     "size": 0.3,
+     "slow": [
+      50,
+      4
+     ]
+    }
+   ]
+  },
+  {
+   "id": "ti_tudla",
+   "classId": "tirador",
+   "name": "Tudla ng Mahangin",
+   "icon": "🌬️",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 9,
+   "cooldown": 10,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ti_mabilis": 1
+   },
+   "description": "Piercing wind bolt through ALL enemies (180% +15%/rank).",
+   "effects": [
+    {
+     "t": "proj",
+     "mult": 1.8,
+     "pr": 0.15,
+     "color": 13168895,
+     "size": 0.32,
+     "pierce": 99
+    }
+   ]
+  },
+  {
+   "id": "ti_bihira",
+   "classId": "tirador",
+   "name": "Pambihirang Tira",
+   "icon": "🎇",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 12,
+   "cooldown": 14,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ti_tudla": 1
+   },
+   "description": "Charged shot: guaranteed critical (220% +20%/rank).",
+   "effects": [
+    {
+     "t": "proj",
+     "mult": 2.2,
+     "pr": 0.2,
+     "color": 16747082,
+     "size": 0.36,
+     "forceCrit": true
+    }
+   ]
+  },
+  {
+   "id": "ti_ulanp",
+   "classId": "tirador",
+   "name": "Ulan ng Palaso",
+   "icon": "☄️",
+   "type": "active",
+   "branch": "specialty",
+   "requiredLevel": 15,
+   "cooldown": 13,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ti_pigil": 1
+   },
+   "description": "Barrage on target area (160% +15%/rank in r6).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "aim",
+     "r": 6,
+     "mult": 1.6,
+     "pr": 0.15
+    }
+   ]
+  },
+  {
+   "id": "ti_lawin",
+   "classId": "tirador",
+   "name": "Mata ng Lawin",
+   "icon": "🦅",
+   "type": "passive",
+   "branch": "offense",
+   "requiredLevel": 7,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "+5% (+3%/rank) critical chance.",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "critCh",
+     "val": 5,
+     "pr": 3
+    }
+   ]
+  },
+  {
+   "id": "ti_tahimik",
+   "classId": "tirador",
+   "name": "Tahimik na Posisyon",
+   "icon": "🧘",
+   "type": "passive",
+   "branch": "specialty",
+   "requiredLevel": 14,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "After standing still 2s: +12% (+6%/rank) damage.",
+   "effects": [
+    {
+     "t": "cond",
+     "when": "still",
+     "thresh": 2,
+     "stat": "atkPct",
+     "val": 12,
+     "pr": 6
+    }
+   ]
+  },
+  {
+   "id": "ti_pusod",
+   "classId": "tirador",
+   "name": "Pusod ng Tumpak",
+   "icon": "🎯",
+   "type": "passive",
+   "branch": "offense",
+   "requiredLevel": 18,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "+10% (+5%/rank) critical damage.",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "critDmg",
+     "val": 10,
+     "pr": 5
+    }
+   ]
+  },
+  {
+   "id": "ti_bagsik",
+   "classId": "tirador",
+   "name": "Bagsik ng Langit",
+   "icon": "🌩️",
+   "type": "ultimate",
+   "branch": "ultimate",
+   "requiredLevel": 20,
+   "cooldown": 60,
+   "maxRank": 1,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ti_tumpak": 3
+   },
+   "description": "ULTIMATE: 4-wave sky barrage on the target area (4× 90%).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "aim",
+     "r": 8,
+     "mult": 0.9
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "aim",
+     "r": 8,
+     "mult": 0.9,
+     "delayMs": 300
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "aim",
+     "r": 8,
+     "mult": 0.9,
+     "delayMs": 600
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "aim",
+     "r": 8,
+     "mult": 0.9,
+     "delayMs": 900
+    }
+   ]
+  },
+  {
+   "id": "al_siklab",
+   "classId": "alim",
+   "name": "Siklab ng Diwa",
+   "icon": "✨",
+   "type": "active",
+   "branch": "core",
+   "requiredLevel": 1,
+   "cooldown": 4,
+   "maxRank": 5,
+   "pointCost": 1,
+   "free": true,
+   "requires": null,
+   "description": "Spirit bolt (160% +15%/rank).",
+   "effects": [
+    {
+     "t": "proj",
+     "mult": 1.6,
+     "pr": 0.15,
+     "color": 12618495,
+     "size": 0.32
+    }
+   ]
+  },
+  {
+   "id": "al_kidlat",
+   "classId": "alim",
+   "name": "Kidlat ng Langit",
+   "icon": "⚡",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 3,
+   "cooldown": 9,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "al_siklab": 1
+   },
+   "description": "Lightning strike at the target point (220% +20%/rank, 0.8s stun).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "aim",
+     "r": 3,
+     "mult": 2.2,
+     "pr": 0.2,
+     "stun": 0.8
+    }
+   ]
+  },
+  {
+   "id": "al_yelo",
+   "classId": "alim",
+   "name": "Yelong Hininga",
+   "icon": "❄️",
+   "type": "active",
+   "branch": "specialty",
+   "requiredLevel": 5,
+   "cooldown": 10,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "al_siklab": 1
+   },
+   "description": "Freezing cone (120% +12%/rank): slows 50% for 3s.",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "cone",
+     "r": 8,
+     "mult": 1.2,
+     "pr": 0.12,
+     "slow": [
+      50,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "id": "al_buhawi",
+   "classId": "alim",
+   "name": "Buhawi ng Diwa",
+   "icon": "🌀",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 9,
+   "cooldown": 14,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "al_kidlat": 1
+   },
+   "description": "Magical vortex zone (4s): 50% (+10%/rank) attack as dmg/s.",
+   "effects": [
+    {
+     "t": "zone",
+     "kind": "dps",
+     "at": "aim",
+     "r": 5,
+     "dur": 4,
+     "val": 0.5,
+     "pr": 0.1,
+     "color": 12618495
+    }
+   ]
+  },
+  {
+   "id": "al_pader",
+   "classId": "alim",
+   "name": "Pader ng Lupa",
+   "icon": "🧱",
+   "type": "active",
+   "branch": "defense",
+   "requiredLevel": 12,
+   "cooldown": 16,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "al_siklab": 1
+   },
+   "description": "Earthen barrier: ward absorbing 25% (+5%/rank) of max HP.",
+   "effects": [
+    {
+     "t": "shield",
+     "pct": 25,
+     "pr": 5
+    }
+   ]
+  },
+  {
+   "id": "al_bituin",
+   "classId": "alim",
+   "name": "Bituin ng Bathala",
+   "icon": "🌠",
+   "type": "active",
+   "branch": "specialty",
+   "requiredLevel": 15,
+   "cooldown": 15,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "al_yelo": 1
+   },
+   "description": "Delayed meteor (1.2s): 300% (+25%/rank) in r6.",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "aim",
+     "r": 6,
+     "mult": 3,
+     "pr": 0.25,
+     "delayMs": 1200,
+     "warn": true
+    }
+   ]
+  },
+  {
+   "id": "al_karunungan",
+   "classId": "alim",
+   "name": "Karunungan ng Alim",
+   "icon": "📖",
+   "type": "passive",
+   "branch": "offense",
+   "requiredLevel": 7,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "+6% (+3%/rank) attack (spirit knowledge).",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "atkPct",
+     "val": 6,
+     "pr": 3
+    }
+   ]
+  },
+  {
+   "id": "al_daloy",
+   "classId": "alim",
+   "name": "Daloy ng Mahika",
+   "icon": "🔮",
+   "type": "passive",
+   "branch": "specialty",
+   "requiredLevel": 14,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "+5% (+3%/rank) cooldown reduction.",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "cdr",
+     "val": 5,
+     "pr": 3
+    }
+   ]
+  },
+  {
+   "id": "al_salamangka",
+   "classId": "alim",
+   "name": "Mata ng Salamangka",
+   "icon": "🧿",
+   "type": "passive",
+   "branch": "offense",
+   "requiredLevel": 18,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "+12% (+6%/rank) critical damage (arcane penetration).",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "critDmg",
+     "val": 12,
+     "pr": 6
+    }
+   ]
+  },
+  {
+   "id": "al_apat",
+   "classId": "alim",
+   "name": "Galit ng Apat na Diwa",
+   "icon": "🌋",
+   "type": "ultimate",
+   "branch": "ultimate",
+   "requiredLevel": 20,
+   "cooldown": 65,
+   "maxRank": 1,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "al_siklab": 3
+   },
+   "description": "ULTIMATE: fire, ice, lightning and wind strike in sequence (4× 100%, slow+stun).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 8,
+     "mult": 1,
+     "dot": [
+      "burn",
+      4,
+      0,
+      3
+     ]
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 8,
+     "mult": 1,
+     "slow": [
+      50,
+      3
+     ],
+     "delayMs": 350
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 8,
+     "mult": 1,
+     "stun": 1,
+     "delayMs": 700
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 8,
+     "mult": 1,
+     "knock": 2,
+     "delayMs": 1050
+    }
+   ]
+  },
+  {
+   "id": "ba_tawag",
+   "classId": "babaylan",
+   "name": "Tawag-Diwa",
+   "icon": "🔮",
+   "type": "active",
+   "branch": "core",
+   "requiredLevel": 1,
+   "cooldown": 4,
+   "maxRank": 5,
+   "pointCost": 1,
+   "free": true,
+   "requires": null,
+   "description": "Spirit projectile (150% +15%/rank).",
+   "effects": [
+    {
+     "t": "proj",
+     "mult": 1.5,
+     "pr": 0.15,
+     "color": 8253695,
+     "size": 0.3
+    }
+   ]
+  },
+  {
+   "id": "ba_haplos",
+   "classId": "babaylan",
+   "name": "Haplos ng Ninuno",
+   "icon": "🙏",
+   "type": "active",
+   "branch": "defense",
+   "requiredLevel": 3,
+   "cooldown": 10,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ba_tawag": 1
+   },
+   "description": "Ancestral touch: heal 20% (+4%/rank) of max HP.",
+   "effects": [
+    {
+     "t": "heal",
+     "pct": 20,
+     "pr": 4
+    }
+   ]
+  },
+  {
+   "id": "ba_bendisyon",
+   "classId": "babaylan",
+   "name": "Bendisyon",
+   "icon": "✝️",
+   "type": "active",
+   "branch": "defense",
+   "requiredLevel": 5,
+   "cooldown": 14,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ba_haplos": 1
+   },
+   "description": "Blessing: 25% (+5%/rank) damage reduction for 8s.",
+   "effects": [
+    {
+     "t": "buff",
+     "stat": "dr",
+     "val": 25,
+     "pr": 5,
+     "dur": 8
+    }
+   ]
+  },
+  {
+   "id": "ba_ward",
+   "classId": "babaylan",
+   "name": "Anito Ward",
+   "icon": "🛡️",
+   "type": "active",
+   "branch": "defense",
+   "requiredLevel": 9,
+   "cooldown": 16,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ba_bendisyon": 1
+   },
+   "description": "Protective ward absorbing 20% (+4%/rank) of max HP.",
+   "effects": [
+    {
+     "t": "shield",
+     "pct": 20,
+     "pr": 4
+    }
+   ]
+  },
+  {
+   "id": "ba_lunas",
+   "classId": "babaylan",
+   "name": "Lunas ng Lupa",
+   "icon": "🌿",
+   "type": "active",
+   "branch": "specialty",
+   "requiredLevel": 12,
+   "cooldown": 18,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ba_haplos": 1
+   },
+   "description": "Healing ground (6s): restores 3% (+1%/rank) max HP per second.",
+   "effects": [
+    {
+     "t": "zone",
+     "kind": "heal",
+     "at": "self",
+     "r": 5,
+     "dur": 6,
+     "val": 3,
+     "pr": 1,
+     "color": 6990650
+    }
+   ]
+  },
+  {
+   "id": "ba_bulalakaw",
+   "classId": "babaylan",
+   "name": "Bulalakaw ng Diwa",
+   "icon": "☄️",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 15,
+   "cooldown": 9,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ba_tawag": 1
+   },
+   "description": "Three spirit meteors (each 80% +10%/rank).",
+   "effects": [
+    {
+     "t": "proj",
+     "mult": 0.8,
+     "pr": 0.1,
+     "color": 8253695,
+     "size": 0.28,
+     "count": 3,
+     "spread": 15
+    }
+   ]
+  },
+  {
+   "id": "ba_mata",
+   "classId": "babaylan",
+   "name": "Mata ng Babaylan",
+   "icon": "👁️",
+   "type": "passive",
+   "branch": "specialty",
+   "requiredLevel": 7,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "Spirit insight: +4% (+2%/rank) XP gained.",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "xpGain",
+     "val": 4,
+     "pr": 2
+    }
+   ]
+  },
+  {
+   "id": "ba_daloy",
+   "classId": "babaylan",
+   "name": "Daloy ng Diwa",
+   "icon": "♻️",
+   "type": "passive",
+   "branch": "specialty",
+   "requiredLevel": 14,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "+5% (+3%/rank) cooldown reduction.",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "cdr",
+     "val": 5,
+     "pr": 3
+    }
+   ]
+  },
+  {
+   "id": "ba_awit",
+   "classId": "babaylan",
+   "name": "Awit ng Ninuno",
+   "icon": "🎶",
+   "type": "passive",
+   "branch": "defense",
+   "requiredLevel": 18,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "Healing you receive is 15% (+10%/rank) stronger.",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "healBoost",
+     "val": 15,
+     "pr": 10
+    }
+   ]
+  },
+  {
+   "id": "ba_panawagan",
+   "classId": "babaylan",
+   "name": "Panawagan ng mga Ninuno",
+   "icon": "👼",
+   "type": "ultimate",
+   "branch": "ultimate",
+   "requiredLevel": 20,
+   "cooldown": 70,
+   "maxRank": 1,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "ba_tawag": 3
+   },
+   "description": "ULTIMATE: the ancestors answer — full cleanse, 35% heal, healing ground and spirit blast (150%).",
+   "effects": [
+    {
+     "t": "cleanse"
+    },
+    {
+     "t": "heal",
+     "pct": 35,
+     "pr": 0
+    },
+    {
+     "t": "zone",
+     "kind": "heal",
+     "at": "self",
+     "r": 6,
+     "dur": 8,
+     "val": 3,
+     "pr": 0,
+     "color": 8253695
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 8,
+     "mult": 1.5
+    }
+   ]
+  },
+  {
+   "id": "pa_hampas",
+   "classId": "panday",
+   "name": "Hampas-Panday",
+   "icon": "🔨",
+   "type": "active",
+   "branch": "core",
+   "requiredLevel": 1,
+   "cooldown": 5,
+   "maxRank": 5,
+   "pointCost": 1,
+   "free": true,
+   "requires": null,
+   "description": "Heavy hammer strike (160% +15%/rank).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "cone",
+     "r": 6,
+     "mult": 1.6,
+     "pr": 0.15
+    }
+   ]
+  },
+  {
+   "id": "pa_baga",
+   "classId": "panday",
+   "name": "Baga ng Panday",
+   "icon": "🔥",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 3,
+   "cooldown": 15,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "pa_hampas": 1
+   },
+   "description": "Forge-fire imbue 8s: hits burn for 3 (+1.5/rank) dmg/s (3s).",
+   "effects": [
+    {
+     "t": "buff",
+     "stat": "burnHit",
+     "val": 3,
+     "pr": 1.5,
+     "dur": 8
+    }
+   ]
+  },
+  {
+   "id": "pa_pukpok",
+   "classId": "panday",
+   "name": "Pukpok-Bakal",
+   "icon": "⚒️",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 5,
+   "cooldown": 10,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "pa_baga": 1
+   },
+   "description": "Armor-shattering blow (170% +20%/rank): −30% enemy defense 6s.",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "cone",
+     "r": 5,
+     "mult": 1.7,
+     "pr": 0.2,
+     "shred": [
+      30,
+      6
+     ]
+    }
+   ]
+  },
+  {
+   "id": "pa_anvil",
+   "classId": "panday",
+   "name": "Anvil Guard",
+   "icon": "🛡️",
+   "type": "active",
+   "branch": "defense",
+   "requiredLevel": 9,
+   "cooldown": 16,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "pa_hampas": 1
+   },
+   "description": "Anvil stance: 45% (+5%/rank) damage reduction 5s.",
+   "effects": [
+    {
+     "t": "buff",
+     "stat": "dr",
+     "val": 45,
+     "pr": 5,
+     "dur": 5
+    }
+   ]
+  },
+  {
+   "id": "pa_siklab",
+   "classId": "panday",
+   "name": "Siklab ng Pugon",
+   "icon": "💥",
+   "type": "active",
+   "branch": "specialty",
+   "requiredLevel": 12,
+   "cooldown": 11,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "pa_anvil": 1
+   },
+   "description": "Furnace blast around you (160% +15%/rank + burn).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 6,
+     "mult": 1.6,
+     "pr": 0.15,
+     "dot": [
+      "burn",
+      3,
+      1,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "id": "pa_martilyo",
+   "classId": "panday",
+   "name": "Martilyo ng Bulkang Apoy",
+   "icon": "🌋",
+   "type": "active",
+   "branch": "specialty",
+   "requiredLevel": 15,
+   "cooldown": 13,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "pa_siklab": 1
+   },
+   "description": "Hurled volcanic hammer (220% +20%/rank, knockback).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "aim",
+     "r": 5,
+     "mult": 2.2,
+     "pr": 0.2,
+     "knock": 1.5
+    }
+   ]
+  },
+  {
+   "id": "pa_tibay",
+   "classId": "panday",
+   "name": "Tibay ng Bakal",
+   "icon": "🔩",
+   "type": "passive",
+   "branch": "defense",
+   "requiredLevel": 7,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "+12% (+6%/rank) defense.",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "defPct",
+     "val": 12,
+     "pr": 6
+    }
+   ]
+  },
+  {
+   "id": "pa_sanay",
+   "classId": "panday",
+   "name": "Sanay na Kamay",
+   "icon": "🖐️",
+   "type": "passive",
+   "branch": "specialty",
+   "requiredLevel": 14,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "Master smith: +5% (+3%/rank) drop rate (better salvage).",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "dropRate",
+     "val": 5,
+     "pr": 3
+    }
+   ]
+  },
+  {
+   "id": "pa_init",
+   "classId": "panday",
+   "name": "Init ng Pugon",
+   "icon": "🌡️",
+   "type": "passive",
+   "branch": "offense",
+   "requiredLevel": 18,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "Consecutive hits build Heat (max 5): +2% (+1%/rank) attack per stack.",
+   "effects": [
+    {
+     "t": "stack",
+     "name": "heat",
+     "on": "hit",
+     "max": 5,
+     "per": 2,
+     "pr": 1,
+     "dur": 5
+    }
+   ]
+  },
+  {
+   "id": "pa_ninuno",
+   "classId": "panday",
+   "name": "Martilyo ng mga Ninuno",
+   "icon": "⚡",
+   "type": "ultimate",
+   "branch": "ultimate",
+   "requiredLevel": 20,
+   "cooldown": 65,
+   "maxRank": 1,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "pa_hampas": 3
+   },
+   "description": "ULTIMATE: ancestral forge-hammer (250%, 1.5s stun) leaving a molten zone (6s).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 9,
+     "mult": 2.5,
+     "stun": 1.5
+    },
+    {
+     "t": "zone",
+     "kind": "dps",
+     "at": "self",
+     "r": 6,
+     "dur": 6,
+     "val": 0.35,
+     "pr": 0,
+     "color": 16734740
+    }
+   ]
+  },
+  {
+   "id": "an_talim",
+   "classId": "anino",
+   "name": "Lihim na Talim",
+   "icon": "🗡️",
+   "type": "active",
+   "branch": "core",
+   "requiredLevel": 1,
+   "cooldown": 4,
+   "maxRank": 5,
+   "pointCost": 1,
+   "free": true,
+   "requires": null,
+   "description": "Hidden blade (150% +15%/rank; +30% from behind).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "cone",
+     "r": 5,
+     "mult": 1.5,
+     "pr": 0.15,
+     "behind": 30
+    }
+   ]
+  },
+  {
+   "id": "an_hakbang",
+   "classId": "anino",
+   "name": "Hakbang-Anino",
+   "icon": "💨",
+   "type": "active",
+   "branch": "specialty",
+   "requiredLevel": 3,
+   "cooldown": 7,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "an_talim": 1
+   },
+   "description": "Shadow dash with brief intangibility.",
+   "effects": [
+    {
+     "t": "dash",
+     "dist": 9
+    }
+   ]
+  },
+  {
+   "id": "an_lason",
+   "classId": "anino",
+   "name": "Lason ng Dilim",
+   "icon": "🧪",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 5,
+   "cooldown": 8,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "an_talim": 1
+   },
+   "description": "Envenomed slash (110%): poison 3 (+1.5/rank) dmg/s for 6s.",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "cone",
+     "r": 5,
+     "mult": 1.1,
+     "pr": 0.1,
+     "dot": [
+      "poison",
+      3,
+      1.5,
+      6
+     ]
+    }
+   ]
+  },
+  {
+   "id": "an_bulag",
+   "classId": "anino",
+   "name": "Bulag na Gabi",
+   "icon": "🌑",
+   "type": "active",
+   "branch": "specialty",
+   "requiredLevel": 9,
+   "cooldown": 13,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "an_hakbang": 1
+   },
+   "description": "Night-blind burst (80% +10%/rank): dazes 0.8s and slows 40% 3s.",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 7,
+     "mult": 0.8,
+     "pr": 0.1,
+     "stun": 0.8,
+     "slow": [
+      40,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "id": "an_kutsilyo",
+   "classId": "anino",
+   "name": "Kutsilyong Multo",
+   "icon": "🔪",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 12,
+   "cooldown": 9,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "an_lason": 1
+   },
+   "description": "Thrown ghost blade (170% +15%/rank, pierces one).",
+   "effects": [
+    {
+     "t": "proj",
+     "mult": 1.7,
+     "pr": 0.15,
+     "color": 10119922,
+     "size": 0.3,
+     "pierce": 1
+    }
+   ]
+  },
+  {
+   "id": "an_kamatayan",
+   "classId": "anino",
+   "name": "Kamatayan sa Likod",
+   "icon": "☠️",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 15,
+   "cooldown": 14,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "an_kutsilyo": 1
+   },
+   "description": "Executioner strike (260% +25%/rank; +50% vs poisoned/marked).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "cone",
+     "r": 4,
+     "mult": 2.6,
+     "pr": 0.25,
+     "vsDebuffed": 50
+    }
+   ]
+  },
+  {
+   "id": "an_balabal",
+   "classId": "anino",
+   "name": "Balabal ng Dilim",
+   "icon": "🕶️",
+   "type": "passive",
+   "branch": "offense",
+   "requiredLevel": 7,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "+5% (+3%/rank) critical chance.",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "critCh",
+     "val": 5,
+     "pr": 3
+    }
+   ]
+  },
+  {
+   "id": "an_tahimik",
+   "classId": "anino",
+   "name": "Tahimik na Kilos",
+   "icon": "🤫",
+   "type": "passive",
+   "branch": "specialty",
+   "requiredLevel": 14,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "Enemies notice you 12% (+6%/rank) later (smaller aggro radius).",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "aggro",
+     "val": 12,
+     "pr": 6
+    }
+   ]
+  },
+  {
+   "id": "an_patay",
+   "classId": "anino",
+   "name": "Patay-Buhay",
+   "icon": "🌗",
+   "type": "passive",
+   "branch": "defense",
+   "requiredLevel": 18,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "Untouched for 5s: regenerate 1% (+0.5%/rank) HP per second.",
+   "effects": [
+    {
+     "t": "regen",
+     "idleS": 5,
+     "pctPerS": 1,
+     "pr": 0.5
+    }
+   ]
+  },
+  {
+   "id": "an_sayaw",
+   "classId": "anino",
+   "name": "Sayaw ng Anino",
+   "icon": "🌒",
+   "type": "ultimate",
+   "branch": "ultimate",
+   "requiredLevel": 20,
+   "cooldown": 60,
+   "maxRank": 1,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "an_talim": 3
+   },
+   "description": "ULTIMATE: shadow dance — +30% attack, +25% speed, 30% DR, and 4 sweeping strikes.",
+   "effects": [
+    {
+     "t": "buff",
+     "stat": "atkMult",
+     "val": 30,
+     "pr": 0,
+     "dur": 8
+    },
+    {
+     "t": "buff",
+     "stat": "haste",
+     "val": 25,
+     "pr": 0,
+     "dur": 8
+    },
+    {
+     "t": "buff",
+     "stat": "dr",
+     "val": 30,
+     "pr": 0,
+     "dur": 8
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 7,
+     "mult": 0.7
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 7,
+     "mult": 0.7,
+     "delayMs": 250
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 7,
+     "mult": 0.7,
+     "delayMs": 500
+    },
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 7,
+     "mult": 0.7,
+     "delayMs": 750
+    }
+   ]
+  },
+  {
+   "id": "mk_karayom",
+   "classId": "mangkukulam",
+   "name": "Kulam na Karayom",
+   "icon": "🪡",
+   "type": "active",
+   "branch": "core",
+   "requiredLevel": 1,
+   "cooldown": 5,
+   "maxRank": 5,
+   "pointCost": 1,
+   "free": true,
+   "requires": null,
+   "description": "Cursed needle (160% +15%/rank): bleeds and marks with kulam — the curse spreads on death.",
+   "effects": [
+    {
+     "t": "proj",
+     "mult": 1.6,
+     "pr": 0.15,
+     "color": 10157914,
+     "size": 0.32,
+     "kulam": true
+    }
+   ]
+  },
+  {
+   "id": "mk_usok",
+   "classId": "mangkukulam",
+   "name": "Usok ng Kulam",
+   "icon": "🟢",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 3,
+   "cooldown": 11,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "mk_karayom": 1
+   },
+   "description": "Poison smoke zone (4s +1s/rank): 8 dmg/s.",
+   "effects": [
+    {
+     "t": "zone",
+     "kind": "dps",
+     "at": "aim",
+     "r": 6,
+     "dur": 4,
+     "prDur": 1,
+     "val": 0.35,
+     "pr": 0.05,
+     "color": 10157914
+    }
+   ]
+  },
+  {
+   "id": "mk_tali",
+   "classId": "mangkukulam",
+   "name": "Tali ng Multo",
+   "icon": "⛓️",
+   "type": "active",
+   "branch": "specialty",
+   "requiredLevel": 5,
+   "cooldown": 12,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "mk_karayom": 1
+   },
+   "description": "Spirit chains (80%): root enemies 2s (+0.5s/rank).",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "aim",
+     "r": 5,
+     "mult": 0.8,
+     "pr": 0.05,
+     "root": 2,
+     "prRoot": 0.5
+    }
+   ]
+  },
+  {
+   "id": "mk_dugo",
+   "classId": "mangkukulam",
+   "name": "Lason sa Dugo",
+   "icon": "🩸",
+   "type": "active",
+   "branch": "offense",
+   "requiredLevel": 9,
+   "cooldown": 10,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "mk_usok": 1
+   },
+   "description": "Blood poison (100%): strong stacking poison 5 (+2/rank) dmg/s for 6s.",
+   "effects": [
+    {
+     "t": "proj",
+     "mult": 1,
+     "pr": 0.05,
+     "color": 14170718,
+     "size": 0.3,
+     "dot": [
+      "poison",
+      5,
+      2,
+      6
+     ]
+    }
+   ]
+  },
+  {
+   "id": "mk_salamin",
+   "classId": "mangkukulam",
+   "name": "Salamin ng Sumpa",
+   "icon": "🪞",
+   "type": "active",
+   "branch": "defense",
+   "requiredLevel": 12,
+   "cooldown": 16,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "mk_karayom": 1
+   },
+   "description": "Curse mirror 3s: reflect 60% (+15%/rank) of damage taken.",
+   "effects": [
+    {
+     "t": "buff",
+     "stat": "reflect",
+     "val": 60,
+     "pr": 15,
+     "dur": 3
+    }
+   ]
+  },
+  {
+   "id": "mk_pusok",
+   "classId": "mangkukulam",
+   "name": "Tawag-Pusok",
+   "icon": "👻",
+   "type": "active",
+   "branch": "specialty",
+   "requiredLevel": 15,
+   "cooldown": 20,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "mk_tali": 1
+   },
+   "description": "Summon a cursed spirit for 10s (5 +2/rank dmg/s).",
+   "effects": [
+    {
+     "t": "summon",
+     "dur": 10,
+     "dps": 5,
+     "pr": 2,
+     "color": 10119922
+    }
+   ]
+  },
+  {
+   "id": "mk_puso",
+   "classId": "mangkukulam",
+   "name": "Puso ng Kulam",
+   "icon": "🖤",
+   "type": "passive",
+   "branch": "offense",
+   "requiredLevel": 7,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "Your poisons and curses deal +15% (+10%/rank) damage.",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "dotBoost",
+     "val": 15,
+     "pr": 10
+    }
+   ]
+  },
+  {
+   "id": "mk_halimaw",
+   "classId": "mangkukulam",
+   "name": "Lihim na Halimaw",
+   "icon": "😈",
+   "type": "passive",
+   "branch": "offense",
+   "requiredLevel": 14,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "+10% (+5%/rank) damage against debuffed enemies.",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "vsDebuff",
+     "val": 10,
+     "pr": 5
+    }
+   ]
+  },
+  {
+   "id": "mk_buhay",
+   "classId": "mangkukulam",
+   "name": "Buhay sa Sumpa",
+   "icon": "💚",
+   "type": "passive",
+   "branch": "defense",
+   "requiredLevel": 18,
+   "cooldown": 0,
+   "maxRank": 3,
+   "pointCost": 1,
+   "free": false,
+   "requires": null,
+   "description": "Absorb 15% (+10%/rank) of your poison/curse damage as healing.",
+   "effects": [
+    {
+     "t": "pmod",
+     "stat": "dotHeal",
+     "val": 15,
+     "pr": 10
+    }
+   ]
+  },
+  {
+   "id": "mk_sumpa",
+   "classId": "mangkukulam",
+   "name": "Dakilang Sumpa",
+   "icon": "🕷️",
+   "type": "ultimate",
+   "branch": "ultimate",
+   "requiredLevel": 20,
+   "cooldown": 65,
+   "maxRank": 1,
+   "pointCost": 1,
+   "free": false,
+   "requires": {
+    "mk_karayom": 3
+   },
+   "description": "ULTIMATE: great curse (120%) — every enemy near you is cursed, bleeds and is poisoned; the kulam spreads on death.",
+   "effects": [
+    {
+     "t": "melee",
+     "shape": "circle",
+     "at": "self",
+     "r": 10,
+     "mult": 1.2,
+     "dot": [
+      "poison",
+      5,
+      0,
+      6
+     ],
+     "kulam": true
+    }
+   ]
+  }
+ ]
+}

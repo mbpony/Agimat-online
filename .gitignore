@@ -1,0 +1,8 @@
+node_modules/
+*.log
+.DS_Store
+
+# live server state — never commit player accounts/economy
+data/users.json
+data/guilds.json
+data/market.json

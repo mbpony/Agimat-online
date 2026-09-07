@@ -1,0 +1,60 @@
+# 🚀 AGIMAT ONLINE — Put it online (GitHub + Render, free)
+
+Total time ~15 minutes. When done, you and your friends open the same URL,
+log in, and play together (co-op channels of 5, chat, duels, marketplace).
+
+---
+
+## STEP 1 — Push to GitHub
+
+The git repo is already prepared and committed in this folder (`agimat/`).
+
+1. Create the empty repo: https://github.com/new
+   - Name: `agimat-online` · Public or Private · **do NOT add a README**
+2. From inside the `agimat/` folder run:
+
+```bash
+git remote add origin https://github.com/YOUR_USERNAME/agimat-online.git
+git push -u origin main
+```
+
+GitHub will ask you to sign in (browser popup or a Personal Access Token —
+create one at https://github.com/settings/tokens if prompted, scope: `repo`).
+
+> Alternative without terminal: GitHub → repo → "uploading an existing file"
+> and drag everything EXCEPT `node_modules/` and `legacy/`. The git way is better.
+
+## STEP 2 — Deploy on Render (Blueprint, one click)
+
+1. https://render.com → sign up **with your GitHub account** (free).
+2. Dashboard → **New +** → **Blueprint**.
+3. Pick the `agimat-online` repo → Render reads `render.yaml` → **Apply**.
+4. Wait ~2–3 min for the first build. Your game is live at:
+   `https://agimat-online.onrender.com` (exact URL shown on the service page)
+
+That's it. Share the URL with friends — accounts, co-op, guilds, market,
+arena all work over the internet (WebSocket auto-uses `wss://`).
+
+## STEP 3 — Auto-deploy updates
+
+`autoDeploy: true` is set: every `git push` to `main` redeploys automatically.
+When you add the new 3D assets later:
+
+```bash
+git add -A && git commit -m "new world assets" && git push
+```
+
+---
+
+## ⚠️ Free-tier facts (so nothing surprises you)
+
+| Thing | Reality |
+|---|---|
+| Sleep | Server sleeps after ~15 min with no visitors; next visit takes ~50 s to wake. Tell friends to be patient on first load. |
+| **Player saves** | Free tier has **no persistent disk** → server-side accounts (users/guilds/market) reset on every deploy/restart. Local single-player saves live in each browser and survive. |
+| Permanent saves | Upgrade the service (Starter) → add a **Disk** mounted at `/data` → add env var `DATA_DIR=/data`. The server already supports this (server.js line 13). |
+| Player capacity | 10 co-op channels × 5 players = 50 concurrent, fine for the free instance. |
+
+## Custom domain (later)
+Service → Settings → Custom Domains → add `agimatonline.ph`, then set the
+DNS records Render shows you at your registrar.

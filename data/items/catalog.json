@@ -1,0 +1,784 @@
+{
+ "classGroups": {
+  "melee": [
+   "arnisador",
+   "mandirigma",
+   "anino",
+   "panday",
+   "babaylan"
+  ],
+  "ranged": [
+   "tirador",
+   "mamamana"
+  ],
+  "caster": [
+   "alim",
+   "babaylan"
+  ],
+  "tank": [
+   "mandirigma",
+   "panday"
+  ],
+  "agile": [
+   "anino",
+   "arnisador",
+   "tirador"
+  ]
+ },
+ "items": [
+  {
+   "id": "w_bolo1",
+   "name": "Bolo ng Baryo",
+   "icon": "🔪",
+   "slot": "mainhand",
+   "tier": 1,
+   "classes": [
+    "babaylan"
+   ],
+   "rarity": "common",
+   "main": "atk",
+   "mult": 1.1,
+   "lore": "Itak ng magsasaka — unang sandata ng bawat babaylan."
+  },
+  {
+   "id": "w_bolo2",
+   "name": "Bolo ng Halimaw",
+   "icon": "🗡️",
+   "slot": "mainhand",
+   "tier": 15,
+   "classes": [
+    "babaylan"
+   ],
+   "rarity": "rare",
+   "main": "atk",
+   "mult": 1.3,
+   "affixes": [
+    "lifesteal"
+   ],
+   "lore": "Binasbasan ng dugo ng aswang na tinalo nito."
+  },
+  {
+   "id": "w_bolo3",
+   "name": "Sundang ni Apo Laki",
+   "icon": "⚔️",
+   "slot": "mainhand",
+   "tier": 40,
+   "classes": [
+    "babaylan"
+   ],
+   "rarity": "epic",
+   "main": "atk",
+   "mult": 1.5,
+   "affixes": [
+    "lifesteal",
+    "atkPct"
+   ],
+   "lore": "Regalo raw ng diyos ng digmaan sa unang babaylan ng kapuluan."
+  },
+  {
+   "id": "w_arnis1",
+   "name": "Yantok na Baston",
+   "icon": "🥢",
+   "slot": "mainhand",
+   "tier": 1,
+   "classes": [
+    "arnisador"
+   ],
+   "rarity": "common",
+   "main": "atk",
+   "mult": 1.1,
+   "lore": "Rattan na hinugot sa kasukalan — magaan at mabilis."
+  },
+  {
+   "id": "w_arnis2",
+   "name": "Kamagong Duo",
+   "icon": "🪵",
+   "slot": "mainhand",
+   "tier": 15,
+   "classes": [
+    "arnisador"
+   ],
+   "rarity": "rare",
+   "main": "atk",
+   "mult": 1.3,
+   "affixes": [
+    "critCh"
+   ],
+   "lore": "Kahoy na bakal ng gubat — mas mabigat, mas masakit."
+  },
+  {
+   "id": "w_arnis3",
+   "name": "Baston ng Bagyo",
+   "icon": "🌀",
+   "slot": "mainhand",
+   "tier": 40,
+   "classes": [
+    "arnisador"
+   ],
+   "rarity": "epic",
+   "main": "atk",
+   "mult": 1.5,
+   "affixes": [
+    "critCh",
+    "moveSpd"
+   ],
+   "lore": "Sa bawat hampas, dinig mo ang hangin ng unos."
+  },
+  {
+   "id": "w_sling1",
+   "name": "Tiradorang Guwapo",
+   "icon": "🪃",
+   "slot": "mainhand",
+   "tier": 1,
+   "classes": [
+    "tirador"
+   ],
+   "rarity": "common",
+   "main": "atk",
+   "mult": 1.1,
+   "lore": "Gawa sa sanga ng bayabas at goma ng tsinelas."
+  },
+  {
+   "id": "w_sling2",
+   "name": "Pana-Bato ng Kabundukan",
+   "icon": "🎯",
+   "slot": "mainhand",
+   "tier": 15,
+   "classes": [
+    "tirador"
+   ],
+   "rarity": "rare",
+   "main": "atk",
+   "mult": 1.3,
+   "affixes": [
+    "critDmg"
+   ],
+   "lore": "Ang batong inilipad nito ay bumutas na ng bakal."
+  },
+  {
+   "id": "w_sling3",
+   "name": "Mata ng Agila",
+   "icon": "🦅",
+   "slot": "mainhand",
+   "tier": 40,
+   "classes": [
+    "tirador"
+   ],
+   "rarity": "epic",
+   "main": "atk",
+   "mult": 1.5,
+   "affixes": [
+    "critDmg",
+    "critCh"
+   ],
+   "lore": "Hindi ito pumapalya. Ang pumapalya ay ang may hawak."
+  },
+  {
+   "id": "w_staff1",
+   "name": "Tungkod ng Albularyo",
+   "icon": "🪄",
+   "slot": "mainhand",
+   "tier": 1,
+   "classes": [
+    "alim"
+   ],
+   "rarity": "common",
+   "main": "atk",
+   "mult": 1.1,
+   "lore": "May nakataling bawang at asin sa dulo. Epektibo. Mabaho."
+  },
+  {
+   "id": "w_staff2",
+   "name": "Setro ng Sigilo",
+   "icon": "🔮",
+   "slot": "mainhand",
+   "tier": 15,
+   "classes": [
+    "alim"
+   ],
+   "rarity": "rare",
+   "main": "atk",
+   "mult": 1.3,
+   "affixes": [
+    "cdr"
+   ],
+   "lore": "May nakaukit na apat na elemento sa katawan nito."
+  },
+  {
+   "id": "w_staff3",
+   "name": "Tungkod ni Bathala",
+   "icon": "⚡",
+   "slot": "mainhand",
+   "tier": 40,
+   "classes": [
+    "alim"
+   ],
+   "rarity": "epic",
+   "main": "atk",
+   "mult": 1.5,
+   "affixes": [
+    "cdr",
+    "atkPct"
+   ],
+   "lore": "Sinasabing piraso ito ng kidlat na unang humati sa kawayan."
+  },
+  {
+   "id": "w_kamp1",
+   "name": "Kampilan ng Baryo",
+   "icon": "🗡️",
+   "slot": "mainhand",
+   "tier": 1,
+   "classes": [
+    "mandirigma"
+   ],
+   "rarity": "common",
+   "main": "atk",
+   "mult": 1.1,
+   "lore": "Mabigat, mapurol nang bahagya, pero tapat."
+  },
+  {
+   "id": "w_kamp2",
+   "name": "Kampilan ni Lapu",
+   "icon": "⚔️",
+   "slot": "mainhand",
+   "tier": 15,
+   "classes": [
+    "mandirigma"
+   ],
+   "rarity": "rare",
+   "main": "atk",
+   "mult": 1.3,
+   "affixes": [
+    "hpFlat"
+   ],
+   "lore": "Hinulma sa alaala ng dakilang datu ng Mactan."
+  },
+  {
+   "id": "w_kamp3",
+   "name": "Pangil ng Bakunawa",
+   "icon": "🐉",
+   "slot": "mainhand",
+   "tier": 40,
+   "classes": [
+    "mandirigma"
+   ],
+   "rarity": "epic",
+   "main": "atk",
+   "mult": 1.5,
+   "affixes": [
+    "hpFlat",
+    "defFlat"
+   ],
+   "lore": "Ngipin ng serpyente ng buwan, hinasa ng pitong panday."
+  },
+  {
+   "id": "w_bow1",
+   "name": "Busog na Kawayan",
+   "icon": "🏹",
+   "slot": "mainhand",
+   "tier": 1,
+   "classes": [
+    "mamamana"
+   ],
+   "rarity": "common",
+   "main": "atk",
+   "mult": 1.1,
+   "lore": "Unang busog ng bawat mangangaso ng kabundukan."
+  },
+  {
+   "id": "w_bow2",
+   "name": "Busog ng Amihan",
+   "icon": "🌬️",
+   "slot": "mainhand",
+   "tier": 15,
+   "classes": [
+    "mamamana"
+   ],
+   "rarity": "rare",
+   "main": "atk",
+   "mult": 1.3,
+   "affixes": [
+    "moveSpd"
+   ],
+   "lore": "Ang palaso nito ay sakay ng hanging hilaga."
+  },
+  {
+   "id": "w_bow3",
+   "name": "Ulan ng mga Tala",
+   "icon": "🌠",
+   "slot": "mainhand",
+   "tier": 40,
+   "classes": [
+    "mamamana"
+   ],
+   "rarity": "epic",
+   "main": "atk",
+   "mult": 1.5,
+   "affixes": [
+    "moveSpd",
+    "critDmg"
+   ],
+   "lore": "Bawat tudla, isang bituing bumabagsak sa kalaban."
+  },
+  {
+   "id": "w_dag1",
+   "name": "Balisong ng Batangan",
+   "icon": "🔪",
+   "slot": "mainhand",
+   "tier": 1,
+   "classes": [
+    "anino"
+   ],
+   "rarity": "common",
+   "main": "atk",
+   "mult": 1.1,
+   "lore": "Dalawang-katlong bilis, isang-katlong hinhin."
+  },
+  {
+   "id": "w_dag2",
+   "name": "Kambal na Anino",
+   "icon": "🗡️",
+   "slot": "mainhand",
+   "tier": 15,
+   "classes": [
+    "anino"
+   ],
+   "rarity": "rare",
+   "main": "atk",
+   "mult": 1.3,
+   "affixes": [
+    "critCh"
+   ],
+   "lore": "Dalawang patalim na hinulma mula sa iisang gabi."
+  },
+  {
+   "id": "w_dag3",
+   "name": "Pangil ng Gabi",
+   "icon": "🌑",
+   "slot": "mainhand",
+   "tier": 40,
+   "classes": [
+    "anino"
+   ],
+   "rarity": "epic",
+   "main": "atk",
+   "mult": 1.5,
+   "affixes": [
+    "critCh",
+    "lifesteal"
+   ],
+   "lore": "Hindi ito kumikislap sa liwanag. Walang liwanag na nakaabot dito."
+  },
+  {
+   "id": "w_ham1",
+   "name": "Maso ng Pandayan",
+   "icon": "🔨",
+   "slot": "mainhand",
+   "tier": 1,
+   "classes": [
+    "panday"
+   ],
+   "rarity": "common",
+   "main": "atk",
+   "mult": 1.1,
+   "lore": "Sampung libong palo na ang narinig ng maso na ito."
+  },
+  {
+   "id": "w_ham2",
+   "name": "Bayo ng Bulkan",
+   "icon": "🌋",
+   "slot": "mainhand",
+   "tier": 15,
+   "classes": [
+    "panday"
+   ],
+   "rarity": "rare",
+   "main": "atk",
+   "mult": 1.3,
+   "affixes": [
+    "defFlat"
+   ],
+   "lore": "Pinalamig sa lawa ng apoy ng Bulkan Apolaki."
+  },
+  {
+   "id": "w_ham3",
+   "name": "Puso ng Bundok",
+   "icon": "⛰️",
+   "slot": "mainhand",
+   "tier": 40,
+   "classes": [
+    "panday"
+   ],
+   "rarity": "epic",
+   "main": "atk",
+   "mult": 1.5,
+   "affixes": [
+    "defFlat",
+    "hpFlat"
+   ],
+   "lore": "Sa loob nito, tumitibok pa rin ang bundok na pinagmulan."
+  },
+  {
+   "id": "o_kalasag1",
+   "name": "Kalasag na Yantok",
+   "icon": "🛡️",
+   "slot": "offhand",
+   "tier": 5,
+   "classes": [
+    "mandirigma",
+    "panday"
+   ],
+   "rarity": "uncommon",
+   "main": "def",
+   "mult": 1.2,
+   "lore": "Habing rattan na kayang sumalo ng itak."
+  },
+  {
+   "id": "o_kalasag2",
+   "name": "Kalasag ni Bagani",
+   "icon": "🐢",
+   "slot": "offhand",
+   "tier": 30,
+   "classes": [
+    "mandirigma",
+    "panday"
+   ],
+   "rarity": "epic",
+   "main": "def",
+   "mult": 1.45,
+   "affixes": [
+    "hpFlat"
+   ],
+   "lore": "Pinalamutian ng mga baybayin ng tagumpay."
+  },
+  {
+   "id": "o_agimat1",
+   "name": "Agimat na Tanso",
+   "icon": "🧿",
+   "slot": "offhand",
+   "tier": 5,
+   "classes": [
+    "alim",
+    "babaylan"
+   ],
+   "rarity": "uncommon",
+   "main": "atk",
+   "mult": 1.2,
+   "lore": "Anting-anting na binendisyunan tuwing Biyernes Santo."
+  },
+  {
+   "id": "o_agimat2",
+   "name": "Mutya ng Buwan",
+   "icon": "🌙",
+   "slot": "offhand",
+   "tier": 30,
+   "classes": [
+    "alim",
+    "babaylan"
+   ],
+   "rarity": "epic",
+   "main": "atk",
+   "mult": 1.45,
+   "affixes": [
+    "cdr"
+   ],
+   "lore": "Nahulog mula sa buwan noong ika-pitong paglamon ng Bakunawa."
+  },
+  {
+   "id": "o_pouch1",
+   "name": "Supot ng mga Bato",
+   "icon": "👝",
+   "slot": "offhand",
+   "tier": 5,
+   "classes": [
+    "tirador",
+    "mamamana"
+   ],
+   "rarity": "uncommon",
+   "main": "atk",
+   "mult": 1.2,
+   "lore": "Piniling bato mula sa ilog — bilog, makinis, mabilis."
+  },
+  {
+   "id": "o_pouch2",
+   "name": "Lalagyan ng Hiyas",
+   "icon": "💼",
+   "slot": "offhand",
+   "tier": 30,
+   "classes": [
+    "tirador",
+    "mamamana"
+   ],
+   "rarity": "epic",
+   "main": "atk",
+   "mult": 1.45,
+   "affixes": [
+    "critCh"
+   ],
+   "lore": "Bawat bala, may kasamang maliit na dasal."
+  },
+  {
+   "id": "h_salakot1",
+   "name": "Salakot ng Magsasaka",
+   "icon": "👒",
+   "slot": "head",
+   "tier": 1,
+   "classes": null,
+   "rarity": "common",
+   "main": "def",
+   "mult": 1.1,
+   "lore": "Laban sa araw, ulan, at mahihinang palo sa ulo."
+  },
+  {
+   "id": "h_salakot2",
+   "name": "Salakot na Tanso",
+   "icon": "⛑️",
+   "slot": "head",
+   "tier": 20,
+   "classes": null,
+   "rarity": "rare",
+   "main": "def",
+   "mult": 1.3,
+   "affixes": [
+    "hpFlat"
+   ],
+   "lore": "Salakot ng maharlika — may pilak na palamuti."
+  },
+  {
+   "id": "h_putong",
+   "name": "Putong ng Datu",
+   "icon": "👑",
+   "slot": "head",
+   "tier": 50,
+   "classes": null,
+   "rarity": "epic",
+   "main": "def",
+   "mult": 1.5,
+   "affixes": [
+    "hpFlat",
+    "atkPct"
+   ],
+   "lore": "Pulang putong na sagisag ng namumunong dugo."
+  },
+  {
+   "id": "c_baro1",
+   "name": "Barong Habi",
+   "icon": "👕",
+   "slot": "chest",
+   "tier": 1,
+   "classes": null,
+   "rarity": "common",
+   "main": "hp",
+   "mult": 1.1,
+   "lore": "Hinabi ng ina, tinahi ng pag-ibig."
+  },
+  {
+   "id": "c_baro2",
+   "name": "Kupya ng Mandirigma",
+   "icon": "🦺",
+   "slot": "chest",
+   "tier": 20,
+   "classes": null,
+   "rarity": "rare",
+   "main": "hp",
+   "mult": 1.3,
+   "affixes": [
+    "defFlat"
+   ],
+   "lore": "Makapal na habi na may mga gintong hibla."
+  },
+  {
+   "id": "c_baro3",
+   "name": "Baluti ng Kapuluan",
+   "icon": "🛡️",
+   "slot": "chest",
+   "tier": 50,
+   "classes": null,
+   "rarity": "epic",
+   "main": "hp",
+   "mult": 1.5,
+   "affixes": [
+    "defFlat",
+    "hpFlat"
+   ],
+   "lore": "Baluting kinabit-kabit mula sa kabibe at tanso."
+  },
+  {
+   "id": "l_sand1",
+   "name": "Tsinelas ng Baryo",
+   "icon": "🩴",
+   "slot": "legs",
+   "tier": 1,
+   "classes": null,
+   "rarity": "common",
+   "main": "spd",
+   "mult": 1.1,
+   "lore": "Islander classic. Panlaban din sa ipis."
+  },
+  {
+   "id": "l_sand2",
+   "name": "Sapin ng Kabundukan",
+   "icon": "🥾",
+   "slot": "legs",
+   "tier": 20,
+   "classes": null,
+   "rarity": "rare",
+   "main": "spd",
+   "mult": 1.3,
+   "affixes": [
+    "moveSpd"
+   ],
+   "lore": "Yapak na sanay sa hagdan-hagdang palayan."
+  },
+  {
+   "id": "l_sand3",
+   "name": "Yapak ng Tikbalang",
+   "icon": "🐴",
+   "slot": "legs",
+   "tier": 50,
+   "classes": null,
+   "rarity": "epic",
+   "main": "spd",
+   "mult": 1.5,
+   "affixes": [
+    "moveSpd",
+    "critCh"
+   ],
+   "lore": "Baligtad ang talampakan — palaging isang hakbang ang lamang."
+  },
+  {
+   "id": "k_kapa1",
+   "name": "Kapa ng Manlalakbay",
+   "icon": "🧣",
+   "slot": "cloak",
+   "tier": 10,
+   "classes": null,
+   "rarity": "uncommon",
+   "main": "hp",
+   "mult": 1.2,
+   "lore": "Kapa na natulog na sa isandaang baybayin."
+  },
+  {
+   "id": "k_kapa2",
+   "name": "Balahibo ng Sarimanok",
+   "icon": "🐓",
+   "slot": "cloak",
+   "tier": 35,
+   "classes": null,
+   "rarity": "epic",
+   "main": "hp",
+   "mult": 1.45,
+   "affixes": [
+    "moveSpd"
+   ],
+   "set": "hangin",
+   "lore": "Kumikinang sa pitong kulay tuwing takipsilim."
+  },
+  {
+   "id": "k_kapa3",
+   "name": "Pakpak ng Minokawa",
+   "icon": "🦅",
+   "slot": "cloak",
+   "tier": 60,
+   "classes": null,
+   "rarity": "legendary",
+   "main": "hp",
+   "mult": 1.6,
+   "affixes": [
+    "moveSpd",
+    "hpFlat"
+   ],
+   "lore": "Isang balahibo lang ito ng dambuhalang ibon. ISANG balahibo."
+  },
+  {
+   "id": "a_anito1",
+   "name": "Anting ng Nuno",
+   "icon": "📿",
+   "slot": "amulet1",
+   "tier": 8,
+   "classes": null,
+   "rarity": "uncommon",
+   "main": "atk",
+   "mult": 1.2,
+   "lore": "Munting punso na nakapaloob sa garing."
+  },
+  {
+   "id": "a_anito2",
+   "name": "Agimat ng Anito",
+   "icon": "🧿",
+   "slot": "amulet1",
+   "tier": 35,
+   "classes": null,
+   "rarity": "epic",
+   "main": "atk",
+   "mult": 1.45,
+   "affixes": [
+    "atkPct"
+   ],
+   "set": "apoy",
+   "lore": "Dinig mo ang bulong ng mga ninuno kapag suot ito."
+  },
+  {
+   "id": "a_bakunawa",
+   "name": "Kaliskis ng Bakunawa",
+   "icon": "🐉",
+   "slot": "amulet1",
+   "tier": 60,
+   "classes": null,
+   "rarity": "legendary",
+   "main": "atk",
+   "mult": 1.6,
+   "affixes": [
+    "atkPct",
+    "lifesteal"
+   ],
+   "set": "tubig",
+   "lore": "Isang kaliskis mula sa serpyente ng buwan. Malamig. Buhay pa."
+  },
+  {
+   "id": "r_mutya1",
+   "name": "Singsing na Perlas",
+   "icon": "💍",
+   "slot": "ring1",
+   "tier": 8,
+   "classes": null,
+   "rarity": "uncommon",
+   "main": "crit",
+   "mult": 1.2,
+   "lore": "Perlas mula sa Dalampasigan, hinugis-singsing."
+  },
+  {
+   "id": "r_mutya2",
+   "name": "Mutya ng Saging",
+   "icon": "💎",
+   "slot": "ring1",
+   "tier": 35,
+   "classes": null,
+   "rarity": "epic",
+   "main": "crit",
+   "mult": 1.45,
+   "affixes": [
+    "critDmg"
+   ],
+   "set": "lupa",
+   "lore": "Nahuli sa hatinggabi mula sa puso ng puno ng saging."
+  },
+  {
+   "id": "r_sarangay",
+   "name": "Hiyas ni Sarangay",
+   "icon": "🔴",
+   "slot": "ring1",
+   "tier": 60,
+   "classes": null,
+   "rarity": "legendary",
+   "main": "crit",
+   "mult": 1.6,
+   "affixes": [
+    "critDmg",
+    "critCh"
+   ],
+   "set": "apoy",
+   "lore": "\"Hindi ko kinuha. Ibinigay niya.\" — sinungaling na may suot nito."
+  }
+ ]
+}

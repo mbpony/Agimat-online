@@ -1,0 +1,11 @@
+# Render Blueprint — deploy AGIMAT ONLINE with one click
+# (Render dashboard → New + → Blueprint → pick this repo)
+services:
+  - type: web
+    name: agimat-online
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /
+    autoDeploy: true
