@@ -1,4 +1,10 @@
 # CHANGELOG
+## 2026-09-08 — Chibi enemies: KayKit Skeletons (CC0) + enemy GLB animation engine
+- **Assets**: KayKit Character Pack Skeletons 1.0 (CC0, LICENSE.txt shipped) from official GitHub — 4 rigged models (~4.6-5.9k tris, 95 anims each incl. skeleton-specific Awaken/Resurrect clips), embedded textures.
+- **Enemy mapping (registry)**: duwende→Skeleton_Minion (pack skirmisher) · nuno→Skeleton_Mage (caster) · aswang→Skeleton_Rogue (night predator) · bungisngis→Skeleton_Warrior (isla brute). Other 8 enemies stay procedural until later packs. Height honors 2.2×def.scale.
+- **glbEnemyAnim module**: same skinned pipeline as heroes (SkeletonUtils clone + mixers). State machine off EXISTING AI fields: windup→attack one-shot (melee/caster profile) · flash→Hit_A · chase→Running_A · wander→Walking_A · else Idle. Death: corpse ghost replays Death clip 0.9s then cleans up — killEnemy/removeEnemy/rewards untouched.
+- Procedural fallback preserved; scope-gate lint clean; headless 14/14 PASS. SW → agimat-v15.
+
 ## 2026-09-08 — Chibi hero models: KayKit Adventurers (CC0) + GLB animation engine
 - **Assets**: KayKit Character Pack Adventurers 1.0 (CC0, LICENSE.txt shipped in assets/characters/kaykit/) pulled directly from the official KayKit GitHub. 5 rigged chibi models (Knight/Barbarian/Mage/Rogue/Rogue_Hooded), ~5.7-7k tris, 76 animations each, embedded textures.
 - **Class mapping (registry-driven)**: mandirigma→Knight · arnisador+panday→Barbarian · anino→Rogue_Hooded · tirador+mamamana→Rogue · babaylan+alim→Mage · mangkukulam keeps her artist GLB. data/models/registry.json now also carries animProfile (melee/ranged/caster).

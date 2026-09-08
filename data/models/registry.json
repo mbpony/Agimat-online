@@ -55,7 +55,24 @@
    "animProfile": "melee"
   }
  },
- "enemies": {},
+ "enemies": {
+  "duwende": {
+   "baseModel": "assets/characters/kaykit_skeletons/Skeleton_Minion.glb",
+   "animProfile": "melee"
+  },
+  "nuno": {
+   "baseModel": "assets/characters/kaykit_skeletons/Skeleton_Mage.glb",
+   "animProfile": "caster"
+  },
+  "aswang": {
+   "baseModel": "assets/characters/kaykit_skeletons/Skeleton_Rogue.glb",
+   "animProfile": "melee"
+  },
+  "bungisngis": {
+   "baseModel": "assets/characters/kaykit_skeletons/Skeleton_Warrior.glb",
+   "animProfile": "melee"
+  }
+ },
  "pets": {},
  "npcs": {},
  "_comment": "Model registry (restructure spec \u00a719). baseModel/advancedModel = GLB path or null (null => procedural mesh). Add entries as the artist delivers \u2014 no code changes needed."

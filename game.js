@@ -13321,3 +13321,116 @@ CATALOG.push(
     }
   });
 })();
+
+/* ================================================================
+   💀 ANIMATED GLB ENEMIES (KayKit Skeletons, CC0)
+   Mirrors the hero anim engine for monsters. Registry-driven:
+   data/models/registry.json enemies.<id>.baseModel + animProfile.
+   Mapped: duwende→Minion · nuno→Mage · aswang→Rogue · bungisngis→
+   Warrior (others stay procedural until more packs arrive).
+   State machine reads the EXISTING enemy AI fields:
+     windup>0 → attack one-shot · state 'chase' → Running_A ·
+     wandering (wt>0 & moving) → Walking_A · else Idle.
+   Death anim plays via a killEnemy wrap (corpse lingers 0.9s, no
+   reward/removal changes — removeEnemy stays canonical).
+   ================================================================ */
+(function glbEnemyAnim(){
+  const REGE=(GAME_DATA.models&&GAME_DATA.models.enemies)||{};
+  const PROFILE_ATTACK={
+    melee:['1H_Melee_Attack_Chop','1H_Melee_Attack_Slice_Diagonal','2H_Melee_Attack_Slice'],
+    ranged:['2H_Ranged_Shoot','1H_Ranged_Shoot','Throw'],
+    caster:['Spellcast_Shoot','Spellcast_Raise','Spellcasting'],
+  };
+  function findClip(A,names){ for(const n of names){ const c=A.find(a=>a.name===n); if(c) return c; } return null; }
+  const mixers=new Set();
+
+  const _bem=buildEnemyMesh;
+  buildEnemyMesh=function(key){
+    const url=MODELS.enemy[key];
+    const c=url&&MODEL_CACHE[url];
+    if(!c||!c.animations||!c.animations.length) return _bem.apply(this,arguments);
+    const def=ENEMY_DEFS[key];
+    const g=new THREE.Group();
+    const m=SkeletonUtils.clone(c.scene);
+    const box=new THREE.Box3().setFromObject(m);
+    const h=box.max.y-box.min.y;
+    const target=2.2*(def?def.scale:1);
+    if(h>0) m.scale.setScalar(target/h);
+    const box2=new THREE.Box3().setFromObject(m);
+    m.position.y-=box2.min.y;
+    m.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false; } });
+    g.add(m);
+    const mixer=new THREE.AnimationMixer(m);
+    const A=c.animations;
+    const prof=(REGE[key]&&REGE[key].animProfile)||'melee';
+    const clips={
+      idle:findClip(A,['Idle','Idle_B','2H_Melee_Idle','Skeleton_Inactive_Standing_Pose']),
+      walk:findClip(A,['Walking_A','Walking_B']),
+      run:findClip(A,['Running_A','Running_B','Walking_A']),
+      attack:findClip(A,PROFILE_ATTACK[prof]||PROFILE_ATTACK.melee),
+      hit:findClip(A,['Hit_A','Hit_B']),
+      death:findClip(A,['Death_A','Death_C_Skeletons','Death_B']),
+    };
+    const acts={};
+    for(const [k2,cl] of Object.entries(clips)) if(cl) acts[k2]=mixer.clipAction(cl);
+    for(const k2 of ['attack','hit','death']) if(acts[k2]){ acts[k2].setLoop(THREE.LoopOnce); }
+    if(acts.death) acts.death.clampWhenFinished=true;
+    const st={mixer,acts,cur:null,oneUntil:0,_root:g};
+    st.play=(name,fade)=>{ const a=st.acts[name]; if(!a||st.cur===name) return;
+      const prev=st.acts[st.cur]; a.reset(); a.play();
+      if(prev&&prev!==a) prev.crossFadeTo(a,fade??0.2,false); st.cur=name; };
+    st.playOnce=(name,dur)=>{ const a=st.acts[name]; if(!a) return;
+      a.reset(); a.setEffectiveTimeScale((a.getClip().duration/Math.max(0.2,dur))||1); a.play();
+      const prev=st.acts[st.cur]; if(prev&&prev!==a) prev.crossFadeTo(a,0.08,false);
+      st.cur=name; st.oneUntil=nowS()+dur; };
+    if(acts.idle){ acts.idle.play(); st.cur='idle'; }
+    mixers.add(st);
+    g.userData.glbAnim2=st;
+    g.userData.anim={};                    // procedural anim no-op
+    return g;
+  };
+
+  /* mixer updates + per-enemy state machine */
+  let lastT=performance.now()/1000;
+  (function tick(){
+    requestAnimationFrame(tick);
+    const t=performance.now()/1000, dt=Math.min(0.1,t-lastT); lastT=t;
+    for(const st of mixers){ if(!st._root.parent){ mixers.delete(st); continue; } st.mixer.update(dt); }
+    if(!started) return;
+    const ts=nowS();
+    for(const en of enemies){
+      const st=en.mesh&&en.mesh.userData&&en.mesh.userData.glbAnim2;
+      if(!st) continue;
+      if(ts<st.oneUntil) continue;
+      if(en.windup>0){ st.playOnce('attack',Math.max(0.3,en.windup+0.25)); continue; }
+      if(en.flash>0.08&&st.acts.hit){ st.playOnce('hit',0.3); continue; }
+      if(en.state==='chase') st.play('run');
+      else if(Math.abs(en.x-en.wx)+Math.abs(en.z-en.wz)>0.3) st.play('walk');
+      else st.play('idle');
+    }
+  })();
+
+  /* death: play the death clip on a corpse ghost (does NOT touch rewards) */
+  const _ke2=killEnemy;
+  killEnemy=function(en){
+    const st=en.mesh&&en.mesh.userData&&en.mesh.userData.glbAnim2;
+    if(st&&st.acts.death&&en.mesh){
+      const corpse=en.mesh;                     // reuse the mesh as a corpse
+      const pos={x:en.x,z:en.z};
+      const r=_ke2.apply(this,arguments);       // normal kill (removes mesh from scene)
+      corpse.position.set(pos.x,groundY(pos.x,pos.z),pos.z);
+      scene.add(corpse);                        // re-add for the death anim
+      mixers.add(st);                           // keep the mixer alive
+      st.playOnce('death',0.9);
+      setTimeout(()=>{ scene.remove(corpse); mixers.delete(st); },1000);
+      return r;
+    }
+    return _ke2.apply(this,arguments);
+  };
+
+  /* preload registered enemy models (network-first cache picks them up) */
+  const urls=[...new Set(Object.values(MODELS.enemy).filter(Boolean))];
+  if(urls.length) Promise.all(urls.map(u=>loadGLB(u).catch(()=>null))).then(cs=>{
+    console.log('[chibi] enemy models loaded:',cs.filter(Boolean).length+'/'+urls.length);
+  });
+})();
