@@ -1,4 +1,10 @@
 # CHANGELOG
+## 2026-09-08 — Weapon attachments (chibi update #3)
+- **KayKit Adventurers weapon set** (29 gltf models + bins/textures, 620KB) copied to assets/characters/kaykit/weapons/; .gltf URI references (bin + class texture PNGs) resolve natively from the same folder.
+- **weaponAttach module**: weapons snap to the rig's handslot.r (mainhand) / handslot.l (offhand) bones. Class flavor table: Mandirigma sword+badge shield · Arnisador sword+dagger · Panday axe+round shield · Anino dual daggers · Tirador crossbow · Mamamana 2H crossbow+quiver · Babaylan staff+open spellbook · Alim staff+closed book · Mangkukulam wand+smokebomb.
+- **Gear-reactive**: offhand model only appears when an offhand item is equipped (casters always hold theirs); epic/legendary mainhand upgrades silhouette to 2H variants. Signature check prevents re-attach churn; equipItem wrap + 2s sweep covers equips, mesh swaps, GLB arrival, respawn.
+- Procedural heroes untouched; scope-gate lint clean; headless 9/9 PASS. SW → agimat-v17.
+
 ## 2026-09-08 — Filipino class tints + Mangkukulam chibi swap (chibi update #2)
 - **classTints module**: registry heroes.<cls>.tint {hue,sat,bri} → runtime canvas filter over the KayKit atlas → CanvasTexture cached per class; materials cloned per hero (no cross-class leak). Non-fatal fallback keeps original texture.
 - **Identities**: Babaylan pula't-ginto ritual red · Alim teal elemental · Mangkukulam DARK WITCH (desaturated near-black violet) · Mandirigma war-red Knight · Arnisador crimson Barbarian · Panday ash/coal forge · Tirador earth/sand Rogue · Mamamana forest-green Rogue · Anino shadow-violet hooded.

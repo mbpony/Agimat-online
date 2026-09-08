@@ -13486,3 +13486,87 @@ CATALOG.push(
     return g;
   };
 })();
+
+/* ================================================================
+   ⚔️ WEAPON ATTACHMENTS (chibi update #3) — KayKit weapons snap to
+   the rig's handslot bones based on EQUIPPED gear.
+   · handslot.r = mainhand · handslot.l = offhand/shield
+   · weapon model chosen from the equipped item's slot+class flavor
+   · re-attaches on equip/unequip (equipItem wrap + 2s sweep for
+     load/advance edge cases) · tinted with the class atlas rules
+   · caster classes with no weapon equipped hold their staff/book
+   Weapon .gltf files reference class textures by URI — served from
+   the same folder, so GLTFLoader resolves them natively.
+   ================================================================ */
+(function weaponAttach(){
+  const W='assets/characters/kaykit/weapons/';
+  /* class flavor: which model represents a generic mainhand/offhand */
+  const FLAVOR={
+    mandirigma:{main:'sword_1handed.gltf', off:'shield_badge.gltf'},
+    arnisador: {main:'sword_1handed.gltf', off:'dagger.gltf'},
+    panday:    {main:'axe_1handed.gltf',   off:'shield_round.gltf'},
+    anino:     {main:'dagger.gltf',        off:'dagger.gltf'},
+    tirador:   {main:'crossbow_1handed.gltf', off:null},
+    mamamana:  {main:'crossbow_2handed.gltf', off:'quiver.gltf'},
+    babaylan:  {main:'staff.gltf',         off:'spellbook_open.gltf'},
+    alim:      {main:'staff.gltf',         off:'spellbook_closed.gltf'},
+    mangkukulam:{main:'wand.gltf',         off:'smokebomb.gltf'},
+  };
+  /* legendary/epic mainhands upgrade the silhouette */
+  const UPGRADE={
+    mandirigma:'sword_2handed.gltf', arnisador:'sword_2handed.gltf',
+    panday:'axe_2handed.gltf', anino:'dagger.gltf',
+    tirador:'crossbow_2handed.gltf', mamamana:'crossbow_2handed.gltf',
+    babaylan:'staff.gltf', alim:'staff.gltf', mangkukulam:'staff.gltf',
+  };
+  function findBone(root,name){
+    let hit=null;
+    root.traverse(o=>{ if(!hit&&o.name===name) hit=o; });
+    return hit;
+  }
+  function weaponFor(cls){
+    const f=FLAVOR[cls]||FLAVOR.mandirigma;
+    const mh=S.gear&&S.gear.mainhand, oh=S.gear&&S.gear.offhand;
+    let main=f.main;
+    if(mh&&(mh.rarity==='epic'||mh.rarity==='legendary')) main=UPGRADE[cls]||main;
+    /* offhand only when an item is equipped there (casters always hold theirs) */
+    const caster=['babaylan','alim','mangkukulam'].includes(cls);
+    const off=(oh||caster)?f.off:null;
+    return {main:(mh||caster)?main:f.main, off};   // mainhand model always shown (bare fists look wrong on chibi)
+  }
+  function clearSlot(bone){
+    if(!bone) return;
+    for(const c of [...bone.children]) if(c.userData&&c.userData._weap) bone.remove(c);
+  }
+  function attach(bone,url,cls){
+    if(!bone||!url) return;
+    loadGLB(W+url.replace(/\.gltf$/,'.gltf')).then(c=>{
+      if(!c) return;
+      clearSlot(bone);
+      const m=c.scene.clone(true);              // static meshes: plain clone OK
+      m.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false; } });
+      /* normalize size: weapons are authored at rig scale; the hero group
+         was scaled by 2.6/h on the MODEL, and bones inherit that — so no
+         extra scaling needed. Flag for cleanup. */
+      m.userData._weap=true;
+      bone.add(m);
+    }).catch(()=>{});
+  }
+  function refresh(){
+    if(!player.mesh||!player.mesh.userData||!player.mesh.userData.glb) return;
+    const cls=S.cls; if(!cls||!FLAVOR[cls]) return;
+    const R=findBone(player.mesh,'handslot.r'), L=findBone(player.mesh,'handslot.l');
+    if(!R&&!L) return;
+    const w=weaponFor(cls);
+    const sig=cls+'|'+(w.main||'')+'|'+(w.off||'');
+    if(player.mesh.userData._weapSig===sig) return;      // unchanged
+    player.mesh.userData._weapSig=sig;
+    clearSlot(R); clearSlot(L);
+    if(w.main) attach(R,w.main,cls);
+    if(w.off)  attach(L,w.off,cls);
+  }
+  /* re-attach on equip changes + slow sweep for mesh swaps (GLB arrival, advance, respawn) */
+  const _eq2=equipItem;
+  equipItem=function(){ _eq2.apply(this,arguments); setTimeout(refresh,50); };
+  setInterval(refresh,2000);
+})();
