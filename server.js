@@ -204,6 +204,11 @@ const DAILY=[
 ];
 function dayKey(ts){ const d=new Date(ts); return d.getUTCFullYear()+'-'+(d.getUTCMonth()+1)+'-'+d.getUTCDate(); }
 function handleAPI(req,res,p){
+  /* GET /api/health — deploy/diagnostic probe: is cloud persistence ON? */
+  if(p==='/api/health'){
+    return sendJSON(res,200,{ok:true, cloud:CLOUD_ON?'ON':'OFF',
+      users:Object.keys(USERS).length, uptimeS:Math.round(process.uptime())});
+  }
   if(req.method!=='POST') return sendJSON(res,405,{ok:false,err:'POST only'});
   jsonBody(req,(b)=>{
     if(!b) return sendJSON(res,400,{ok:false,err:'bad body'});
