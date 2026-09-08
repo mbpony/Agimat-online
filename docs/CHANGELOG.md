@@ -1,4 +1,10 @@
 # CHANGELOG
+## 2026-09-08 — Kapuluan Life Pack: quest variety + NPC reputation + contextual interactions (Game Bible #3/#4/#5)
+- **[A] Quest variety**: story chain 6 → 12 (inline + quests.json, push guarded vs duplicates). New engine types: visit (multi-zone exploration w/ per-quest vset dedupe) · forage · fish · cook (achEvent bridge) · enhance · **choice** (auto-ready). Veterans with finished chains get "Bagong kabanata!" reopen. Finale "Ang Nakawang Anting-anting" = MORAL CHOICE epilogue: return (+25k XP, +10 rep with 3 town NPCs) vs keep (+15k gold, +15 Kubrador rep); choice recorded in S.ctx.moral; title "May Budhi".
+- **[B] NPC reputation**: builds on npcRel/tier data from the Universal NPC system. Sources: quest turn-ins (+5, existed), shop purchases (+1, delegated listener), moral choice. Perks: shop discounts 5% @15 / 10% @30 / 15% @100 (buyPrice wrap, per-NPC context via _curNpcShop) + daily material gift at Kaalyado (60+); tier-up toasts; cap 150.
+- **[C] Contextual interactions**: world-aware green action button — 🕊️ Balon ng Kahilingan (plaza well: 100g offering → random +6% ATK/HP/DEF or +8% XP, 5 min, 10 min cd) · 🙏 Tabi-tabi po (Nuno Highlands: +6% Drop 10 min, 15% Nuno Stone chance, 20 min cd) · 🐚 Mamulot (beach: materials + 20% Diwata Dew, 15 min cd). Own buff store + HUD chip (kept separate from FOOD.buffs whose chip assumes DISHES ids); buffs expire cleanly.
+- 4 new achievements. Save additive: S.ctx, S.npcGift, S.quests.vset/vq. Scope-gate lint clean; headless 30/30 PASS. SW → agimat-v11.
+
 ## 2026-09-08 — Ang Apat na Pag-angat: 4-tier advancement rituals (Lv20/40/60/80)
 - **LEVEL_CAP 70 → 80** (Lv80 = final ritual). UNLOCKS notes for 40/60/80 updated.
 - **4-tier ladders for all 9 classes**, rooted in real Philippine mythology: epic heroes (Lam-ang, Aliguyon of the Hudhud, Bantugan of the Darangen, Bernardo Carpio), deities (Apolaki, Mayari, Sidapa, Lakapati, Kanlaon, Anitun Tabu, Dumakulem, Bathala), Sitan's agents (Mangagaway, Hukluban), authentic titles (Mumbaki = Ifugao ritual priest, Punong Guro = arnis grandmaster rank, Lakan = precolonial ruler, Tigbanua of Bagobo lore).

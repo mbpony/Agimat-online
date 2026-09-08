@@ -12857,3 +12857,272 @@ CATALOG.push(
     {id:'adv4', icon:'☀️', name:'Rurok ng Landas', desc:'Tapusin ang Ritwal IV (Lv80)', chk:()=>(S.advT||0)>=4, rw:{gold:100000}, title:'Hinirang ng mga Bathala'},
   );
 })();
+
+/* ================================================================
+   🌍 KAPULUAN LIFE PACK — three Game Bible features in one module:
+   [A] QUEST VARIETY — story chain continues (#7-#12) with NEW quest
+       types: exploration(visit) · forage · fishing · cooking ·
+       smithing(enhance) · MORAL CHOICE. Engine hooks are wraps on
+       existing top-level fns — no core rewrites.
+   [B] NPC REPUTATION — S.npcRel points grow from quests(+5, exists),
+       purchases(+1) and daily visits; tiers unlock shop DISCOUNTS
+       (5/10/15%) and a daily GIFT at Kaalyado+.
+   [C] CONTEXTUAL INTERACTIONS — world-aware action button:
+       🕊️ Balon ng Kahilingan (plaza well) · 🙏 Tabi-tabi po (Nuno
+       Highlands) · 🐚 Pamumulot (beach). Own buff store + chip
+       (NOT FOOD.buffs — its chip assumes DISHES ids).
+   Save additive: S.quests.vset/vq · S.ctx · S.npcGift.
+   ================================================================ */
+(function kapuluanLife(){
+
+  /* ============ [A] QUEST VARIETY ============ */
+  if(!QUESTS.some(q=>q&&q.id===6)) QUESTS.push(
+    {id:6, npc:'Ka Bining', icon:'🗺️', title:'Mapa ng Kapuluan',
+     text:'Ang mga hinabi ko ay kulang sa kulay ng malalayong lupain. Maglakbay ka — tapakan mo ang APAT na lupain: Kawayan Grove, Gubat ng Balete, Nuno Highlands, at ang baybayin.',
+     type:'visit', targets:[1,2,3,5], n:4, reward:{gold:6000, xp:10000}},
+    {id:7, npc:'Aling Rosa', icon:'🌾', title:'Ani ng Lupa',
+     text:'Anak, ang tiangge ay nabubuhay sa ani. Mangalap ka ng LABINLIMANG beses mula sa mga halaman at bato ng kapuluan.',
+     type:'forage', n:15, reward:{gold:7000, xp:12000}},
+    {id:8, npc:'Aling Rosa', icon:'🎣', title:'Biyaya ng Tubig',
+     text:'Ang mga matanda ay nangangailangan ng sariwang isda. Mamingwit ka ng LIMANG huli mula sa tubig.',
+     type:'fish', n:5, reward:{gold:8000, xp:14000}},
+    {id:9, npc:'Aling Rosa', icon:'🍲', title:'Handaan ng Bayan',
+     text:'May pista sa susunod na buwan ng anihan! Magluto ka ng TATLONG putahe sa Lutuan ng Bayan — subukan mo ang paborito ng mga anito.',
+     type:'cook', n:3, reward:{gold:9000, xp:16000}},
+    {id:10, npc:'Panday Iko', icon:'🔨', title:'Bakal na Banyuhay',
+     text:'Ang bakal ay parang tao, kaibigan — kailangang dumaan sa apoy para lumakas. Magpanday ka ng TATLONG beses sa aking pandayan (+1 kahit alin).',
+     type:'enhance', n:3, reward:{gold:10000, xp:18000}},
+    {id:11, npc:'Ang Kubrador', icon:'📿', title:'Ang Nakawang Anting-anting',
+     text:'Ssst… may nahanap akong anting-anting na ninakaw sa isang babaylan sa kabilang baryo. Mainit sa kamay. Kunin mo — ikaw na ang bahala kung saan ito dadalhin. Walang tanong.',
+     type:'choice', n:1, reward:{gold:2000, xp:20000}},
+  );
+  /* veterans who finished the old 6-quest chain: reopen it */
+  setInterval(()=>{ try{
+    if(S.quests&&S.quests.done&&S.quests.cur<QUESTS.length){
+      S.quests.done=false; save(); updateQuestHud();
+      toast('📜 <b>Bagong kabanata!</b> May mga bagong misyon sa Tiangge — kausapin ang mga NPC.','levelup');
+    }
+    /* 'choice' quests are ready the moment they are current */
+    const q=curQuest();
+    if(q&&q.type==='choice'&&S.quests.prog<q.n){ S.quests.prog=q.n; updateQuestHud(); }
+  }catch(e){} },4000);
+
+  /* --- hooks: forage / fish / cook / enhance / visit --- */
+  function chainBump(type,key){
+    const q=curQuest(); if(!q||q.type!==type) return;
+    if(type==='visit'){
+      S.quests.vq=S.quests.vq??-1;
+      if(S.quests.vq!==S.quests.cur){ S.quests.vq=S.quests.cur; S.quests.vset=[]; }
+      if(!q.targets.includes(key)||S.quests.vset.includes(key)) return;
+      S.quests.vset.push(key);
+      S.quests.prog=S.quests.vset.length;
+    } else S.quests.prog=Math.min(q.n,S.quests.prog+1);
+    if(S.quests.prog>=q.n) toast(`📜 <b>${q.title}</b> — TAPOS NA! Bumalik kay ${q.npc}.`,'levelup');
+    else toast(`📜 ${q.title}: ${S.quests.prog}/${q.n}`,'');
+    updateQuestHud(); save();
+  }
+  const _hn=harvestNode;
+  harvestNode=function(n){ _hn.apply(this,arguments); chainBump('forage'); };
+  const _qp=window._questProg;
+  window._questProg=function(kind,amt,key){
+    _qp.apply(this,arguments);
+    if(kind==='fish') chainBump('fish');
+    if(kind==='cook') chainBump('cook');
+    if(kind==='enhance') chainBump('enhance');
+  };
+  /* cooking increments achEvent('cook') not _questProg — bridge it */
+  const _ae=achEvent;
+  achEvent=function(kind,amt,key){ _ae.apply(this,arguments); if(kind==='cook') chainBump('cook'); };
+  /* zone visits */
+  setInterval(()=>{ try{
+    if(!started||player.dead) return;
+    const q=curQuest(); if(!q||q.type!=='visit') return;
+    const tx=clamp(Math.floor(player.x/TILE),0,MAP_W-1), ty=clamp(Math.floor(player.z/TILE),0,MAP_H-1);
+    chainBump('visit',zoneGrid[ty*MAP_W+tx]);
+  }catch(e){} },2000);
+
+  /* --- moral choice epilogue (wrap the shared turn-in) --- */
+  const _ti=window._questTurnIn;
+  window._questTurnIn=function(q){
+    _ti.apply(this,arguments);
+    if(q.type!=='choice') return;
+    setTimeout(()=>{
+      showModal(`<div class="modal-emoji">📿</div><div class="modal-title">ANG NAKAWANG ANTING-ANTING</div>
+        <p style="text-align:center;font-size:12px;color:#bfb6d2">Hawak mo na ito. Mainit. Humihinga. Sa malayo, may isang babaylan na nagdadasal na maibalik ang kanyang kalasag ng kaluluwa…</p>
+        <button class="modal-btn" id="mc-return">🕊️ IBALIK sa babaylan<br><small>+25,000 XP · pagpapala ng mga anito</small></button>
+        <button class="modal-btn secondary" id="mc-keep">🌑 ITAGO — ibenta kay Kubrador<br><small>+15,000 ginto · walang tanong</small></button>`);
+      const r=$('mc-return'), k=$('mc-keep');
+      if(r) r.onclick=()=>{
+        gainXP(25000);
+        S.npcRel=S.npcRel||{}; for(const nid of ['trader','blacksmith','equipment']) S.npcRel[nid]=(S.npcRel[nid]||0)+10;
+        closeModal(); SFX.levelup();
+        toast('🕊️ <b>Ibinalik mo ang anting-anting.</b> Ramdam mo ang pasasalamat ng buong baryo. (+10 tiwala sa mga NPC)','levelup');
+        if(window._chatSys) window._chatSys('🕊️ Pinili mo ang liwanag — ibinalik ang nakawang anting-anting.','xp');
+        S.ctx=S.ctx||{}; S.ctx.moral='return'; save();
+      };
+      if(k) k.onclick=()=>{
+        S.gold+=15000;
+        S.npcRel=S.npcRel||{}; S.npcRel.blackmarket=(S.npcRel.blackmarket||0)+15;
+        closeModal(); SFX.loot();
+        toast('🌑 <b>Itinago mo ito.</b> Bigat sa bulsa, bigat sa dibdib. (+15,000 ginto · +15 tiwala kay Kubrador)','warn');
+        if(window._chatSys) window._chatSys('🌑 Pinili mo ang dilim — ibinenta ang anting-anting.','xp');
+        S.ctx=S.ctx||{}; S.ctx.moral='keep'; save();
+      };
+    },600);
+  };
+
+  /* ============ [B] NPC REPUTATION ============ */
+  function relPts(nid){ return (S.npcRel&&S.npcRel[nid])||0; }
+  function relTier(nid){
+    const tiers=(window._npcData&&window._npcData.tiers)||[];
+    let t=tiers[0]||{id:'stranger',label:'Estranghero',min:0};
+    for(const x of tiers) if(relPts(nid)>=x.min) t=x;
+    return t;
+  }
+  function repAdd(nid,amt){
+    if(!nid) return;
+    S.npcRel=S.npcRel||{};
+    const before=relTier(nid).id;
+    S.npcRel[nid]=Math.min(150,(S.npcRel[nid]||0)+amt);
+    const after=relTier(nid);
+    if(after.id!==before){
+      const nm=(window._npcData&&window._npcData.defs[nid])?window._npcData.defs[nid].name:nid;
+      toast(`🤝 <b>${nm}</b>: kayo na ay <b>${after.label}</b>!`,'levelup');
+      SFX.loot();
+    }
+    save();
+  }
+  window._repAdd=repAdd;
+  function discountFor(nid){
+    const p=relPts(nid);
+    return p>=100?0.15:p>=30?0.10:p>=15?0.05:0;
+  }
+  /* current shop context */
+  const _onw=window.openNpcWindow;
+  window.openNpcWindow=function(nid){ window._curNpcShop=nid; dailyGift(nid); _onw.apply(this,arguments); };
+  const _ros=window._rawOpenShop;
+  window._rawOpenShop=function(id){ window._curNpcShop=id; _ros.apply(this,arguments); };
+  /* discount: buyPrice is top-level → reassignable */
+  const _bp=buyPrice;
+  buyPrice=function(it){
+    const base=_bp(it), d=discountFor(window._curNpcShop);
+    return d?Math.max(1,Math.round(base*(1-d))):base;
+  };
+  /* +1 rep per successful shop purchase (delegated; skip disabled buttons) */
+  document.addEventListener('click',e=>{
+    const b=e.target&&e.target.closest&&e.target.closest('.shop-buy,.mat-buy');
+    if(b&&!b.disabled&&window._curNpcShop) repAdd(window._curNpcShop,1);
+  },true);
+  /* daily gift from Kaalyado+ (rep 60+) NPCs */
+  function dailyGift(nid){
+    if(relPts(nid)<60) return;
+    S.npcGift=S.npcGift||{};
+    const day=new Date().toISOString().slice(0,10);
+    if(S.npcGift[nid]===day) return;
+    S.npcGift[nid]=day;
+    const gifts={trader:['palay',60],blacksmith:['bato',60],equipment:['dahon',60],blackmarket:['anito_dust',4]};
+    const g=gifts[nid]||['palay',40];
+    addInv(g[0],g[1]);
+    const nm=(window._npcData&&window._npcData.defs[nid])?window._npcData.defs[nid].name:nid;
+    toast(`🎁 <b>${nm}</b>: "Para sa kaalyado ko!" — ${MATERIALS[g[0]].icon} ${MATERIALS[g[0]].name} ×${g[1]}`,'loot');
+    save();
+  }
+
+  /* ============ [C] CONTEXTUAL INTERACTIONS ============ */
+  S.ctx=S.ctx||{};
+  const CTXB={};   // own buff store: id -> {until, stat, v, icon, name}
+  const _cs=computeStats;
+  computeStats=function(){
+    _cs.apply(this,arguments);
+    const t=nowS();
+    for(const b of Object.values(CTXB)){
+      if(b.until<=t) continue;
+      if(b.stat==='atk') P.atk=Math.round(P.atk*(1+b.v));
+      else if(b.stat==='def') P.def=Math.round(P.def*(1+b.v));
+      else if(b.stat==='hp') P.maxHp=Math.round(P.maxHp*(1+b.v));
+      else if(b.stat==='drop') P.dropRate+=b.v*100;
+      else if(b.stat==='xp') P.xpGain+=b.v*100;
+    }
+  };
+  const WELL={x:68.6*TILE, z:44.6*TILE};
+  const CTX_ACTIONS=[
+    { id:'well', icon:'🕊️', label:'Balon',
+      when:()=>d2(player.x,player.z,WELL.x,WELL.z)<7*7,
+      cd:600,
+      run(){
+        if(S.gold<100){ toast('🪙 Kailangan ng 100 ginto para sa alay sa balon.','warn'); return false; }
+        S.gold-=100;
+        const wishes=[['atk','⚔️ Lakas ng Loob','+6% Atake'],['hp','❤️ Hininga ng Balon','+6% Max HP'],['def','🛡️ Balat-Bato','+6% Depensa'],['xp','✨ Liwanag ng Isip','+8% XP']];
+        const w=wishes[rand(0,wishes.length-1)];
+        CTXB.well={until:nowS()+300, stat:w[0], v:w[0]==='xp'?0.08:0.06, icon:'🕊️', name:w[1]};
+        computeStats(); SFX.levelup();
+        fxRing(WELL.x,WELL.z,0x7df0ff,0.4,4,0.8);
+        toast(`🕊️ <b>${w[1]}</b> — ${w[2]} sa loob ng 5 minuto. Ang balon ay narinig ka.`,'levelup');
+        return true;
+      }},
+    { id:'tabi', icon:'🙏', label:'Tabi-tabi po',
+      when:()=>{ try{ const tx=clamp(Math.floor(player.x/TILE),0,MAP_W-1),ty=clamp(Math.floor(player.z/TILE),0,MAP_H-1); return zoneGrid[ty*MAP_W+tx]===3; }catch(e){ return false; } },
+      cd:1200,
+      run(){
+        CTXB.tabi={until:nowS()+600, stat:'drop', v:0.06, icon:'🙏', name:'Paggalang sa Nuno'};
+        computeStats(); SFX.loot();
+        fxRing(player.x,player.z,0x8aff9a,0.3,3,0.6);
+        let bonus='';
+        if(Math.random()<0.15){ addInv('nuno_stone',1); bonus=' Isang <b>Nuno\'s Stone</b> ang lumitaw sa punso!'; }
+        toast(`🙏 <b>"Tabi-tabi po…"</b> Ang mga nuno ay natuwa. +6% Drop Rate sa loob ng 10 min.${bonus}`,'loot');
+        return true;
+      }},
+    { id:'shell', icon:'🐚', label:'Mamulot',
+      when:()=>{ try{ const tx=clamp(Math.floor(player.x/TILE),0,MAP_W-1),ty=clamp(Math.floor(player.z/TILE),0,MAP_H-1); return zoneGrid[ty*MAP_W+tx]===5; }catch(e){ return false; } },
+      cd:900,
+      run(){
+        const finds=[['bato',15],['kawayan',10],['niyog',12]];
+        const f=finds[rand(0,finds.length-1)];
+        addInv(f[0],f[1]);
+        let extra='';
+        if(Math.random()<0.2){ addInv('diwata_dew',2); extra=' May kumikinang sa buhangin — <b>Diwata Dew ×2</b>!'; }
+        SFX.loot(); fxRing(player.x,player.z,0xffe08a,0.3,2.5,0.5);
+        toast(`🐚 Namulot ka sa baybayin: ${MATERIALS[f[0]].icon} ${MATERIALS[f[0]].name} ×${f[1]}.${extra}`,'loot');
+        return true;
+      }},
+  ];
+  /* context button (own pill — the core interact pill is closure-owned) */
+  const cb=document.createElement('button');
+  cb.id='btn-context'; cb.className='ctl-btn tiny hidden';
+  document.body.appendChild(cb);
+  let curCtx=null;
+  setInterval(()=>{
+    if(!started||player.dead){ cb.classList.add('hidden'); return; }
+    const t=nowS();
+    curCtx=CTX_ACTIONS.find(a=>a.when()&&t>=(S.ctx[a.id+'At']||0))||null;
+    cb.classList.toggle('hidden',!curCtx);
+    if(curCtx) cb.innerHTML=curCtx.icon+'<span>'+curCtx.label+'</span>';
+  },700);
+  cb.onclick=()=>{
+    if(!curCtx) return;
+    if(curCtx.run()!==false){ S.ctx[curCtx.id+'At']=nowS()+curCtx.cd; save(); }
+  };
+  /* ctx buff chip (own — FOOD chip assumes DISHES ids) */
+  const chip=document.createElement('div');
+  chip.id='ctx-chip'; chip.className='hc-adopt';
+  chip.style.cssText='background:rgba(20,14,34,.72);border:1px solid rgba(138,255,154,.35);color:#c8f0d8;font:700 10px system-ui;padding:3px 9px;border-radius:999px;pointer-events:none;display:none';
+  (window._hudCenter||document.body).appendChild(chip);
+  setInterval(()=>{
+    const t=nowS();
+    const act=Object.values(CTXB).filter(b=>b.until>t);
+    let dirty=false;
+    for(const [k,b] of Object.entries(CTXB)) if(b.until<=t){ delete CTXB[k]; dirty=true; }
+    if(dirty) computeStats();
+    chip.style.display=(started&&act.length)?'block':'none';
+    if(act.length) chip.textContent=act.map(b=>b.icon+' '+b.name).join(' · ');
+  },2000);
+
+  /* ---------- achievements ---------- */
+  ACH_DEFS.push(
+    {id:'wish1', icon:'🕊️', name:'Naghiling sa Balon',   desc:'Mag-alay sa Balon ng Kahilingan', chk:()=>!!S.ctx.wellAt, rw:{gold:1000}},
+    {id:'tabi1', icon:'🙏', name:'May Galang sa Nuno',   desc:'Magsabi ng tabi-tabi po sa Highlands', chk:()=>!!S.ctx.tabiAt, rw:{gold:1000}},
+    {id:'ally1', icon:'🤝', name:'Kaalyado ng Bayan',    desc:'Maabot ang Kaalyado (60) sa isang NPC', chk:()=>Object.values(S.npcRel||{}).some(v=>v>=60), rw:{gold:5000}},
+    {id:'moral', icon:'📿', name:'Ang Pagpili',          desc:'Tapusin ang Ang Nakawang Anting-anting', chk:()=>!!(S.ctx&&S.ctx.moral), rw:{gold:3000},
+      title:'May Budhi'},
+  );
+})();

@@ -1831,3 +1831,18 @@ h2,h3,h4{ font-family:var(--ff); letter-spacing:.4px; }
 .ar-step.now b{ background:rgba(255,217,74,.2); color:#ffd94a; animation:pulse 1.4s infinite; }
 .ar-step.now span{ color:#ffd94a; }
 .ar-step.lock{ opacity:.55; }
+
+/* ================================================================
+   🌍 KAPULUAN LIFE — contextual action button
+   ================================================================ */
+#btn-context{
+  position:fixed; z-index:11;
+  right:calc(12px + env(safe-area-inset-right)); bottom:calc(240px + env(safe-area-inset-bottom));
+  width:56px; height:56px; font-size:20px;
+  background:radial-gradient(circle at 32% 28%,#c8f0d8,#3a8a5a 60%,#1e5a38); border-color:#d8ffe8;
+  animation:bump 1.4s infinite;
+}
+#btn-context span{ font-size:8px; font-weight:900; letter-spacing:.2px; }
+@media (pointer:coarse) and (max-width:1024px){
+  #btn-context{ right:calc(210px + env(safe-area-inset-right)); bottom:calc(130px + env(safe-area-inset-bottom)); }
+}
