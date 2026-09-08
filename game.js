@@ -12236,3 +12236,225 @@ CATALOG.push(
     try{ _kr(en); } finally { window._rwMul=1; }
   };
 })();
+
+/* ================================================================
+   🐾 ALAGA v2 (master-fix §9) — companion system upgrade.
+   Progression: pets level via combat XP (active pet only), bond
+   grows with shared kills; passives SCALE with level + bond.
+   Rarity, favorites, collection view, rotating 3D preview,
+   mount energy (gentle), 2 NEW companions (Santelmo, Sigbin).
+   Save schema: ADDITIVE ONLY (S.pets.data/fav/energy lazy-init) —
+   old saves load unchanged.
+   ================================================================ */
+(function alagaV2(){
+  /* ---------- new companions ---------- */
+  PET_DEFS.santelmo={name:'Santelmo', icon:'🔥', cost:12000, type:'pet',
+    desc:'Ligaw na apoy ng latian. +3% Attack (lumalakas kada level).',
+    build(){ const g=new THREE.Group();
+      const core=new THREE.Mesh(new THREE.SphereGeometry(0.22,8,7), M(0x7df0ff,{emissive:0x2ad4ff,emissiveIntensity:2.2})); core.position.y=0.7; g.add(core);
+      const flame=new THREE.Mesh(new THREE.ConeGeometry(0.16,0.5,6), M(0xaef4ff,{emissive:0x7df0ff,emissiveIntensity:1.4,transparent:true,opacity:0.8}));
+      flame.position.y=1.02; g.add(flame);
+      const glow=new THREE.PointLight(0x4ad4ff,0.8,6); glow.position.y=0.8; g.add(glow);
+      return g; }};
+  PET_DEFS.sigbin={name:'Sigbin', icon:'🐐', cost:30000, type:'mount',
+    desc:'Anino ng gabi — SAKYAN: +80% bilis! Naglalakad nang paatras.',
+    build(){ const g=new THREE.Group();
+      const body=new THREE.Mesh(new THREE.CapsuleGeometry(0.45,1.0,4,8), M(0x241a30)); body.rotation.z=Math.PI/2; body.position.y=0.9; g.add(body);
+      const head=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.42,0.55), M(0x2e2240)); head.position.set(0,1.12,0.85); g.add(head);
+      for(const sx of [-1,1]){
+        const ear=new THREE.Mesh(new THREE.ConeGeometry(0.09,0.5,4), M(0x241a30)); ear.position.set(sx*0.16,1.5,0.75); ear.rotation.z=sx*0.35; g.add(ear);
+        const eye=new THREE.Mesh(new THREE.SphereGeometry(0.05,5,4), M(0xff4a2a,{emissive:0xff2a00,emissiveIntensity:2})); eye.position.set(sx*0.1,1.15,1.12); g.add(eye);
+        for(const fz of [0.5,-0.5]){
+          const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.05,0.9,5), M(0x1c1426)); leg.position.set(sx*0.24,0.42,fz); g.add(leg);
+        }
+      }
+      return g; }};
+
+  /* ---------- meta: rarity + level growth (data table) ---------- */
+  const PET_META={
+    tarsier:  {rarity:'uncommon',  passive:'XP Gain',    base:10, per:0.35, unit:'%'},
+    paniki:   {rarity:'uncommon',  passive:'Life Steal', base:4,  per:0.15, unit:'%'},
+    sarimanok:{rarity:'rare',      passive:'Drop Rate',  base:12, per:0.4,  unit:'%'},
+    santelmo: {rarity:'epic',      passive:'Attack',     base:3,  per:0.25, unit:'%'},
+    kalabaw:  {rarity:'uncommon',  passive:'Ride Speed', base:60, per:0.4,  unit:'%'},
+    sigbin:   {rarity:'legendary', passive:'Ride Speed', base:80, per:0.5,  unit:'%'},
+  };
+  const PET_MAXLVL=30;
+  const BOND_TIERS=[[0,'Bagong Kakilala','🤍'],[20,'Magkasundo','💛'],[50,'Matalik','🧡'],[100,'Kadugo','❤️']];
+  function petNeed(lvl){ return Math.round(30*Math.pow(lvl,1.6)); }
+  function petState(id){
+    S.pets.data=S.pets.data||{};
+    if(!S.pets.data[id]) S.pets.data[id]={lvl:1,xp:0,bond:0,kills:0};
+    return S.pets.data[id];
+  }
+  function bondTier(b){ let t=BOND_TIERS[0]; for(const x of BOND_TIERS) if(b>=x[0]) t=x; return t; }
+  function bondIdx(b){ let i=0; for(let k=0;k<BOND_TIERS.length;k++) if(b>=BOND_TIERS[k][0]) i=k; return i; }
+  function passiveVal(id){
+    const m=PET_META[id]; if(!m) return 0;
+    const st=petState(id);
+    return m.base+m.per*(st.lvl-1);
+  }
+
+  /* ---------- progression: pet XP + bond from kills ---------- */
+  const _kr2=killReward;
+  killReward=function(en){
+    _kr2(en);
+    const id=S.pets&&S.pets.active; if(!id||!PET_DEFS[id]) return;
+    const st=petState(id);
+    if(st.lvl>=PET_MAXLVL){ st.kills++; return; }
+    const def=ENEMY_DEFS[en.key]||{};
+    st.xp+=def.boss?40:def.tier==='Elite'?8:4;
+    st.kills++;
+    if(st.kills%20===0&&st.bond<BOND_TIERS[BOND_TIERS.length-1][0]) st.bond++;
+    while(st.xp>=petNeed(st.lvl)&&st.lvl<PET_MAXLVL){
+      st.xp-=petNeed(st.lvl); st.lvl++;
+      toast(`🐾 Si <b>${PET_DEFS[id].name}</b> ay <b>Lv ${st.lvl}</b> na!`,'levelup');
+      SFX.levelup(); computeStats();
+    }
+  };
+
+  /* ---------- passives scale with level + bond ---------- */
+  const _cs2=computeStats;
+  computeStats=function(){
+    _cs2.apply(this,arguments);
+    const id=S.pets&&S.pets.active; if(!id||!PET_DEFS[id]) return;
+    const st=petState(id), m=PET_META[id];
+    const lvlB=m?m.per*(st.lvl-1):0;
+    const bi=bondIdx(st.bond);            // bond: +1% DR & +1% XP per tier
+    if(id==='sarimanok') P.dropRate+=lvlB;
+    if(id==='tarsier')   P.xpGain+=lvlB;
+    if(id==='paniki')    P.lifesteal=Math.min(30,P.lifesteal+lvlB);
+    if(id==='santelmo')  P.atk=Math.round(P.atk*(1+(m.base+lvlB)/100));
+    if(S.pets.mounted){
+      if(id==='sigbin')  P.spd=P.spd/1.6*(1.8+0.005*(st.lvl-1));
+      if(id==='kalabaw') P.spd=P.spd/1.6*(1.6+0.004*(st.lvl-1));
+    }
+    P.dropRate+=bi; P.xpGain+=bi;
+  };
+
+  /* ---------- mount energy (gentle: ~5min ride, fast recharge) ---------- */
+  if(S.pets.energy===undefined) S.pets.energy=100;
+  setInterval(()=>{
+    if(!started) return;
+    if(S.pets.energy===undefined) S.pets.energy=100;
+    if(S.pets.mounted){
+      S.pets.energy=Math.max(0,S.pets.energy-0.35);
+      if(S.pets.energy<=0){
+        S.pets.mounted=false; computeStats(); save();
+        toast('💤 Pagod na ang sasakyan mo — kailangan niyang magpahinga.','warn');
+      }
+    } else if(S.pets.energy<100) S.pets.energy=Math.min(100,S.pets.energy+1.2);
+  },1000);
+
+  /* ---------- 3D preview (rotating, modal-scoped) ---------- */
+  let pv={rnd:null,sc:null,cam:null,mesh:null,raf:0};
+  function preview(id){
+    const cv=document.getElementById('pet3d'); if(!cv) return;
+    if(!pv.rnd||pv.cv!==cv){
+      pv.rnd=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+      pv.rnd.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+      pv.rnd.outputColorSpace=THREE.SRGBColorSpace;
+      pv.sc=new THREE.Scene();
+      pv.sc.add(new THREE.HemisphereLight(0xd8e8ff,0x4a3a64,1.5));
+      const k=new THREE.DirectionalLight(0xffe9c0,2); k.position.set(3,4,4); pv.sc.add(k);
+      pv.cam=new THREE.PerspectiveCamera(38,1,0.1,30);
+      pv.cv=cv;
+    }
+    if(pv.mesh){ pv.sc.remove(pv.mesh); pv.mesh=null; }
+    try{ pv.mesh=PET_DEFS[id].build(); pv.sc.add(pv.mesh); }catch(e){}
+    const mount=PET_DEFS[id].type==='mount';
+    pv.cam.position.set(0,mount?1.6:1.0,mount?4.2:2.6);
+    pv.cam.lookAt(0,mount?0.9:0.6,0);
+    if(pv.raf) cancelAnimationFrame(pv.raf);
+    (function spin(){
+      const c=document.getElementById('pet3d');
+      if(!c||c!==pv.cv){ pv.raf=0; return; }        // modal closed / rebuilt
+      pv.raf=requestAnimationFrame(spin);
+      const w=c.clientWidth||220,h=c.clientHeight||160;
+      if(c.width!==w*pv.rnd.getPixelRatio()){ pv.rnd.setSize(w,h,false); pv.cam.aspect=w/h; pv.cam.updateProjectionMatrix(); }
+      if(pv.mesh) pv.mesh.rotation.y+=0.014;
+      pv.rnd.render(pv.sc,pv.cam);
+    })();
+  }
+
+  /* ---------- ALAGA WINDOW v2 ---------- */
+  let tab='pets', sel=null;
+  openPets=function(){
+    S.pets.fav=S.pets.fav||[];
+    const owned=S.pets.owned||[];
+    const list=Object.entries(PET_DEFS).filter(([id,d])=>
+      tab==='pets'?d.type==='pet':tab==='mounts'?d.type==='mount':true);
+    if(!sel||!list.some(([id])=>id===sel)) sel=list[0][0];
+    const [sid,sd]=[sel,PET_DEFS[sel]];
+    const sm=PET_META[sid], st=petState(sid), rar=RARITIES.find(r=>r.id===(sm?sm.rarity:'common'));
+    const has=owned.includes(sid), active=S.pets.active===sid, fav=S.pets.fav.includes(sid);
+    const bt=bondTier(st.bond), need=petNeed(st.lvl);
+    const xpPct=st.lvl>=PET_MAXLVL?100:Math.round(st.xp/need*100);
+    const en=Math.round(S.pets.energy===undefined?100:S.pets.energy);
+    showModal(`<div class="modal-title" style="margin-bottom:6px">🐾 ALAGA AT SASAKYAN</div>
+      <div class="alg-tabs">
+        <button class="alg-tab ${tab==='pets'?'on':''}" data-t="pets">🐾 Mga Alaga</button>
+        <button class="alg-tab ${tab==='mounts'?'on':''}" data-t="mounts">🐃 Sasakyan</button>
+        <button class="alg-tab ${tab==='all'?'on':''}" data-t="all">📚 Koleksyon</button>
+      </div>
+      <div class="alg-body">
+        <div class="alg-list">${list.map(([id,d])=>{
+          const m=PET_META[id], r=RARITIES.find(x=>x.id===(m?m.rarity:'common'));
+          const o=owned.includes(id), a=S.pets.active===id, s2=petState(id);
+          return `<div class="alg-card ${id===sel?'sel':''} ${o?'':'ghost'}" data-sel="${id}" style="border-color:${id===sel?'#7df0ff':r.color}55">
+            <span class="alg-ic">${d.icon}</span>
+            <div class="alg-inf"><b style="color:${r.color}">${d.name}${S.pets.fav.includes(id)?' ⭐':''}</b>
+            <i>${o?`Lv ${s2.lvl} · ${r.name}`:r.name+' · 🔒'}</i></div>
+            ${a?'<em class="alg-on">AKTIBO</em>':''}
+          </div>`;}).join('')}
+        </div>
+        <div class="alg-view">
+          <canvas id="pet3d"></canvas>
+          <div class="alg-det">
+            <b style="color:${rar.color};font-size:15px">${sd.icon} ${sd.name}</b>
+            <i style="color:${rar.color}">${rar.name}${sd.type==='mount'?' · SASAKYAN':''}</i>
+            <p>${sd.desc}</p>
+            ${has?`
+              <div class="alg-bar"><span>Lv ${st.lvl}${st.lvl>=PET_MAXLVL?' (MAX)':''}</span><div><i style="width:${xpPct}%"></i></div><span>${st.lvl>=PET_MAXLVL?'★':st.xp+'/'+need}</span></div>
+              <div class="alg-stat">✨ ${sm?sm.passive:''}: <b>+${passiveVal(sid).toFixed(1)}${sm?sm.unit:''}</b> <s>(+${sm?sm.per:0}/lvl)</s></div>
+              <div class="alg-stat">${bt[2]} Bond: <b>${bt[1]}</b> <s>(${st.bond} · +${bondIdx(st.bond)}% DR at XP)</s></div>
+              <div class="alg-stat">⚔️ Magkasamang napatay: <b>${fmt(st.kills)}</b></div>
+              ${sd.type==='mount'?`<div class="alg-bar"><span>⚡ Lakas</span><div><i style="width:${en}%;background:linear-gradient(90deg,#8aff9a,#2ad46a)"></i></div><span>${en}%</span></div>`:''}
+            `:''}
+          </div>
+          <div class="alg-btns">
+            ${!has?`<button class="modal-btn" data-buy="${sid}">🪙 Bilhin — ${fmt(sd.cost)}</button>`
+              :active?(sd.type==='mount'
+                ?`<button class="modal-btn" data-ride="${sid}">${S.pets.mounted?'⬇️ BUMABA':'🏇 SAKYAN'}</button><button class="modal-btn secondary" data-off="1">Iuwi</button>`
+                :`<button class="modal-btn secondary" data-off="1">Iuwi si ${sd.name}</button>`)
+              :`<button class="modal-btn" data-on="${sid}">✨ ${sd.type==='mount'?'IHANDA':'ISAMA'}</button>`}
+            ${has?`<button class="modal-btn secondary" data-fav="${sid}">${fav?'⭐ Alisin sa paborito':'☆ Paborito'}</button>`:''}
+          </div>
+        </div>
+      </div>
+      <p style="font-size:10.5px;color:#8a80a2;text-align:center;margin:6px 0 0">Ang aktibong alaga ay nakakakuha ng XP at bond mula sa mga laban. Isa lang ang aktibo.</p>
+      <button class="modal-btn secondary" onclick="closeModal()" style="margin-top:6px">Isara</button>`);
+    preview(sid);
+    document.querySelectorAll('.alg-tab').forEach(b=>b.onclick=()=>{ tab=b.dataset.t; sel=null; openPets(); });
+    document.querySelectorAll('[data-sel]').forEach(b=>b.onclick=()=>{ sel=b.dataset.sel; openPets(); });
+    const q=s3=>document.querySelector(s3);
+    const bBuy=q('[data-buy]'); if(bBuy)bBuy.onclick=()=>{
+      const d=PET_DEFS[sid];
+      if(S.gold<d.cost){ toast('🪙 Kulang ang ginto!','warn'); return; }
+      S.gold-=d.cost; S.pets.owned.push(sid); S.pets.active=sid; S.pets.mounted=false;
+      petState(sid); computeStats(); refreshPetMesh(); updateHUD(); save(); SFX.levelup();
+      toast(`${d.icon} Nabili mo si <b>${d.name}</b>!`,'levelup'); openPets(); };
+    const bOn=q('[data-on]'); if(bOn)bOn.onclick=()=>{ S.pets.active=sid; S.pets.mounted=false; computeStats(); refreshPetMesh(); save(); openPets(); };
+    const bOff=q('[data-off]'); if(bOff)bOff.onclick=()=>{ S.pets.active=null; S.pets.mounted=false; computeStats(); refreshPetMesh(); save(); openPets(); };
+    const bRide=q('[data-ride]'); if(bRide)bRide.onclick=()=>{
+      if(!S.pets.mounted&&(S.pets.energy||0)<10){ toast('💤 Pagod pa ang sasakyan — hintayin ang ⚡ Lakas.','warn'); return; }
+      S.pets.mounted=!S.pets.mounted; computeStats(); save(); SFX.dodge();
+      toast(S.pets.mounted?`${PET_DEFS[sid].icon} Sakay ka na! Bilisan mo!`:'Bumaba ka.',''); openPets(); };
+    const bFav=q('[data-fav]'); if(bFav)bFav.onclick=()=>{
+      const i=S.pets.fav.indexOf(sid);
+      if(i>=0) S.pets.fav.splice(i,1); else S.pets.fav.push(sid);
+      save(); openPets(); };
+  };
+  window.openPets=openPets;
+  const pb=document.getElementById('btn-pets'); if(pb) pb.onclick=()=>openPets();
+})();

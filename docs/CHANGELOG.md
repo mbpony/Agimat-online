@@ -1,4 +1,12 @@
 # CHANGELOG
+## 2026-09-08 — Alaga v2: companion system upgrade (master-fix §9)
+- **New window**: tabs (🐾 Alaga / 🐃 Sasakyan / 📚 Koleksyon), companion list with rarity colors + lock/AKTIBO states, rotating 3D preview canvas, detail card, favorite ⭐ toggle. Mobile layout ≤480px.
+- **Progression**: active pet earns XP from your kills (common 4 / elite 8 / boss 40), levels 1→30 (need 30·lvl^1.6), +1 bond per 20 shared kills. Bond tiers: Bagong Kakilala → Magkasundo → Matalik → Kadugo, each grants +1% Drop Rate AND +1% XP Gain.
+- **Scaling passives** (PET_META data table): Sarimanok 12%+0.4/lvl DR · Tarsier 10%+0.35/lvl XP · Paniki 4%+0.15/lvl LS · Santelmo 3%+0.25/lvl ATK · Kalabaw 60%+0.4/lvl ride · Sigbin 80%+0.5/lvl ride.
+- **2 new companions**: 🔥 Santelmo (epic pet, glowing cyan flame w/ point light, 12k gold) · 🐐 Sigbin (legendary mount, ember eyes, 30k gold).
+- **Mount energy (gentle)**: ~5 min ride time, drains 0.35/s mounted, recharges 1.2/s on foot; auto-dismount at 0; needs ≥10% to ride. Energy bar in window.
+- **Save schema: ADDITIVE ONLY** — S.pets.data/fav/energy lazy-init; legacy saves load untouched (verified by test). Base killReward/computeStats untouched (wrap chain). Headless 19/19 PASS. SW → agimat-v5.
+
 ## 2026-09-08 — Map Instancing + Zone Difficulty (master-fix §6–§8)
 - **Zone instances**: world statics partitioned once at boot into MAINLAND vs ISLA buckets (split at the ocean gap, x ≥ (ISLE.x0−4)·TILE). Only the active zone's objects are attached to the scene — the other side is fully detached (zero draw calls/raycasts/matrix updates). Lights, sky, terrain, water (origin-anchored) stay shared.
 - **Zone switching**: 700ms watcher flips the instance whenever the player crosses the split (portal, respawn, any teleport). Off-zone enemies are culled + enemy projectiles cleared on switch. Debug: window._zoneDebug().
