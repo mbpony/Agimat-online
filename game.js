@@ -6773,11 +6773,14 @@ setInterval(()=>{
       const dst=toIsle?PORTAL_ISLE:PORTAL_TOWN;
       fxRing(player.x,player.z,0x7df0ff,0.6,5,0.6);
       SFX.skill(); screenShake(0.3,0.4);
-      player.x=dst.x+3; player.z=dst.z;
-      fxRing(player.x,player.z,0x7dff9a,0.6,5,0.6);
-      toast(toIsle?'🏝️ <b>ISLA NG BATHALA</b> — lupain ng mga sinaunang halimaw!':'🏮 Bumalik ka sa Dakilang Tiangge.','levelup');
+      const hop=()=>{
+        player.x=dst.x+3; player.z=dst.z;
+        fxRing(player.x,player.z,0x7dff9a,0.6,5,0.6);
+        toast(toIsle?'🏝️ <b>ISLA NG BATHALA</b> — lupain ng mga sinaunang halimaw!':'🏮 Bumalik ka sa Dakilang Tiangge.','levelup');
+        save();
+      };
+      if(window._mapTransition) window._mapTransition(toIsle?'isla':'town',hop); else hop();
       portalCd=8;
-      save();
       break;
     }
   }
@@ -11886,4 +11889,242 @@ CATALOG.push(
       if(n.label.textContent!==want) n.label.textContent=want;
     }
   },1500);
+})();
+
+/* ================================================================
+   🧱 UI OVERLAY MANAGER (master-fix §1) — layered stacking:
+   0 world · 10 HUD · 20 chat · 30-40 panels · 65 npc · 70 modal ·
+   115+ menus/inventory. Chat AUTO-HIDES behind any popup and can be
+   minimized to a floating 💬 button with an unread counter.
+   ================================================================ */
+(function uiOverlayManager(){
+  const chat=document.getElementById('chat-wrap'); if(!chat) return;
+  const tabs=chat.querySelector('#chat-tabs');
+  const log=chat.querySelector('#chat-log');
+
+  /* floating chat button (minimized state) */
+  const fab=document.createElement('button');
+  fab.id='chat-fab';
+  fab.innerHTML='💬<span id="chat-fab-n" class="hidden">0</span>';
+  document.body.appendChild(fab);
+
+  /* "—" minimize-to-button control, always visible in the tab strip */
+  const hideBtn=document.createElement('button');
+  hideBtn.id='chat-hide'; hideBtn.title='I-minimize ang chat'; hideBtn.textContent='—';
+  tabs.appendChild(hideBtn);
+
+  let unread=0;
+  let userMin=localStorage.getItem('agimat_chat_fab')==='1';
+
+  function anyPopupOpen(){
+    const mb=document.getElementById('modal-backdrop');
+    if(mb&&!mb.classList.contains('hidden')) return true;
+    for(const id of ['inv2','mainmenu','tal','sktree','npcw']){
+      const el=document.getElementById(id);
+      if(el&&el.classList.contains('open')) return true;
+    }
+    if(document.querySelector('.panel.open')) return true;
+    return false;
+  }
+  function updFab(){
+    const n=document.getElementById('chat-fab-n');
+    n.textContent=unread>99?'99+':String(unread);
+    n.classList.toggle('hidden',unread===0);
+    fab.style.display=(started&&SETTINGS.chatVisible&&userMin&&!anyPopupOpen())?'flex':'none';
+  }
+  /* unread counter: counts lines that arrive while chat is not visible */
+  new MutationObserver(muts=>{
+    if(userMin||chat.classList.contains('chat-behind')){
+      for(const m of muts) unread+=m.addedNodes.length;
+      updFab();
+    }
+  }).observe(log,{childList:true});
+
+  /* watcher: popups push chat behind; closing restores it */
+  setInterval(()=>{
+    chat.classList.toggle('chat-behind',anyPopupOpen());
+    chat.classList.toggle('chat-fabbed',userMin);
+    updFab();
+  },350);
+
+  hideBtn.onclick=e=>{
+    e.stopPropagation();
+    userMin=true; localStorage.setItem('agimat_chat_fab','1');
+    unread=0; updFab();
+    chat.classList.add('chat-fabbed');
+  };
+  fab.onclick=()=>{
+    userMin=false; localStorage.setItem('agimat_chat_fab','0');
+    unread=0; updFab();
+    chat.classList.remove('chat-fabbed');
+  };
+})();
+
+/* ================================================================
+   🧍 INVENTORY 3D CHARACTER (master-fix §3) — the SVG silhouette is
+   replaced by the ACTUAL hero model: slow auto-rotation, touch-drag
+   rotation, rebuilds immediately when equipment changes.
+   ================================================================ */
+(function inv3d(){
+  const doll=document.getElementById('i2-doll'); if(!doll) return;
+  const svg=doll.querySelector('svg'); if(svg) svg.remove();
+  const cv=document.createElement('canvas');
+  cv.id='i2-hero3d';
+  cv.style.cssText='position:absolute;inset:0;width:100%;height:100%;display:block';
+  doll.insertBefore(cv,doll.firstChild);
+
+  let rnd=null,sc=null,cam=null,mesh=null,yaw=0,dragging=false,lastX=0,raf=0;
+  function ensure(){
+    if(rnd) return;
+    rnd=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+    rnd.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+    rnd.outputColorSpace=THREE.SRGBColorSpace;
+    sc=new THREE.Scene();
+    sc.add(new THREE.HemisphereLight(0xd8e8ff,0x4a3a64,1.35));
+    const key=new THREE.DirectionalLight(0xffe9c0,2.1); key.position.set(3,5,4); sc.add(key);
+    const rim=new THREE.DirectionalLight(0x7df0ff,0.9); rim.position.set(-3,3,-4); sc.add(rim);
+    cam=new THREE.PerspectiveCamera(36,1,0.1,50);
+    cam.position.set(0,2.0,6.0); cam.lookAt(0,1.45,0);
+    const ped=new THREE.Mesh(new THREE.CylinderGeometry(1.35,1.5,0.2,20),
+      new THREE.MeshStandardMaterial({color:0x3a2f5a,roughness:.6,metalness:.3}));
+    ped.position.y=-0.1; sc.add(ped);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(1.35,0.045,6,24),
+      new THREE.MeshBasicMaterial({color:0x7df0ff}));
+    ring.rotation.x=Math.PI/2; ring.position.y=0.02; sc.add(ring);
+    cv.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;cv.setPointerCapture(e.pointerId);});
+    cv.addEventListener('pointermove',e=>{ if(dragging){ yaw+=(e.clientX-lastX)*0.012; lastX=e.clientX; } });
+    cv.addEventListener('pointerup',()=>dragging=false);
+    cv.addEventListener('pointercancel',()=>dragging=false);
+  }
+  function rebuild(){
+    ensure();
+    if(mesh){ sc.remove(mesh); mesh=null; }
+    try{ mesh=buildHero(S.cls); sc.add(mesh); }catch(e){}
+  }
+  window._inv3dRefresh=()=>{ if(document.getElementById('inv2').classList.contains('open')) rebuild(); };
+  function loop(){
+    if(!document.getElementById('inv2').classList.contains('open')){ raf=0; return; }
+    raf=requestAnimationFrame(loop);
+    const w=cv.clientWidth||300,h=cv.clientHeight||380;
+    if(cv.width!==w*rnd.getPixelRatio()){ rnd.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); }
+    if(mesh){ mesh.rotation.y=yaw+Math.PI; if(!dragging) yaw+=0.006; }
+    rnd.render(sc,cam);
+  }
+  /* hook open + equip changes */
+  const _open=i2Open;
+  i2Open=function(){ _open.apply(this,arguments); rebuild(); if(!raf) loop(); };
+  window.openInventory2=i2Open;                    // re-point stale reference
+  const _eq=equipItem;
+  equipItem=function(){ _eq.apply(this,arguments); if(window._inv3dRefresh) window._inv3dRefresh(); };
+})();
+
+/* ================================================================
+   ⟐ MAP TRANSITION SCREEN (master-fix §15) — cinematic zone travel.
+   Wired into the existing portal hop (town ⇄ Isla ng Bathala).
+   Lightweight: pure DOM/CSS, ~1.4s, no asset loading needed since
+   both zones share the world scene (true instancing = backlog).
+   ================================================================ */
+(function mapTransition(){
+  const LORE={
+    isla:['🏝️','ISLA NG BATHALA','"Dito nagpapahinga ang mga sinaunang halimaw —\nat ang mga bayaning sumusubok sa kanila."'],
+    town:['🏮','DAKILANG TIANGGE','"Sa bawat parol na sindi,\nmay kuwento ng pag-uwi."'],
+  };
+  const TIPS=[
+    'Tip: Pindutin nang matagal ang 🎙️ sa chat para mag-voice message.',
+    'Tip: Ang mga elite (⭐) ay mas malakas — pero mas maganda ang drops.',
+    'Tip: Kapag gabi, mas maraming aswang — at mas malaki ang gantimpala.',
+    'Tip: Si Aling Rosa ay nagpapagaling nang LIBRE. Dalawin mo siya!',
+    'Tip: I-upgrade ang gamit sa Pandayan ni Panday Iko (+1 → +10).',
+  ];
+  const ov=document.createElement('div');
+  ov.id='map-trans';
+  ov.innerHTML='<div class="mt-rune">ᜀ</div><div class="mt-logo">⟐ AGIMAT ONLINE ⟐</div>'+
+    '<div class="mt-zone"></div><div class="mt-lore"></div><div class="mt-bar"><i></i></div><div class="mt-tip"></div>';
+  document.body.appendChild(ov);
+  window._mapTransition=function(zone,done){
+    const [ic,name,lore]=LORE[zone]||LORE.town;
+    ov.querySelector('.mt-rune').textContent=['ᜀ','ᜊ','ᜃ','ᜄ','ᜎ'][Math.floor(Math.random()*5)];
+    ov.querySelector('.mt-zone').textContent=ic+' '+name;
+    ov.querySelector('.mt-lore').textContent=lore;
+    ov.querySelector('.mt-tip').textContent=TIPS[Math.floor(Math.random()*TIPS.length)];
+    ov.classList.add('show');
+    const bar=ov.querySelector('.mt-bar i');
+    bar.style.transition='none'; bar.style.width='0%';
+    requestAnimationFrame(()=>{ bar.style.transition='width 1.1s ease'; bar.style.width='100%'; });
+    setTimeout(()=>{ try{ done&&done(); }catch(e){} },700);
+    setTimeout(()=>ov.classList.remove('show'),1500);
+  };
+})();
+
+/* ================================================================
+   🧭 LEFT NAV RAIL (master-fix §5) — inventory window navigation
+   moves from bottom tabs to a vertical RPG rail on the left.
+   ================================================================ */
+(function leftRail(){
+  const root=document.getElementById('inv2'); if(!root) return;
+  const nav=root.querySelector('.inv2-nav'); if(!nav) return;
+  nav.classList.add('rail');
+  /* runtime style so it cascades AFTER the injected inv2 styles */
+  const st=document.createElement('style');
+  st.textContent=`
+    #inv2.open{flex-direction:row}
+    #inv2 .inv2-top{position:absolute;top:0;left:64px;right:0;z-index:3;background:rgba(10,8,18,.85)}
+    #inv2 .inv2-nav.rail{order:-1;flex:0 0 64px;flex-direction:column;justify-content:flex-start;gap:4px;
+      padding:calc(52px + env(safe-area-inset-top)) 6px 10px;
+      background:linear-gradient(180deg,rgba(14,10,24,.96),rgba(10,8,18,.98));
+      border-right:1px solid rgba(201,162,75,.28)}
+    #inv2 #i2-invmain{margin-top:calc(46px + env(safe-area-inset-top))}
+    #inv2 #i2-mapwrap,#inv2 #i2-profwrap{margin-top:calc(46px + env(safe-area-inset-top))}
+    @media (max-width:820px){
+      #inv2 .inv2-nav.rail{flex-basis:56px}
+      #inv2 .inv2-top{left:56px}
+    }`;
+  document.head.appendChild(st);
+  /* add Alaga entry to the rail (routes to the existing pets window) */
+  if(!nav.querySelector('[data-nav="pets"]')){
+    const b=document.createElement('button');
+    b.className='i2-nav'; b.dataset.nav='pets'; b.innerHTML='🐾 <s>Alaga</s>';
+    b.onclick=()=>{ i2Close(); openPets(); };
+    nav.appendChild(b);
+  }
+  /* icon + label markup for rail styling */
+  nav.querySelectorAll('.i2-nav').forEach(b=>{
+    if(b.dataset.nav==='pets') return;
+    const [ic,...rest]=b.textContent.trim().split(' ');
+    b.innerHTML=ic+' <s>'+rest.join(' ')+'</s>';
+  });
+})();
+
+/* ================================================================
+   🎁 DAILY REWARD v2 (master-fix §10) — modal-layer 7-day track w/
+   claimed/today/locked states + countdown to the next reward.
+   ================================================================ */
+(function daily2(){
+  const REWARD_PREVIEW=['🪙','🪙','🌿','🪙','💠','🌿','💎'];
+  window._openDailyTrack=function(r){
+    const now=new Date();
+    const nxt=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate()+1));
+    const hrs=Math.floor((nxt-now)/3600000), mins=Math.floor(((nxt-now)%3600000)/60000);
+    showModal(`
+      <div class="modal-emoji">🎁</div><div class="modal-title">Gantimpala ng Araw!</div>
+      <div class="daily-track v2">${[1,2,3,4,5,6,7].map(d=>{
+        const st=d<r.streak?'done':d===r.streak?'today':'lock';
+        return `<div class="daily-day ${st}">${st==='done'?'✓':REWARD_PREVIEW[d-1]}<i>Araw ${d}</i>${st==='lock'?'<u>🔒</u>':''}</div>`;
+      }).join('')}</div>
+      <p style="text-align:center;font-weight:800;color:#ffd94a;font-size:15px" class="daily-pop">${r.reward.desc}</p>
+      <p style="text-align:center;color:#bfb6d2;font-size:12px">Sunod-sunod: <b>${r.streak}/7</b> · Susunod na regalo sa <b>${hrs}h ${mins}m</b></p>
+      <button class="modal-btn" onclick="closeModal()">🙏 Salamat po!</button>`);
+  };
+  const _cd=claimDaily;
+  claimDaily=async function(){
+    if(!ACCT.token) return;
+    const r=await api('/api/daily',{token:ACCT.token});
+    if(!r.ok||r.already) return;
+    if(r.claimed&&r.reward){
+      S.gold+=r.reward.gold||0;
+      if(r.reward.mats) for(const [id,q] of Object.entries(r.reward.mats)) addInv(id,q);
+      updateHUD(); save(); SFX.levelup();
+      window._openDailyTrack(r);
+    }
+  };
 })();

@@ -1393,3 +1393,121 @@ body{background:var(--bg);color:var(--text);font-family:var(--ff);overflow:hidde
   #npcw{ align-items:flex-end; justify-content:flex-start; padding-left:calc(10px + env(safe-area-inset-left)); }
   #npcw-card{ width:min(480px,62vw); max-height:78vh; }
 }
+
+/* ================================================================
+   🧱 MASTER FIX PACK — UI layering · chat FAB · left rail ·
+   daily v2 · map transition · rune glow
+   ================================================================ */
+
+/* ---- layered stacking (spec §1): chat < panels < npc < modal ---- */
+#chat-wrap{ z-index:20; transition:opacity .18s ease, transform .18s ease; }
+#chat-wrap.chat-behind{ opacity:0; pointer-events:none; transform:translateX(-50%) translateY(8px); }
+#chat-wrap.chat-fabbed{ opacity:0; pointer-events:none; transform:translateX(-50%) translateY(14px); }
+
+/* minimize control in the tab strip — always visible */
+#chat-hide{
+  margin-left:auto; background:transparent; border:none; color:#8a80a2;
+  font:900 13px system-ui; cursor:pointer; padding:4px 8px; flex:none;
+}
+#chat-hide:active{ color:#ffd94a; }
+
+/* floating chat button w/ unread badge */
+#chat-fab{
+  position:fixed; left:50%; transform:translateX(-50%);
+  bottom:calc(10px + env(safe-area-inset-bottom));
+  width:46px; height:46px; border-radius:50%; z-index:21; display:none;
+  align-items:center; justify-content:center; font-size:20px; cursor:pointer;
+  background:linear-gradient(165deg,rgba(20,14,36,.92),rgba(10,7,20,.94));
+  border:1.5px solid rgba(125,240,255,.45); color:#7df0ff;
+  box-shadow:0 4px 14px rgba(0,0,0,.55), 0 0 14px rgba(125,240,255,.18);
+}
+#chat-fab span{
+  position:absolute; top:-5px; right:-5px; min-width:18px; height:18px; padding:0 4px;
+  border-radius:9px; background:linear-gradient(180deg,#ff6a5e,#c22e28); color:#fff;
+  font:900 10px system-ui; display:flex; align-items:center; justify-content:center;
+}
+
+/* ---- LEFT NAV RAIL (spec §5) ---- */
+#inv2{ display:none; }
+#inv2.open{ display:flex; flex-direction:row; }
+#inv2>.inv2-top{ position:absolute; top:0; left:64px; right:0; z-index:3; }
+.inv2-nav.rail{
+  order:-1; flex:0 0 64px; flex-direction:column; justify-content:flex-start; gap:4px;
+  padding:calc(52px + env(safe-area-inset-top)) 6px 10px;
+  background:linear-gradient(180deg,rgba(14,10,24,.96),rgba(10,8,18,.98));
+  border-right:1px solid rgba(201,162,75,.28);
+}
+.inv2-nav.rail .i2-nav{
+  min-width:0; width:52px; height:52px; padding:0; border-radius:12px;
+  border:1px solid transparent; background:transparent; color:#8a80a2;
+  font-size:20px; line-height:1.05; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:1px;
+}
+.inv2-nav.rail .i2-nav s{ text-decoration:none; font:800 8px system-ui; letter-spacing:.2px; }
+.inv2-nav.rail .i2-nav.on{
+  background:linear-gradient(180deg,rgba(106,90,154,.5),rgba(67,53,106,.5));
+  border-color:rgba(255,217,122,.55); color:#ffe9b0;
+  box-shadow:0 0 12px rgba(125,240,255,.15), inset 0 1px 0 rgba(255,217,122,.25);
+}
+/* main content sits right of the rail */
+#i2-invmain,#i2-mapwrap,#i2-profwrap{ padding-top:calc(46px + env(safe-area-inset-top)); }
+@media (max-width:820px){
+  .inv2-nav.rail{ flex-basis:56px; }
+  .inv2-nav.rail .i2-nav{ width:46px; height:46px; font-size:17px; }
+  #inv2>.inv2-top{ left:56px; }
+}
+
+/* ---- DAILY REWARD v2 (spec §10) ---- */
+.daily-track.v2 .daily-day{ position:relative; }
+.daily-track.v2 .daily-day.lock{ opacity:.55; }
+.daily-track.v2 .daily-day.lock u{
+  position:absolute; right:-3px; top:-6px; font-size:9px; text-decoration:none;
+}
+.daily-track.v2 .daily-day.today{
+  border-color:#ffd94a; background:rgba(255,217,74,.16);
+  box-shadow:0 0 14px rgba(255,217,74,.4); animation:pulse 1.4s infinite;
+}
+.daily-pop{ animation:dailyPop .5s cubic-bezier(.3,1.6,.5,1); }
+@keyframes dailyPop{ from{ transform:scale(.6); opacity:0; } to{ transform:none; opacity:1; } }
+
+/* ---- MAP TRANSITION SCREEN (spec §15) — layer 100 ---- */
+#map-trans{
+  position:fixed; inset:0; z-index:200; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:10px; text-align:center;
+  background:radial-gradient(ellipse at 50% 40%,#241a3e 0%,#120c22 60%,#0a0714 100%);
+  opacity:0; pointer-events:none; transition:opacity .25s ease;
+}
+#map-trans.show{ opacity:1; pointer-events:auto; }
+#map-trans .mt-rune{
+  font-size:44px; color:#7df0ff; text-shadow:0 0 24px rgba(125,240,255,.8);
+  animation:mtSpin 2.4s ease-in-out infinite;
+}
+@keyframes mtSpin{ 0%,100%{ transform:rotate(-8deg) scale(1); } 50%{ transform:rotate(8deg) scale(1.12); } }
+#map-trans .mt-logo{ font:800 13px system-ui; letter-spacing:4px; color:#c9a24b; }
+#map-trans .mt-zone{ font:900 24px system-ui; letter-spacing:2px; color:#ffd94a; text-shadow:0 2px 14px rgba(0,0,0,.7); }
+#map-trans .mt-lore{ font:500 12px/1.6 system-ui; color:#bfb6d2; white-space:pre-line; font-style:italic; }
+#map-trans .mt-bar{
+  width:min(320px,70vw); height:5px; border-radius:3px; overflow:hidden;
+  background:rgba(255,255,255,.08); border:1px solid rgba(201,162,75,.35);
+}
+#map-trans .mt-bar i{ display:block; height:100%; width:0;
+  background:linear-gradient(90deg,#7df0ff,#ffd94a); }
+#map-trans .mt-tip{ font:600 10.5px system-ui; color:#6a6284; margin-top:6px; }
+
+/* ---- BAYBAYIN RUNE GLOW (spec §4) — carved-artifact treatment ---- */
+.sock.filled, .sock-slot.filled, .rune-chip{
+  background:
+    radial-gradient(circle at 50% 38%, rgba(125,240,255,.14), transparent 65%),
+    linear-gradient(180deg, rgba(60,48,88,.85), rgba(26,20,42,.95));
+  border:1px solid rgba(125,240,255,.5);
+  text-shadow:0 0 8px rgba(125,240,255,.9), 0 0 18px rgba(125,240,255,.35);
+  color:#aef4ff;
+}
+.rune-chip.sel{
+  border-color:#ffd94a; color:#ffe9b0;
+  text-shadow:0 0 8px rgba(255,217,74,.95), 0 0 20px rgba(255,217,74,.4);
+  box-shadow:0 0 14px rgba(255,217,74,.45), inset 0 0 10px rgba(255,217,74,.12);
+  animation:runeShimmer 2.2s ease-in-out infinite;
+}
+@keyframes runeShimmer{ 50%{ box-shadow:0 0 20px rgba(255,217,74,.7), inset 0 0 14px rgba(255,217,74,.2); } }
+.sock-slot.filled{ animation:runeShimmer 3s ease-in-out infinite; }

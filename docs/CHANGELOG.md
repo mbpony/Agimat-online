@@ -1,4 +1,14 @@
 # CHANGELOG
+## 2026-09-08 — Master Fix Pack phase 1 (spec: Master Fix & Upgrade Prompt)
+- **§1 UI layering**: uiOverlayManager — chat auto-hides behind ANY popup (modals, panels, inventory, menu, talents, skill tree, NPC window) and restores on close; new always-visible "—" minimize control; minimized chat = floating 💬 button with unread badge; states persisted. Headless tests 4/4.
+- **§3 Inventory 3D character**: SVG silhouette replaced with the player's ACTUAL buildHero model — slow auto-rotation, touch-drag rotate, pedestal + cyan ring, rebuilds instantly on equip (equipItem hook). Renders only while inventory is open (no background cost).
+- **§5 Left nav rail**: inventory bottom tabs → vertical RPG rail (Profile/Inventory/Skills/Map/Alaga) with icon+label, active purple/gold highlight; Alaga routes to the pets window.
+- **§10 Daily reward v2**: 7-day track with claimed ✓ / today (pulsing gold) / locked 🔒 states, reward-pop animation, countdown to next UTC reward; modal layer (chat can never cover it).
+- **§15 Map transition screen**: ⟐ AGIMAT ONLINE ⟐ + zone name + lore line + animated Baybayin rune + progress bar + gameplay tip; wired into the town⇄Isla portal (layer 200).
+- **§4 Baybayin rune glow**: carved-artifact treatment for sockets/rune chips — cyan/gold energy, engraved-metal gradients, rarity shimmer (subtle, mobile-safe).
+- **§13 PWA**: manifest display_override [fullscreen, standalone, minimal-ui]; sw VERSION → agimat-v3 (cache-safe update).
+- Compatibility: no systems removed; all hooks are wrap-style; server API untouched.
+
 ## 2026-09-08 — Universal NPC Interaction System + PWA launch fix
 - **PWA fix**: sw.js v2 — index.html offline fallback now applies ONLY to page navigations. v1 served index.html for ANY failed fetch (including game.js while Render was waking), which made the installed app open to a blank screen. game.js + three.module.min.js added to precache; VERSION bump auto-cleans old caches.
 - **Universal NPC Window** (spec: npc-redesign): ONE reusable window for all NPCs — portrait, name/title, relationship badge, scrollable dialogue, contextual action bar ([💬 Usap] [📜 Misyon] [🧰 Serbisyo]), tap-outside/✕/Esc to close. World stays visible behind (35% dim). Mobile-first: ≥44px touch targets, bottom-sheet on narrow phones, side placement in short landscape.
