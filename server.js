@@ -206,8 +206,14 @@ function dayKey(ts){ const d=new Date(ts); return d.getUTCFullYear()+'-'+(d.getU
 function handleAPI(req,res,p){
   /* GET /api/health — deploy/diagnostic probe: is cloud persistence ON? */
   if(p==='/api/health'){
+    /* env diagnostics: lengths + shape only — never the secrets themselves */
+    const rawU=process.env.UPSTASH_REDIS_REST_URL||'', rawT=process.env.UPSTASH_REDIS_REST_TOKEN||'';
     return sendJSON(res,200,{ok:true, cloud:CLOUD_ON?'ON':'OFF',
-      users:Object.keys(USERS).length, uptimeS:Math.round(process.uptime())});
+      users:Object.keys(USERS).length, uptimeS:Math.round(process.uptime()),
+      env:{
+        url: rawU? (rawU.startsWith('https://')?'set✓':'set-but-odd(len '+rawU.length+', starts "'+rawU.slice(0,4)+'")') : 'MISSING',
+        token: rawT? 'set✓ (len '+rawT.length+')' : 'MISSING',
+      }});
   }
   if(req.method!=='POST') return sendJSON(res,405,{ok:false,err:'POST only'});
   jsonBody(req,(b)=>{
