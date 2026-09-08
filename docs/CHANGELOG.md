@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-09-08 — Chibi hero models: KayKit Adventurers (CC0) + GLB animation engine
+- **Assets**: KayKit Character Pack Adventurers 1.0 (CC0, LICENSE.txt shipped in assets/characters/kaykit/) pulled directly from the official KayKit GitHub. 5 rigged chibi models (Knight/Barbarian/Mage/Rogue/Rogue_Hooded), ~5.7-7k tris, 76 animations each, embedded textures.
+- **Class mapping (registry-driven)**: mandirigma→Knight · arnisador+panday→Barbarian · anino→Rogue_Hooded · tirador+mamamana→Rogue · babaylan+alim→Mage · mangkukulam keeps her artist GLB. data/models/registry.json now also carries animProfile (melee/ranged/caster).
+- **glbHeroAnim module**: SkeletonUtils.clone (fixes skinned-clone corruption of the old clone(true) path), AnimationMixer per hero, name-based clip table, state machine off existing player state (moving→Running_A, attack→profile clip incl. Spellcast for casters, dodge→Dodge_Forward, death→Death_A, else Idle). One-shots time-scaled to game action duration. Remote ka-party heroes animate from movement deltas. Procedural fallback preserved when a model is missing.
+- jsm/utils/SkeletonUtils.js added (three r160, bare-'three' import matches importmap). Preloads registry hero models; live-swaps the player mesh when their model arrives ("Bagong anyo!" toast).
+- GLBs are NOT precached by the SW (network-first + runtime cache handles them). Scope-gate lint clean; headless 11/11 PASS. SW → agimat-v14.
+
 ## 2026-09-08 — Boot splash: no more naked HUD on first paint
 - index.html: #boot-splash injected as the FIRST body element with fully inline styles + inline progress script — covers the screen from the very first paint, before any game CSS/JS loads. Baybayin rune pulse, ⚜️ logo, animated progress bar (caps 92%), rotating Tagalog loading lines, 20s slow-connection notice.
 - game.js bootSplash module: dismisses (fade + DOM removal) the moment the game is presentable (welcome screen visible OR world started), min 600ms display to avoid flash. SW → agimat-v13.

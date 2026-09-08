@@ -10,6 +10,7 @@ import { RenderPass } from './jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from './jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from './jsm/postprocessing/OutputPass.js';
 import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
+import * as SkeletonUtils from './jsm/utils/SkeletonUtils.js';
 
 /* ---- PHASE 1 DATA LOADER (restructure spec §10/§24/§31) ----
    External JSON is authoritative when present; inline literals below
@@ -13180,4 +13181,143 @@ CATALOG.push(
     setTimeout(()=>{ sp.style.opacity='0'; sp.style.pointerEvents='none';
       setTimeout(()=>sp.remove(),500); },120);
   },150);
+})();
+
+/* ================================================================
+   🎭 ANIMATED GLB HEROES (KayKit Adventurers, CC0) — chibi update.
+   The old GLB path made statues: clone(true) breaks skinned meshes
+   and animations were ignored. This module:
+   · SkeletonUtils.clone for correct skinned instancing
+   · AnimationMixer per hero + name-based clip lookup
+   · state machine driven by existing player state:
+       moving → Running_A · attack → profile attack · dodge →
+       Dodge_Forward · death → Death_A · else Idle
+   · anim profiles per class (melee/ranged/caster) from registry
+   · applies to LOCAL player, REMOTE ka-party players, inventory
+     3D preview, and the character-creation preview.
+   Procedural heroes (no GLB registered) keep the legacy limb anim.
+   ================================================================ */
+(function glbHeroAnim(){
+  const PROFILE_ATTACK={
+    melee:['1H_Melee_Attack_Slice_Diagonal','1H_Melee_Attack_Chop','2H_Melee_Attack_Slice'],
+    ranged:['1H_Ranged_Shoot','2H_Ranged_Shoot','Throw'],
+    caster:['Spellcast_Shoot','Spellcast_Raise','Spellcasting'],
+  };
+  const REG=(GAME_DATA.models&&GAME_DATA.models.heroes)||{};
+  function profileFor(cls){ return (REG[cls]&&REG[cls].animProfile)||'melee'; }
+  const mixers=new Set();
+  window._glbMixers=mixers;
+
+  function findClip(anims,names){
+    for(const n of names){ const c=anims.find(a=>a.name===n); if(c) return c; }
+    return null;
+  }
+  /* upgraded hero builder: skinned clone + mixer + clip table */
+  const _bh=buildHero;
+  buildHero=function(cls, appOverride){
+    const url=MODELS.hero[cls];
+    const c=url&&MODEL_CACHE[url];
+    if(!c||!c.animations||!c.animations.length) return _bh.apply(this,arguments);
+    const g=new THREE.Group();
+    const m=SkeletonUtils.clone(c.scene);
+    /* normalize height ≈2.6 units, feet at y=0 */
+    const box=new THREE.Box3().setFromObject(m);
+    const h=box.max.y-box.min.y;
+    if(h>0) m.scale.setScalar(2.6/h);
+    const box2=new THREE.Box3().setFromObject(m);
+    m.position.y-=box2.min.y;
+    m.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false; } });
+    g.add(m);
+    const sh=blobShadow(1); sh.position.y=0.02; g.add(sh);
+    const mixer=new THREE.AnimationMixer(m);
+    const A=c.animations;
+    const prof=profileFor(cls);
+    const clips={
+      idle:findClip(A,['Idle','Unarmed_Idle','2H_Melee_Idle']),
+      run:findClip(A,['Running_A','Running_B','Walking_A']),
+      attack:findClip(A,PROFILE_ATTACK[prof]||PROFILE_ATTACK.melee),
+      dodge:findClip(A,['Dodge_Forward','Dodge_Backward']),
+      death:findClip(A,['Death_A','Death_B']),
+      cheer:findClip(A,['Cheer']),
+    };
+    const acts={};
+    for(const [k,cl] of Object.entries(clips)) if(cl){ acts[k]=mixer.clipAction(cl); }
+    if(acts.attack){ acts.attack.setLoop(THREE.LoopOnce); acts.attack.clampWhenFinished=false; }
+    if(acts.dodge){ acts.dodge.setLoop(THREE.LoopOnce); }
+    if(acts.death){ acts.death.setLoop(THREE.LoopOnce); acts.death.clampWhenFinished=true; }
+    if(acts.cheer){ acts.cheer.setLoop(THREE.LoopOnce); }
+    const st={mixer,acts,cur:null,oneUntil:0};
+    st.play=(name,fade)=>{ 
+      const a=st.acts[name]; if(!a||st.cur===name) return;
+      const prev=st.acts[st.cur];
+      a.reset(); a.play();
+      if(prev) prev.crossFadeTo(a,fade??0.18,false);
+      st.cur=name;
+    };
+    st.playOnce=(name,dur)=>{
+      const a=st.acts[name]; if(!a) return;
+      a.reset(); a.setEffectiveTimeScale((a.getClip().duration/Math.max(0.2,dur))||1); a.play();
+      const prev=st.acts[st.cur];
+      if(prev&&prev!==a) prev.crossFadeTo(a,0.1,false);
+      st.cur=name;
+      st.oneUntil=nowS()+dur;
+    };
+    if(acts.idle){ acts.idle.play(); st.cur='idle'; }
+    mixers.add(st);
+    g.userData.glbAnim=st;
+    /* legacy anim API no-ops */
+    const dummy=new THREE.Group();
+    g.userData.legL=dummy; g.userData.legR=dummy; g.userData.armL=dummy;
+    g.userData.armR=dummy; g.userData.weapArm=dummy; g.userData.glb=true;
+    /* GC: drop the mixer when the mesh leaves the scene (checked lazily) */
+    st._root=g;
+    return g;
+  };
+
+  /* drive mixers + local player state machine from the RAF loop */
+  let lastT=performance.now()/1000;
+  (function tick(){
+    requestAnimationFrame(tick);
+    const t=performance.now()/1000, dt=Math.min(0.1,t-lastT); lastT=t;
+    for(const st of mixers){
+      if(st._root&&!st._root.parent&&st!==playerSt()) { mixers.delete(st); continue; }
+      st.mixer.update(dt);
+    }
+    /* local player */
+    const st=playerSt(); if(!st||!started) return;
+    const ts=nowS();
+    if(player.dead){ st.play('death',0.25); return; }
+    if(ts<st.oneUntil) return;                        // let one-shots finish
+    if(player.atkAnim>0){ st.playOnce('attack',Math.max(0.3,player.atkAnimDur||0.3)); return; }
+    if(player.dodgeUntil&&ts<player.dodgeUntil){ st.playOnce('dodge',0.32); return; }
+    const moving=!!player.moving;
+    st.play(moving?'run':'idle');
+  })();
+  function playerSt(){ return player.mesh&&player.mesh.userData&&player.mesh.userData.glbAnim; }
+
+  /* remote ka-party heroes: run/idle from their movement deltas */
+  setInterval(()=>{
+    if(!window._kaParty) return;
+    for(const r of window._kaParty.values()){
+      const st=r.mesh&&r.mesh.userData&&r.mesh.userData.glbAnim;
+      if(!st) continue;
+      const moved=(r._lx!==undefined)&&(Math.abs(r.x-r._lx)+Math.abs(r.z-r._lz)>0.05);
+      r._lx=r.x; r._lz=r.z;
+      st.play(moved?'run':'idle');
+    }
+  },150);
+
+  /* preload the hero models for the classes in the registry (lazy-safe) */
+  const urls=[...new Set(Object.values(MODELS.hero).filter(Boolean))];
+  Promise.all(urls.map(u=>loadGLB(u).catch(()=>null))).then(cs=>{
+    const okCount=cs.filter(Boolean).length;
+    console.log('[chibi] hero models loaded:',okCount+'/'+urls.length);
+    /* live-swap the player if their class model just arrived */
+    if(started&&S.cls&&MODELS.hero[S.cls]&&MODEL_CACHE[MODELS.hero[S.cls]]&&player.mesh&&!player.mesh.userData.glb){
+      const old=player.mesh, nm=buildHero(S.cls);
+      nm.position.copy(old.position); nm.rotation.y=old.rotation.y;
+      scene.remove(old); scene.add(nm); player.mesh=nm;
+      toast('🎭 <b>Bagong anyo!</b> Ang mga bayani ay may buhay nang katawan.','levelup');
+    }
+  });
 })();

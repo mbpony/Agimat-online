@@ -1,53 +1,62 @@
 {
  "heroes": {
   "babaylan": {
-   "baseModel": null,
+   "baseModel": "assets/characters/kaykit/Mage.glb",
    "advancedModel": null,
-   "portrait": "img/p_babaylan.png"
+   "portrait": "img/p_babaylan.png",
+   "animProfile": "caster"
   },
   "arnisador": {
-   "baseModel": null,
+   "baseModel": "assets/characters/kaykit/Barbarian.glb",
    "advancedModel": null,
-   "portrait": "img/p_arnisador.png"
+   "portrait": "img/p_arnisador.png",
+   "animProfile": "melee"
   },
   "tirador": {
-   "baseModel": null,
+   "baseModel": "assets/characters/kaykit/Rogue.glb",
    "advancedModel": null,
-   "portrait": "img/p_tirador.png"
+   "portrait": "img/p_tirador.png",
+   "animProfile": "ranged"
   },
   "alim": {
-   "baseModel": null,
+   "baseModel": "assets/characters/kaykit/Mage.glb",
    "advancedModel": null,
-   "portrait": "img/p_alim.png"
+   "portrait": "img/p_alim.png",
+   "animProfile": "caster"
   },
   "mandirigma": {
-   "baseModel": null,
+   "baseModel": "assets/characters/kaykit/Knight.glb",
    "advancedModel": null,
-   "portrait": "img/p_mandirigma.png"
+   "portrait": "img/p_mandirigma.png",
+   "animProfile": "melee"
   },
   "mamamana": {
-   "baseModel": null,
+   "baseModel": "assets/characters/kaykit/Rogue.glb",
    "advancedModel": null,
-   "portrait": "img/p_mamamana.png"
+   "portrait": "img/p_mamamana.png",
+   "animProfile": "ranged"
   },
   "anino": {
-   "baseModel": null,
+   "baseModel": "assets/characters/kaykit/Rogue_Hooded.glb",
    "advancedModel": null,
-   "portrait": "img/p_anino.png"
+   "portrait": "img/p_anino.png",
+   "animProfile": "melee"
   },
   "mangkukulam": {
    "baseModel": "assets/characters/base/mangkukulam.glb",
    "advancedModel": null,
-   "portrait": "img/p_mangkukulam.png"
+   "portrait": "img/p_mangkukulam.png",
+   "animProfile": "caster"
   },
   "panday": {
-   "baseModel": null,
+   "baseModel": "assets/characters/kaykit/Barbarian.glb",
    "advancedModel": null,
-   "portrait": "img/p_panday.png"
+   "portrait": "img/p_panday.png",
+   "animProfile": "melee"
   }
  },
  "enemies": {},
  "pets": {},
  "npcs": {},
- "_comment": "Model registry (restructure spec §19). baseModel/advancedModel = GLB path or null (null => procedural mesh). Add entries as the artist delivers — no code changes needed."
+ "_comment": "Model registry (restructure spec \u00a719). baseModel/advancedModel = GLB path or null (null => procedural mesh). Add entries as the artist delivers \u2014 no code changes needed."
 }
