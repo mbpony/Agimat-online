@@ -1742,3 +1742,40 @@ h2,h3,h4{ font-family:var(--ff); letter-spacing:.4px; }
   #i2f-sort{ max-width:96px; }
   .i2f-rar{ width:26px; height:26px; }   /* fatter touch targets */
 }
+
+/* ================================================================
+   📖 KODISE NG AGIMAT — living encyclopedia window
+   ================================================================ */
+.kdx-tabs{ display:flex; gap:4px; flex-wrap:wrap; justify-content:center; }
+.kdx-tab{
+  position:relative; width:44px; height:44px; border-radius:var(--r-sm); cursor:pointer;
+  background:rgba(255,255,255,.05); border:1px solid rgba(201,162,75,.3);
+  color:#bfb6d2; font-size:17px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:0; padding:2px 0 0;
+}
+.kdx-tab i{ font:700 7.5px var(--ff); font-style:normal; color:#8a80a2; }
+.kdx-tab.on{
+  background:linear-gradient(180deg,rgba(106,90,154,.55),rgba(67,53,106,.55));
+  border-color:rgba(255,217,122,.6); color:#ffe9b0;
+  box-shadow:0 0 10px rgba(125,240,255,.15);
+}
+.kdx-tab.on i{ color:#ffd94a; }
+.kdx-list{
+  max-height:46vh; overflow-y:auto; display:flex; flex-direction:column; gap:5px;
+  text-align:left; padding-right:2px;
+}
+.kdx-row{
+  display:flex; gap:9px; align-items:flex-start; padding:8px 10px;
+  border-radius:var(--r-sm); background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08); border-left:3px solid rgba(201,162,75,.5);
+}
+.kdx-row.lock{ opacity:.6; border-left-color:rgba(255,255,255,.12); }
+.kdx-ic{ font-size:22px; flex:none; width:28px; text-align:center; }
+.kdx-inf{ flex:1; min-width:0; }
+.kdx-inf b{ font:800 12.5px var(--ff); color:#efe8ff; display:block; }
+.kdx-inf i{ font:700 9px var(--ff); font-style:normal; color:#c9a24b; letter-spacing:.6px; }
+.kdx-inf p{ margin:3px 0 0; font:500 11px/1.45 var(--ff); color:#bfb6d2; }
+@media (max-width:480px){
+  .kdx-tab{ width:40px; height:40px; }
+  .kdx-list{ max-height:52vh; }
+}

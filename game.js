@@ -10053,7 +10053,7 @@ setInterval(_fsIcon,3000);   /* pseudo-fs has no change event */
     ]],
     ['IMBENTARYO',[
       ['btn-open-inventory','🎒','Alay Pouch'],
-      ['btn-codex','📜','Kodise'],
+      ['btn-codex','📜','Katalogo'],
       ['btn-open-bestiary','🐉','Aklat ng Lahi'],
     ]],
     ['SOSYAL',[
@@ -12443,4 +12443,179 @@ CATALOG.push(
     document.getElementById('i2-tabs').querySelectorAll('.i2-tab').forEach(x=>x.classList.toggle('on',x===t));
     H.grid();
   });
+})();
+
+/* ================================================================
+   📖 ANG KODISE NG AGIMAT (Game Bible feature #1)
+   The living encyclopedia of the kapuluan — PROGRESSIVE REVEAL:
+   entries unlock as you actually encounter them (kill/collect/
+   catch/cook/visit/own). Locked entries show as ??? silhouettes,
+   fueling collection drive. 10 categories, one reusable window.
+   Data comes from EXISTING top-level defs (ENEMY_DEFS, MATERIALS,
+   FISH_DEFS, DISHES, PET_DEFS, RUNE_DEFS, ZONE_NAMES, CLASSES,
+   DIWA_DEFS, CATALOG) — no duplicated content, lore lives where
+   it always lived. Save: S.codexSeen (additive; zones/dishes/misc
+   flags only — most categories derive from existing save state).
+   ================================================================ */
+(function agimatCodex(){
+  S.codexSeen=S.codexSeen||{zones:{},dishes:{},fish:{}};
+  const seen=S.codexSeen;
+
+  /* ---------- discovery hooks (all additive wraps) ---------- */
+  /* zones: mark visited (poll — cheap) */
+  setInterval(()=>{
+    if(!started||player.dead) return;
+    try{
+      const tx=clamp(Math.floor(player.x/TILE),0,MAP_W-1), ty=clamp(Math.floor(player.z/TILE),0,MAP_H-1);
+      const zn=zoneGrid[ty*MAP_W+tx];
+      if(zn!=null&&!seen.zones[zn]){ seen.zones[zn]=1; save();
+        toast('📖 <b>Kodise:</b> naitala ang lupain — '+ZONE_NAMES[zn],'loot'); }
+    }catch(e){}
+  },2500);
+  /* dishes: wrap cook flow via FOOD.buffs watcher (buff id appears on cook) */
+  setInterval(()=>{
+    for(const id of Object.keys(FOOD.buffs)){
+      if(!seen.dishes[id]){ seen.dishes[id]=1; save(); }
+    }
+  },3000);
+  /* fish: S.inv presence marks catch (works retroactively for old saves) */
+  setInterval(()=>{
+    for(const fid of Object.keys(FISH_DEFS)){
+      if((S.inv[fid]||0)>0&&!seen.fish[fid]){ seen.fish[fid]=1; save(); }
+    }
+  },3000);
+
+  /* ---------- unlock predicates per category ---------- */
+  const catData={
+    halimaw:{ icon:'🐉', name:'Mga Halimaw', sub:'Mga nilalang ng kapuluan',
+      items:()=>Object.entries(ENEMY_DEFS).map(([id,d])=>({
+        id, icon:d.boss?'💀':d.tier==='Elite'?'⭐':'👹', name:d.name,
+        unlocked:!!(S.bestiary[id]&&S.bestiary[id].seen),
+        sub:d.tier+' · '+(d.role||''),
+        body:(d.lore||'')+(S.bestiary[id]?`<br><b style="color:#ffd94a">⚔️ Napatay: ${fmt(S.bestiary[id].kills||0)}</b> · Gantimpala: ${d.dropText||'—'}`:''),
+        hint:'Makita ang nilalang na ito sa mundo.'}))},
+    materyales:{ icon:'🪨', name:'Mga Materyales', sub:'Yaman ng lupain',
+      items:()=>Object.entries(MATERIALS).filter(([id])=>!FISH_DEFS[id]).map(([id,m])=>({
+        id, icon:m.icon, name:m.name,
+        unlocked:(S.inv[id]||0)>0||!!(seen.fish[id]),
+        sub:m.rarity.toUpperCase(),
+        body:(m.lore||'')+`<br><b style="color:#7df0ff">Meron ka: ${fmt(S.inv[id]||0)}</b>`,
+        hint:'Mangalap o makakuha mula sa mga halimaw.'}))},
+    isda:{ icon:'🎣', name:'Mga Huli sa Tubig', sub:'Biyaya ng dagat at ilog',
+      items:()=>Object.entries(FISH_DEFS).map(([id,f])=>({
+        id, icon:f.icon, name:f.name,
+        unlocked:!!seen.fish[id]||(S.inv[id]||0)>0,
+        sub:f.rarity.toUpperCase(),
+        body:(MATERIALS[id]&&MATERIALS[id].lore)||'Sariwang huli mula sa tubig ng kapuluan.',
+        hint:'Mangisda sa tabing-tubig (🎣).'}))},
+    lutuin:{ icon:'🍲', name:'Mga Lutuin', sub:'Lutuan ng Bayan',
+      items:()=>DISHES.map(d=>({
+        id:d.id, icon:d.icon, name:d.name,
+        unlocked:!!seen.dishes[d.id],
+        sub:'Putahe',
+        body:d.desc,
+        hint:'Lutuin ito sa Lutuan ng Bayan.'}))},
+    alaga:{ icon:'🐾', name:'Mga Alaga', sub:'Mga kasamang nilalang',
+      items:()=>Object.entries(PET_DEFS).map(([id,d])=>({
+        id, icon:d.icon, name:d.name,
+        unlocked:(S.pets.owned||[]).includes(id),
+        sub:(d.type==='mount'?'SASAKYAN':'ALAGA')+(d.bossOnly?' · World Boss drop':''),
+        body:d.desc+((S.pets.owned||[]).includes(id)?`<br><b style="color:#8aff9a">Lv ${typeof petLvl==='function'?petLvl(id):1}</b>`:''),
+        hint:d.bossOnly?'Bihirang regalo mula sa isang World Boss.':'Bilhin sa 🐾 Alaga window.'}))},
+    baybayin:{ icon:'ᜀ', name:'Mga Baybayin Runes', sub:'Sinaunang sulat ng kapangyarihan',
+      items:()=>Object.entries(RUNE_DEFS).map(([id,r])=>({
+        id, icon:r.glyph, name:MATERIALS[id]?MATERIALS[id].name:id,
+        unlocked:(S.inv[id]||0)>0||[...Object.values(S.gear),...S.bag].some(it=>it&&itemSockets(it).includes(id)),
+        sub:'RUNE',
+        body:(MATERIALS[id]&&MATERIALS[id].lore||'')+`<br><b style="color:#ffd94a">${r.desc}</b>`,
+        hint:'Nahuhulog mula sa mga Elite at Boss (bihirang-bihira).'}))},
+    lupain:{ icon:'🗺️', name:'Mga Lupain', sub:'Ang kapuluan mismo',
+      items:()=>ZONE_NAMES.map((nm,i)=>({
+        id:'z'+i, icon:nm.split(' ')[0], name:nm.replace(/^\S+ /,''),
+        unlocked:!!seen.zones[i],
+        sub:'Lupain',
+        body:'<i>"'+(ZONE_FLAVORS[i]||'')+'"</i>',
+        hint:'Maglakbay patungo sa lupaing ito.'}))},
+    uri:{ icon:'🧙', name:'Mga Uri ng Bayani', sub:'Mga landas ng kapangyarihan',
+      items:()=>Object.entries(CLASSES).map(([id,c])=>({
+        id, icon:'🧙', name:c.name+(ADV_DEFS[id]?' → '+ADV_DEFS[id].name:''),
+        unlocked:true,
+        sub:c.role+' · '+c.weapon,
+        body:c.desc+(id===S.cls?'<br><b style="color:#8aff9a">← Ito ang landas mo</b>':''),
+        hint:''}))},
+    diwa:{ icon:'✨', name:'Diwa at Agimat', sub:'Mga espiritu ng pagkatao',
+      items:()=>[...DIWA_DEFS.map(d=>({
+        id:'d_'+d.id, icon:d.icon, name:'Diwa ng '+d.name,
+        unlocked:true, sub:d.tl+' · '+d.fx,
+        body:d.desc+(S.diwa===d.id?'<br><b style="color:#8aff9a">← Ang diwa mo</b>':''), hint:''})),
+        ...AGIMAT0_DEFS.map(a=>({
+        id:'a_'+a.id, icon:a.icon, name:a.name,
+        unlocked:true, sub:a.cat+' · '+a.fx,
+        body:a.desc+(S.agimat0===a.id?'<br><b style="color:#8aff9a">← Ang pamana mo</b>':''), hint:''}))]},
+    alamat:{ icon:'⚔️', name:'Mga Alamat na Kagamitan', sub:'Kodise ng kagamitan',
+      items:()=>CATALOG.map(d=>{
+        const owned=[...Object.values(S.gear),...S.bag].some(it=>it&&it.catalog===d.id);
+        const rar=RARITIES.find(r=>r.id===d.rarity)||{name:d.rarity,color:'#fff'};
+        return { id:d.id, icon:d.icon, name:d.name,
+          unlocked:owned,
+          sub:rar.name+' · Lv '+d.tier+'+',
+          body:'<i>"'+(d.lore||'')+'"</i>',
+          hint:'Nahuhulog mula sa mga halimaw, tindahan, at lagusan.'};})},
+  };
+
+  /* ---------- window ---------- */
+  const CATS=Object.keys(catData);
+  let curCat='halimaw';
+  function counts(cat){
+    const list=catData[cat].items();
+    return [list.filter(e=>e.unlocked).length,list.length];
+  }
+  window.openKodise=function(cat){
+    curCat=cat||curCat;
+    const c=catData[curCat];
+    const list=c.items();
+    const [u,t]=[list.filter(e=>e.unlocked).length,list.length];
+    const totals=CATS.reduce((a,k)=>{ const [x,y]=counts(k); return [a[0]+x,a[1]+y]; },[0,0]);
+    showModal(`<div class="modal-title" style="margin:0 0 2px">📖 ANG KODISE NG AGIMAT</div>
+      <div style="font:600 10.5px var(--ff);color:#8a80a2;margin-bottom:8px">Naitala: <b style="color:#ffd94a">${totals[0]}/${totals[1]}</b> — ang kapuluan ay may mga lihim pa.</div>
+      <div class="kdx-tabs">${CATS.map(k=>{
+        const [x,y]=counts(k);
+        return `<button class="kdx-tab ${k===curCat?'on':''}" data-k="${k}" title="${catData[k].name}">${catData[k].icon}<i>${x}/${y}</i></button>`;}).join('')}
+      </div>
+      <div style="font:800 12px var(--ff);color:#ffd94a;margin:6px 0 2px">${c.icon} ${c.name} — ${u}/${t}</div>
+      <div style="font:600 10px var(--ff);color:#8a80a2;margin-bottom:6px">${c.sub}</div>
+      <div class="kdx-list">${list.map(e=>e.unlocked
+        ?`<div class="kdx-row"><span class="kdx-ic">${e.icon}</span>
+            <div class="kdx-inf"><b>${e.name}</b><i>${e.sub}</i><p>${e.body}</p></div></div>`
+        :`<div class="kdx-row lock"><span class="kdx-ic">❓</span>
+            <div class="kdx-inf"><b>???</b><i>${e.sub||'—'}</i><p style="color:#6a6284">${e.hint||'May lihim pa rito…'}</p></div></div>`).join('')}
+      </div>
+      <button class="modal-btn" onclick="closeModal()" style="margin-top:8px">Isara</button>`);
+    document.querySelectorAll('.kdx-tab').forEach(b=>b.onclick=()=>window.openKodise(b.dataset.k));
+  };
+
+  /* ---------- entry points: ☰ menu tile + Aklat panel button ---------- */
+  (function(){
+    const grid=document.querySelector('#mainmenu .mm-grid');   // first grid = KARAKTER
+    if(grid){
+      const t=document.createElement('div');
+      t.className='mm-tile'; t.dataset.mm='btn-kodise';
+      t.innerHTML='<b>📖</b><span>Kodise ng Agimat</span>';
+      t.onclick=()=>{ document.getElementById('mainmenu').classList.remove('open'); window.openKodise(); };
+      grid.appendChild(t);
+    }
+    /* proxy button so mm-tile fallback logic never hides it */
+    const pb=document.createElement('button');
+    pb.id='btn-kodise'; pb.style.display='none';
+    pb.onclick=()=>window.openKodise();
+    (document.getElementById('menu-tray')||document.body).appendChild(pb);
+  })();
+
+  /* ---------- achievements ---------- */
+  ACH_DEFS.push(
+    {id:'kdx25', icon:'📖', name:'Mag-aaral ng Kapuluan', desc:'Maitala ang 25 entries sa Kodise',
+      chk:()=>CATS.reduce((n,k)=>n+catData[k].items().filter(e=>e.unlocked).length,0)>=25, rw:{gold:2500}},
+    {id:'kdx60', icon:'📚', name:'Tagapag-ingat ng Alamat', desc:'Maitala ang 60 entries sa Kodise',
+      chk:()=>CATS.reduce((n,k)=>n+catData[k].items().filter(e=>e.unlocked).length,0)>=60, rw:{gold:12000}, title:'Tagapag-ingat ng Alamat'},
+  );
 })();

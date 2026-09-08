@@ -1,4 +1,12 @@
 # CHANGELOG
+## 2026-09-08 — Ang Kodise ng Agimat (Game Bible feature #1)
+- **Living encyclopedia w/ progressive reveal**: 10 categories — 🐉 Halimaw · 🪨 Materyales · 🎣 Isda · 🍲 Lutuin · 🐾 Alaga · ᜀ Baybayin Runes · 🗺️ Lupain · 🧙 Uri ng Bayani · ✨ Diwa at Agimat · ⚔️ Alamat na Kagamitan. Locked entries = ❓ ??? + discovery hint (names never leaked); unlocked entries show lore + live stats (kill counts, owned quantities, pet levels).
+- **Discovery**: derives from EXISTING save state (bestiary/inv/pets/gear — retroactive for veterans) + new S.codexSeen (additive) for zones (visit toast "naitala ang lupain"), dishes (cook), fish (catch).
+- **Entry points**: ☰ Menu → 📖 Kodise ng Agimat (KARAKTER group); per-category and global progress counters (Naitala: X/Y).
+- **Achievements**: 25 entries → 2.5k gold; 60 entries → 12k gold + title "Tagapag-ingat ng Alamat".
+- Old equipment-catalog menu tile renamed Kodise → **Katalogo** (its content also appears in the new Kodise as the Alamat tab).
+- No duplicated lore — window reads live from ENEMY_DEFS/MATERIALS/FISH_DEFS/DISHES/PET_DEFS/RUNE_DEFS/ZONE_NAMES/CLASSES/DIWA/CATALOG. Scope-gate lint clean; headless 18/18 PASS. SW → agimat-v9.
+
 ## 2026-09-08 — Inventory search/sort/rarity filters + CRITICAL module-scope repair
 - **CRITICAL FIX**: game.js is an ES module (strict, module scope). The inv3d hook (`const _open=i2Open`) referenced an IIFE-local and THREW at load — killing every module after it (mapTransition, leftRail, daily2, mapInstancing, hudRegions… never executed in production). Caught by scope-aware ESLint (no-undef) sweep.
   - inv2 IIFE now exposes `window._i2` hook (live I2 getter, matTab/isWeapon, detail/doll/grid/renderAll, setGrid, wrapOpen).
