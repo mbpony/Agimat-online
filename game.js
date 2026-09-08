@@ -11597,3 +11597,74 @@ CATALOG.push(
 
   console.log('✨ Skill system v1: '+DATA.skills.length+' defs, '+Object.keys(BYCLASS).length+' classes');
 })();
+
+/* ================================================================
+   📲 PWA — service worker + custom install button
+   Chrome: captures beforeinstallprompt → shows a gold "Install"
+   button on the welcome screen + an ⬇️ entry in Settings.
+   iOS Safari: shows a one-time hint (no install API there).
+   ================================================================ */
+(function pwa(){
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+  }
+  const isStandalone=()=> window.matchMedia('(display-mode: standalone)').matches
+    || window.matchMedia('(display-mode: fullscreen)').matches || window.navigator.standalone===true;
+  let deferredPrompt=null;
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  /* gold install button, shown on the welcome screen when installable */
+  const btn=document.createElement('button');
+  btn.id='btn-install';
+  btn.innerHTML='📲 I-INSTALL ANG LARO';
+  btn.style.cssText='display:none;position:fixed;top:12px;left:14px;z-index:65;'+
+    'background:linear-gradient(180deg,#ffd97a,#dba22a);border:none;color:#221500;'+
+    'font:800 12px system-ui;letter-spacing:.5px;padding:10px 16px;border-radius:12px;cursor:pointer;'+
+    'box-shadow:0 4px 14px rgba(0,0,0,.5),0 0 18px rgba(242,177,52,.35);animation:pulse 2.2s infinite';
+  document.body.appendChild(btn);
+  function refreshBtn(){
+    const onWelcome=!document.getElementById('welcome-screen').classList.contains('hidden');
+    btn.style.display=(deferredPrompt&&!isStandalone()&&onWelcome)?'block':'none';
+  }
+  setInterval(refreshBtn,1500);
+
+  window.addEventListener('beforeinstallprompt',e=>{
+    e.preventDefault(); deferredPrompt=e; refreshBtn();
+  });
+  btn.onclick=async()=>{
+    if(!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const {outcome}=await deferredPrompt.userChoice;
+    if(outcome==='accepted') toast('📲 <b>Na-install ang Agimat Online!</b> Hanapin ito sa home screen mo.','levelup');
+    deferredPrompt=null; refreshBtn();
+  };
+  window.addEventListener('appinstalled',()=>{ deferredPrompt=null; refreshBtn(); });
+
+  /* iOS: no install API — one-time gentle hint on the welcome screen */
+  if(isIOS&&!isStandalone()&&!localStorage.getItem('agimat_ios_hint')){
+    setTimeout(()=>{
+      const onWelcome=!document.getElementById('welcome-screen').classList.contains('hidden');
+      if(!onWelcome) return;
+      toast('📲 Sa iPhone: pindutin ang <b>Share</b> button → <b>"Add to Home Screen"</b> para maging app ang laro!','');
+      localStorage.setItem('agimat_ios_hint','1');
+    },6000);
+  }
+
+  /* Settings: add an install row via openSettings wrap */
+  const _os2=openSettings;
+  openSettings=function(){
+    _os2();
+    const box=$('modal-box'); if(!box) return;
+    if(isStandalone()) return;                       // already installed — nothing to add
+    const row=document.createElement('div');
+    if(deferredPrompt){
+      row.innerHTML='<button class="modal-btn secondary" id="set-install">📲 I-install sa Home Screen</button>';
+      box.insertBefore(row,box.querySelector('.modal-btn:last-child'));
+      const b=$('set-install'); if(b) b.onclick=()=>{ closeModal(); btn.onclick(); };
+    } else if(isIOS){
+      row.innerHTML='<div style="font:500 11px system-ui;color:#8a80a2;margin:6px 0">📲 iPhone: Share → “Add to Home Screen” para maging app ang laro.</div>';
+      box.insertBefore(row,box.querySelector('.modal-btn:last-child'));
+    }
+  };
+  $('btn-settings').onclick=openSettings;
+})();

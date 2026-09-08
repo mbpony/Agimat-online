@@ -1,4 +1,12 @@
 # CHANGELOG
+## 2026-09-08 — PWA: installable app (Chrome/Android/iOS)
+- `manifest.webmanifest`: name "Agimat Online — Alamat ng Kapuluan", fullscreen display, landscape orientation, theme #16102a, 192/512 icons + maskable variants (78% safe zone).
+- New app icon: golden agimat medallion with Baybayin engravings on purple glow (`img/icons/`, master art `img/icon_master.jpg`).
+- `sw.js`: service worker — network-first with cache fallback; never caches /api, /ws, /data; VERSION bump invalidates old caches.
+- `index.html`: manifest link, theme-color, favicons, apple-touch-icon, iOS standalone metas.
+- `game.js`: beforeinstallprompt capture → gold "📲 I-INSTALL ANG LARO" button on welcome screen + Settings row; iOS one-time Add-to-Home-Screen hint toast; hidden when already installed.
+- `server.js`: `.webmanifest` MIME type.
+
 ## 2026-09-08 — Permanent cloud saves (Upstash Redis)
 - `server.js`: new cloud persistence layer — hydrates USERS/GUILDS/MARKET from Upstash Redis on boot (before listen), mirrors changes every 15 s (dirty-flag throttle), full forced flush on SIGTERM/SIGINT.
 - Survives Render free-tier disk wipes: verified via full lifecycle simulation (register → SIGTERM → disk wipe → reboot → login OK; kill -9 wake OK; env-unset file-only fallback OK).

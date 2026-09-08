@@ -495,6 +495,7 @@ const MIME = {
   '.html':'text/html', '.js':'text/javascript', '.css':'text/css',
   '.png':'image/png', '.jpg':'image/jpeg', '.svg':'image/svg+xml',
   '.json':'application/json', '.ico':'image/x-icon', '.pdf':'application/pdf',
+  '.webmanifest':'application/manifest+json',
   '.glb':'model/gltf-binary', '.gltf':'model/gltf+json',
   '.mp3':'audio/mpeg', '.ogg':'audio/ogg', '.wav':'audio/wav',
 };
