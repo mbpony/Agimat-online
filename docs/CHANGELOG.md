@@ -1,4 +1,12 @@
 # CHANGELOG
+## 2026-09-08 — Map Instancing + Zone Difficulty (master-fix §6–§8)
+- **Zone instances**: world statics partitioned once at boot into MAINLAND vs ISLA buckets (split at the ocean gap, x ≥ (ISLE.x0−4)·TILE). Only the active zone's objects are attached to the scene — the other side is fully detached (zero draw calls/raycasts/matrix updates). Lights, sky, terrain, water (origin-anchored) stay shared.
+- **Zone switching**: 700ms watcher flips the instance whenever the player crosses the split (portal, respawn, any teleport). Off-zone enemies are culled + enemy projectiles cleared on switch. Debug: window._zoneDebug().
+- **Spawn gating**: campsFor() now filters to active-zone camps only — no more mainland monsters simulating while on the isla. Manananggal world boss (volcano) blocked while player is on the isla (retries in 60s).
+- **§7 difficulty tiers (DATA)**: spawn-rules.json zoneTiers — per-zoneGrid hp/dmg/reward multipliers. Home/bamboo/beach 1.0× → darkwood/nuno/flowers 1.15× → burnt/blackwater 1.32× → volcano 1.55×/1.5×rw → isla 1.8×hp/1.45×dmg/1.75×reward. Applied post-spawn (hp), on dealTo (_srcEn.dmgMul), and in killReward (XP+gold via transient _rwMul). Missing JSON = graceful 1× fallback.
+- SW cache → agimat-v4. Headless tests 21/21 PASS (partition, boot zone, switch+cull, camp gating, hp/dmg/reward math, multiplier reset, boss gating, re-attach).
+- NOTE: true multi-scene MapManager (separate GLB bundles per map, §6 full) stays on the roadmap for when the world grows beyond 2 zones; this pass delivers the §8 performance goals inside the current single-scene architecture.
+
 ## 2026-09-08 — Master Fix Pack phase 1 (spec: Master Fix & Upgrade Prompt)
 - **§1 UI layering**: uiOverlayManager — chat auto-hides behind ANY popup (modals, panels, inventory, menu, talents, skill tree, NPC window) and restores on close; new always-visible "—" minimize control; minimized chat = floating 💬 button with unread badge; states persisted. Headless tests 4/4.
 - **§3 Inventory 3D character**: SVG silhouette replaced with the player's ACTUAL buildHero model — slow auto-rotation, touch-drag rotate, pedestal + cyan ring, rebuilds instantly on equip (equipItem hook). Renders only while inventory is open (no background cost).

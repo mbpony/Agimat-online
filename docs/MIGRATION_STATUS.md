@@ -207,3 +207,5 @@ Owner requested Phase 9 + all remaining backlog in one update. Delivered four fr
 - Phase 8 visuals: world-prop GLBs wait on owner's Hunyuan3D output (registry-ready, zero code).
 - Server-simulated arena verdicts, WS host-authority hardening, enhancement server RNG — PLANNED (SECURITY.md).
 - Multi-map load/unload runtime + dungeon instancing — PLANNED (spec §13/§14 note).
+
+- **2026-09-08 Map Instancing**: IMPLEMENTED — mainland/isla zone instances w/ detach-based unloading + data-driven zone difficulty (zoneTiers). Full multi-scene MapManager: PLANNED.

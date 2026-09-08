@@ -1,24 +1,77 @@
 {
- "maxEnemies": 40,
- "spawnIntervalMs": 1600,
- "tierWeights": {
-  "Common": 5,
-  "Uncommon": 2.6,
-  "Elite": 1.6
- },
- "defaultWeight": 2,
- "minPlayerDistance": 24,
- "spawnAttempts": 90,
- "hpLevelScaling": 1.06,
- "_comment": "Overworld spawn tuning (spec \u00a710). tierWeights drive the weighted species roll; hpLevelScaling = per-player-level enemy HP growth.",
- "nightRules": {
-  "nightHunters": [
-   "aswang",
-   "wakwak"
-  ],
-  "duskAllowed": true,
-  "nightWeightMult": 3,
-  "dayDespawn": true,
-  "_comment": "Phase 9b (spec 9): nightHunters only spawn at dusk/night; extra surge rolls at night; slink away at dawn (removeEnemy, no loot)."
- }
+  "maxEnemies": 40,
+  "spawnIntervalMs": 1600,
+  "tierWeights": {
+    "Common": 5,
+    "Uncommon": 2.6,
+    "Elite": 1.6
+  },
+  "defaultWeight": 2,
+  "minPlayerDistance": 24,
+  "spawnAttempts": 90,
+  "hpLevelScaling": 1.06,
+  "_comment": "Overworld spawn tuning (spec \u00a710). tierWeights drive the weighted species roll; hpLevelScaling = per-player-level enemy HP growth.",
+  "nightRules": {
+    "nightHunters": [
+      "aswang",
+      "wakwak"
+    ],
+    "duskAllowed": true,
+    "nightWeightMult": 3,
+    "dayDespawn": true,
+    "_comment": "Phase 9b (spec 9): nightHunters only spawn at dusk/night; extra surge rolls at night; slink away at dawn (removeEnemy, no loot)."
+  },
+  "zoneTiers": {
+    "_comment": "difficulty per zoneGrid id: hp/dmg multipliers + reward (xp+gold) multiplier. Zones: 0 home,1 bamboo,2 darkwood,3 nuno,4 burnt,5 beach,6 blackwater,7 volcano,8 flowers,9 isla",
+    "0": {
+      "hp": 1.0,
+      "dmg": 1.0,
+      "reward": 1.0
+    },
+    "1": {
+      "hp": 1.0,
+      "dmg": 1.0,
+      "reward": 1.0
+    },
+    "5": {
+      "hp": 1.0,
+      "dmg": 1.0,
+      "reward": 1.0
+    },
+    "2": {
+      "hp": 1.15,
+      "dmg": 1.1,
+      "reward": 1.12
+    },
+    "3": {
+      "hp": 1.15,
+      "dmg": 1.1,
+      "reward": 1.12
+    },
+    "8": {
+      "hp": 1.15,
+      "dmg": 1.1,
+      "reward": 1.12
+    },
+    "4": {
+      "hp": 1.32,
+      "dmg": 1.22,
+      "reward": 1.28
+    },
+    "6": {
+      "hp": 1.32,
+      "dmg": 1.22,
+      "reward": 1.28
+    },
+    "7": {
+      "hp": 1.55,
+      "dmg": 1.35,
+      "reward": 1.5
+    },
+    "9": {
+      "hp": 1.8,
+      "dmg": 1.45,
+      "reward": 1.75
+    }
+  }
 }

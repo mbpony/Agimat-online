@@ -12128,3 +12128,111 @@ CATALOG.push(
     }
   };
 })();
+
+/* ================================================================
+   🗺️ MAP INSTANCING (master-fix §6–§8) — the world is partitioned
+   into ZONE INSTANCES: MAINLAND (Barangay Liwanag + wilds) and
+   ISLA NG BATHALA. Only the active zone's static objects live in
+   the scene graph; the other side is fully detached (no draw calls,
+   no raycasts, no matrix updates). Enemies simulate ONLY in the
+   active zone. Difficulty comes from data (spawn-rules zoneTiers).
+   ================================================================ */
+(function mapInstancing(){
+  const SPLIT=((ISLE.x0-4)*TILE);          // ocean gap between mainland & isla
+  const buckets={mainland:[],isla:[]};
+  let active=null;
+
+  /* ---------- one-time partition of the static world ---------- */
+  const DYNAMIC=new Set();                  // meshes we must never touch
+  if(player.mesh) DYNAMIC.add(player.mesh);
+  for(const en of enemies) DYNAMIC.add(en.mesh);
+  function isShared(o){
+    /* lights, sky, sun, clouds, terrain (origin-anchored), water */
+    if(o.isLight||o.isSprite) return true;
+    if(Math.abs(o.position.x)<0.001&&Math.abs(o.position.z)<0.001) return true;
+    return false;
+  }
+  (function partition(){
+    for(const o of [...scene.children]){
+      if(DYNAMIC.has(o)||isShared(o)) continue;
+      (o.position.x>=SPLIT?buckets.isla:buckets.mainland).push(o);
+    }
+  })();
+
+  /* ---------- zone switching ---------- */
+  function cullEnemiesOutside(zone){
+    for(const en of [...enemies]){
+      const enZone=en.x>=SPLIT?'isla':'mainland';
+      if(enZone!==zone) removeEnemy(en);
+    }
+    eprojs.length=0;
+  }
+  function doSwitch(zone,silent){
+    if(zone===active) return;
+    const out=zone==='isla'?buckets.mainland:buckets.isla;
+    const inn=zone==='isla'?buckets.isla:buckets.mainland;
+    for(const o of out){ scene.remove(o); }
+    for(const o of inn){ if(!o.parent) scene.add(o); }
+    active=zone;
+    cullEnemiesOutside(zone);
+    if(!silent) console.log('[zone] switched to',zone,'· detached',out.length,'· attached',inn.length);
+  }
+  window._zoneActive=()=>active;
+  window._zoneDebug=()=>({active,mainland:buckets.mainland.length,isla:buckets.isla.length});
+
+  /* boot: activate wherever the player stands */
+  doSwitch(player.x>=SPLIT?'isla':'mainland',true);
+
+  /* watcher: any teleport/portal/respawn crossing the split flips the zone */
+  setInterval(()=>{ if(started) doSwitch(player.x>=SPLIT?'isla':'mainland'); },700);
+
+  /* ---------- spawn gating: only camps of the active zone ---------- */
+  const _campsFor=campsFor;
+  campsFor=function(key){
+    const all=_campsFor(key);
+    if(!active) return all;
+    return all.filter(c=>(c.x>=SPLIT?'isla':'mainland')===active);
+  };
+  /* world boss (volcano = mainland): don't fly while we're on the isla */
+  const _spawnBoss=typeof spawnBoss==='function'?spawnBoss:null;
+  if(_spawnBoss) spawnBoss=function(){ if(active==='mainland') _spawnBoss.apply(this,arguments); else bossNextAt=nowS()+60; };
+
+  /* ---------- §7 difficulty tiers (data: spawn-rules zoneTiers) ---------- */
+  const ZT=(SPAWN_RULES&&SPAWN_RULES.zoneTiers)||{};
+  function tierAt(x,z){
+    try{
+      const tx=clamp(Math.floor(x/TILE),0,MAP_W-1), ty=clamp(Math.floor(z/TILE),0,MAP_H-1);
+      return ZT[String(zoneGrid[ty*MAP_W+tx])]||null;
+    }catch(e){ return null; }
+  }
+  /* new spawns get zone multipliers applied post-spawn (no core rewrite) */
+  const _spawnEnemy=spawnEnemy;
+  spawnEnemy=function(){
+    const before=enemies.length;
+    _spawnEnemy.apply(this,arguments);
+    for(let i=before;i<enemies.length;i++){
+      const en=enemies[i], t=tierAt(en.x,en.z);
+      if(!t) continue;
+      en.hp=Math.round(en.hp*(t.hp||1));
+      en.maxHp=Math.round(en.maxHp*(t.hp||1));
+      en.dmgMul=t.dmg||1;
+      en.rewardMul=t.reward||1;
+    }
+  };
+  /* damage out: enemies in harder zones hit harder */
+  const _dealTo=dealTo;
+  dealTo=function(tgt,dmg,opts){
+    const m=(opts&&opts._srcEn&&opts._srcEn.dmgMul)||1;
+    _dealTo(tgt,dmg*m,opts);
+  };
+  /* rewards: XP + gold scale with the zone tier (transient multiplier) */
+  const _gainXP=gainXP;
+  gainXP=function(x){ _gainXP(Math.round(x*(window._rwMul||1))); };
+  const _sgd=spawnGoldDrop;
+  spawnGoldDrop=function(x,z,q){ _sgd(x,z,Math.round(q*(window._rwMul||1))); };
+  const _kr=killReward;
+  killReward=function(en){
+    window._rwMul=en.rewardMul||1;
+    try{ _kr(en); } finally { window._rwMul=1; }
+  };
+})();
