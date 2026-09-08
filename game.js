@@ -13159,3 +13159,25 @@ CATALOG.push(
       title:'May Budhi'},
   );
 })();
+
+/* ================================================================
+   🎬 BOOT SPLASH DISMISS — the inline splash in index.html covers
+   the naked HUD while the engine builds. Hide it the moment the
+   game is actually presentable: welcome screen visible OR world
+   started. Fades out; removed from DOM after the transition.
+   ================================================================ */
+(function bootSplash(){
+  const sp=document.getElementById('boot-splash'); if(!sp) return;
+  const t0=Date.now();
+  const iv=setInterval(()=>{
+    const ws=document.getElementById('welcome-screen');
+    const ready=started||(ws&&!ws.classList.contains('hidden'));
+    if(!ready) return;
+    if(Date.now()-t0<600) return;              // min display: no jarring flash
+    clearInterval(iv);
+    try{ clearInterval(window._bsTick); clearTimeout(window._bsFail); }catch(e){}
+    const bar=document.getElementById('bs-bar'); if(bar) bar.style.width='100%';
+    setTimeout(()=>{ sp.style.opacity='0'; sp.style.pointerEvents='none';
+      setTimeout(()=>sp.remove(),500); },120);
+  },150);
+})();

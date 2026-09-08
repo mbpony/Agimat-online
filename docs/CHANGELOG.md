@@ -1,4 +1,8 @@
 # CHANGELOG
+## 2026-09-08 — Boot splash: no more naked HUD on first paint
+- index.html: #boot-splash injected as the FIRST body element with fully inline styles + inline progress script — covers the screen from the very first paint, before any game CSS/JS loads. Baybayin rune pulse, ⚜️ logo, animated progress bar (caps 92%), rotating Tagalog loading lines, 20s slow-connection notice.
+- game.js bootSplash module: dismisses (fade + DOM removal) the moment the game is presentable (welcome screen visible OR world started), min 600ms display to avoid flash. SW → agimat-v13.
+
 ## 2026-09-08 — CRITICAL: guest-account trap fix + cloud-authoritative boot + guest→account migration
 - **Bug (user-reported)**: boot auto-resumed ANY local save straight into the world. A browser holding a GUEST save trapped the player — welcome screen unreachable on reload, so login was impossible from that browser; and a LOGGED-IN boot used the possibly-stale localStorage copy instead of the cloud save.
 - **New boot decision**: logged-in → reconcile with cloud first (4s timeout; cloud save adopted when lastSeen newer — offline progress still wins if local is newer; expired session → clean logout to welcome, never silent guest); guest with local save → WELCOME screen (login always reachable; guest resume stays 1 tap: "Maglaro nang walang account"); no save → welcome/creation.

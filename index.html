@@ -17,6 +17,33 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- ===== BOOT SPLASH — instant cover (inline styles: renders before any JS/game CSS) ===== -->
+  <div id="boot-splash" style="position:fixed;inset:0;z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:radial-gradient(ellipse at 50% 42%,#241a3e 0%,#120c22 60%,#0a0714 100%);transition:opacity .45s ease">
+    <div style="font-size:52px;color:#7df0ff;text-shadow:0 0 26px rgba(125,240,255,.85);animation:bsRune 2.2s ease-in-out infinite">ᜀ</div>
+    <div style="font:900 24px Georgia,serif;letter-spacing:4px;color:#ffd94a;text-shadow:0 2px 16px rgba(0,0,0,.7)">⚜️ AGIMAT ONLINE ⚜️</div>
+    <div style="font:600 11px system-ui;letter-spacing:3px;color:#c9a24b">ANG ALAMAT NG KAPULUAN</div>
+    <div style="width:min(280px,70vw);height:5px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,.08);border:1px solid rgba(201,162,75,.35)">
+      <div id="bs-bar" style="height:100%;width:8%;background:linear-gradient(90deg,#7df0ff,#ffd94a);transition:width .5s ease"></div>
+    </div>
+    <div id="bs-txt" style="font:600 10.5px system-ui;color:#8a80a2">Ginigising ang mga anito…</div>
+    <style>@keyframes bsRune{0%,100%{transform:scale(1) rotate(-6deg)}50%{transform:scale(1.15) rotate(6deg)}}</style>
+    <script>
+      /* fake-but-honest progress while the 3D engine + world build */
+      (function(){
+        var b=document.getElementById('bs-bar'),t=document.getElementById('bs-txt'),p=8;
+        var msgs=['Ginigising ang mga anito…','Hinahabi ang kapuluan…','Sinisindihan ang mga parol…','Tinatawag ang mga bayani…'];
+        var i=0;
+        window._bsTick=setInterval(function(){
+          p=Math.min(92,p+Math.random()*9); b.style.width=p+'%';
+          t.textContent=msgs[(++i>>2)%msgs.length];
+        },450);
+        /* if the module ever fails to boot, say so instead of hanging forever */
+        window._bsFail=setTimeout(function(){
+          t.textContent='Mabagal ang koneksyon… sandali lang po.';
+        },20000);
+      })();
+    </script>
+  </div>
 <div id="app">
 
   <!-- ===== 3D VIEW ===== -->
