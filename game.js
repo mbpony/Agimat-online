@@ -395,7 +395,12 @@ function cloudPush(){                       // fire-and-forget; throttled to 10s
   if(now-ACCT.lastPush<10000){ ACCT.dirty=true; return; }
   ACCT.lastPush=now; ACCT.dirty=false;
   api('/api/save',{token:ACCT.token, save:JSON.stringify(S)}).then(r=>{
-    if(!r.ok&&/log in/i.test(r.err||'')) acctLogout();
+    if(!r.ok&&/log in/i.test(r.err||'')){
+      /* session expired server-side (e.g. server restarted) — tell the player
+         instead of silently downgrading to guest */
+      acctLogout();
+      try{ toast('⚠️ <b>Nag-expire ang session mo.</b> Naka-lokal na save ka na lang — mag-log in muli sa ⚙️ Settings para bumalik sa cloud save.','warn'); }catch(e){}
+    }
     /* Phase 7 server authority: server clamped an implausible gold value — accept it */
     if(r.ok&&r.clamped&&typeof r.gold==='number'){ S.gold=r.gold; updateHUD(); }
     /* Phase 8 escrow: items held by the Palengke can't also be in our save — drop them */
@@ -5369,6 +5374,12 @@ function showWelcome(){
     showLogged();          // → character select panel (spec §10)
   };
   $('acct-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') $('acct-go').click(); });
+  /* "play without account": resume the local save if one exists, otherwise create a hero */
+  $('acct-skip').style.cursor='pointer';
+  $('acct-skip').onclick=()=>{
+    if(S.cls){ $('welcome-screen').classList.add('hidden'); bootFromSave(); }
+    else $('btn-start').click();
+  };
   applyLang(); showLogged();
 }
 /* boot the world from an adopted save (mirrors the auto-load path) */
@@ -5666,7 +5677,9 @@ function initForClass(){
 }
 
 const hadSave=load();
-if(hadSave && S.cls){
+/* logout / "mag-log in" from settings sets this flag so the reload lands on the welcome screen */
+const _forceWelcome=(()=>{ try{ if(localStorage.getItem('agimat_force_welcome')==='1'){ localStorage.removeItem('agimat_force_welcome'); return true; } }catch(e){} return false; })();
+if(hadSave && S.cls && !_forceWelcome){
   if(S.px!=null&&S.px>=0&&S.px<=WORLD_W&&S.py>=0&&S.py<=WORLD_H&&walkable(S.px,S.py,player.r)){ player.x=S.px; player.z=S.py; }
   initForClass();
   started=true;
@@ -6304,10 +6317,24 @@ function openSettings(){
     <div class="modal-emoji">⚙️</div><div class="modal-title">Mga Setting</div>
     <div class="set-sec">👤 Account</div>
     <div class="set-acct">${ACCT.token
-      ? `<span style="color:${ACCT.color||'#ffd94a'};font-weight:700">🧿 ${ACCT.user}</span>
-         <button class="modal-btn secondary" id="set-logout">Mag-log Out</button>`
-      : `<span style="color:#8a80a2">Hindi naka-log in (lokal na save)</span>
-         <button class="modal-btn secondary" id="set-login">Mag-log In</button>`}</div>
+      ? `<div class="acct-card">
+           <div class="acct-ava" style="background:${ACCT.color||'#f2b134'}">${(ACCT.user||'?').charAt(0).toUpperCase()}</div>
+           <div class="acct-inf">
+             <b style="color:${ACCT.color||'#ffd94a'}">🧿 ${ACCT.user}</b>
+             <i>☁️ Naka-log in — cloud save aktibo</i>
+             <i>${ACCT.lastPush?('Huling sync: '+(Math.max(1,Math.round((Date.now()-ACCT.lastPush)/1000))<60?Math.max(1,Math.round((Date.now()-ACCT.lastPush)/1000))+'s':Math.round((Date.now()-ACCT.lastPush)/60000)+'min')+' ang nakalipas'):'Hindi pa nasi-sync'}</i>
+           </div>
+           <button class="modal-btn secondary" id="set-logout">🚪 Mag-log Out</button>
+         </div>`
+      : `<div class="acct-card guest">
+           <div class="acct-ava guest">👤</div>
+           <div class="acct-inf">
+             <b style="color:#bfb6d2">Guest / Bisita</b>
+             <i>Hindi naka-log in — lokal na save lamang</i>
+             <i>Mag-log in para ma-save sa cloud ang progreso</i>
+           </div>
+           <button class="modal-btn secondary" id="set-login">🔑 Mag-log In</button>
+         </div>`}</div>
     <div class="set-sec">⌨️ Keyboard (pindutin para palitan)</div>
     <table class="stat-table kb-table">
       ${kb('attack','🗡️ Attack')}${kb('skill1','Skill 1')}${kb('skill2','Skill 2')}${kb('skill3','Skill 3')}
@@ -6343,8 +6370,27 @@ function openSettings(){
   wireChkGrid('chk-auto','autoTargets');
   wireChkGrid('chk-forage','forageTargets');
   $('btn-reset2').onclick=()=>{ if(confirm('Burahin ang lahat ng progreso?')){ localStorage.removeItem('agimat_save3'); location.reload(); } };
-  const lo=$('set-logout'); if(lo) lo.onclick=()=>{ acctLogout(); toast('Naka-log out. Lokal na save na lang ang gagana.','warn'); closeModal(); };
-  const li=$('set-login'); if(li) li.onclick=()=>{ if(confirm('Pupunta sa welcome screen para mag-log in. Ituloy?')){ save(); location.reload(); } };
+  const lo=$('set-logout'); if(lo) lo.onclick=async()=>{
+    if(!confirm('Mag-log out? Babalik ka sa welcome screen.')) return;
+    /* force one final cloud push (bypasses the 10s throttle) before leaving */
+    try{
+      S.lastSeen=Date.now(); S.px=player.x; S.py=player.z; S.itemUid=itemUid;
+      lo.disabled=true; lo.textContent='☁️ Sini-sync…';
+      await api('/api/save',{token:ACCT.token, save:JSON.stringify(S)});
+    }catch(e){}
+    acctLogout();
+    /* leaving an account: wipe the local copy of the cloud character so the
+       next (guest or different) player doesn't inherit it */
+    localStorage.removeItem('agimat_save3');
+    localStorage.setItem('agimat_force_welcome','1');
+    location.reload();
+  };
+  const li=$('set-login'); if(li) li.onclick=()=>{
+    if(!confirm('Pupunta sa welcome screen para mag-log in. Mase-save muna ang progreso mo. Ituloy?')) return;
+    save();
+    localStorage.setItem('agimat_force_welcome','1');
+    location.reload();
+  };
 }
 $('btn-settings').onclick=openSettings;
 /* ---- fullscreen + landscape lock ---- */

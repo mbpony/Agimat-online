@@ -1,4 +1,12 @@
 # CHANGELOG
+## 2026-09-08 — UI Fix Pack (post-launch polish)
+- **Settings → Account**: proper profile card when logged in (avatar initial, username in account color, cloud-sync status + last sync time). Guest players see a "Guest / Bisita" card with a Log In button.
+- **Log out** now actually leaves the game: final forced cloud sync → session cleared → local copy of the cloud character wiped → reload lands on the **welcome screen** (via one-shot `agimat_force_welcome` flag), not back in-world.
+- **"Mag-log In" from settings** also routes through the welcome screen; local-save guests can resume via the "play without account" link (now clickable — boots the existing local save).
+- **Expired session** (e.g. server restart on Render free tier) now shows a warning toast instead of silently downgrading to guest.
+- **HUD overlap fixed**: hero name plate given real clearance from the minimap on touch layouts (left offsets 144/122/112px per breakpoint); name row ellipsizes instead of spilling.
+- **Chat layering fixed**: chat box dropped to z-index 20 so every popup window (panels z30, modals z70, menu z115+) renders above it.
+
 ## 2026-09-08 — Phase 9: Final combined batch (9a rewards · 9b night ecology · 9c boss resist · 9d skills 11–20) ✅
 - 9a: arena win purses are SERVER-issued via mail (300–1000 by rating, 5/day), ledger-credited.
 - 9b: Aswang/Wakwak = night hunters — day-blocked, night surge, dawn despawn (data-driven, spawn-rules.json nightRules).

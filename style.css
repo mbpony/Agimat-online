@@ -1254,3 +1254,40 @@ body{background:var(--bg);color:var(--text);font-family:var(--ff);overflow:hidde
 @media (max-width:900px){
   #welcome-screen #ws-account.ws-panel{ margin:0 auto; }
 }
+
+/* ================================================================
+   UI FIX PACK (settings account card · HUD dock · chat layering)
+   ================================================================ */
+/* ---- settings: account/profile card ---- */
+.set-acct .acct-card{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(242,177,52,.35);margin:6px 0 10px}
+.set-acct .acct-card.guest{border-color:rgba(255,255,255,.14)}
+.acct-ava{width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;
+  justify-content:center;font:900 18px system-ui;color:#221500;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.acct-ava.guest{background:rgba(255,255,255,.1);color:#bfb6d2;font-size:20px}
+.acct-inf{flex:1;display:flex;flex-direction:column;min-width:0;text-align:left;gap:1px}
+.acct-inf b{font:800 13px system-ui;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct-inf i{font:500 10.5px system-ui;font-style:normal;color:#8a80a2}
+.set-acct .modal-btn{width:auto;margin:0;padding:8px 12px;font-size:11px;flex:none}
+
+/* ---- HUD: never let the name row spill over neighbours ---- */
+.hud-stats{min-width:0}
+.hud-name{min-width:0;overflow:hidden}
+#hud-class{overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+
+/* ---- chat sits UNDER every popup window (panels are z30, modal 70) ---- */
+#chat-wrap{z-index:20}
+
+/* ---- HUD dock: give the hero plate real clearance from the minimap ----
+   minimap-wrap ≈160px wide → scaled .8 = 128px (+8 left) = 136px
+   scaled .66 = 106px (+8) = 114px · scaled .62 = 99px (+6) = 105px */
+@media (pointer:coarse) and (max-width:1024px){
+  #hud{ left:144px; }
+}
+@media (pointer:coarse) and (max-width:740px){
+  #hud{ left:122px; }
+  .hud-stats{ width:24vw; }
+}
+@media (pointer:coarse) and (orientation:landscape) and (max-height:540px){
+  #hud{ left:112px; }
+}
