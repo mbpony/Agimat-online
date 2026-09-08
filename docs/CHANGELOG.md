@@ -1,4 +1,13 @@
 # CHANGELOG
+## 2026-09-08 — Inventory search/sort/rarity filters + CRITICAL module-scope repair
+- **CRITICAL FIX**: game.js is an ES module (strict, module scope). The inv3d hook (`const _open=i2Open`) referenced an IIFE-local and THREW at load — killing every module after it (mapTransition, leftRail, daily2, mapInstancing, hudRegions… never executed in production). Caught by scope-aware ESLint (no-undef) sweep.
+  - inv2 IIFE now exposes `window._i2` hook (live I2 getter, matTab/isWeapon, detail/doll/grid/renderAll, setGrid, wrapOpen).
+  - inv3d + leftRail rewired through the hook / window.i2Close.
+  - Full-file lint now shows ZERO unreachable bare names (all remaining no-undef are window-exported globals).
+- **Duplicate pet system removed**: EOF alagaV2 (never ran) conflicted with the richer existing Alaga engine (S.pets.xp leveling, hunger, evolution, openPetsV2). Replaced by slim newCompanions module: 🔥 Santelmo (epic pet, +3% ATK aura via PET_AURAS) + 🐐 Sigbin (legendary mount, ride 1.8×, hunger penalty), favorites sinigang/kinilaw — fully integrated with feeding/leveling/evolution UI.
+- **§3 final — inventory toolbar**: 🔎 search (gear + materials, live counter shown/total), sort select (Rarity/iLv/Halaga/Bago), 5 rarity filter dots (multi-toggle, color-coded, fat touch targets ≤480px). Same cell markup/handlers; empty state "Walang tugma sa paghahanap."
+- Headless filter tests 15/15 (search/rarity/sorts/click wiring/tab intersect). SW → agimat-v8.
+
 ## 2026-09-08 — Visual cohesion pass (master-fix §16/§17)
 - **Design tokens in :root**: radius scale (--r-xs 6 / sm 9 / md 12 / lg 16 / xl 22), shadow scale (--shadow-1/2/3), focus ring (--ring), rarity colors completed (--epic, --legendary), display typeface tokenized (--ff-display = Georgia, branding only — logo/tagline/quote; all UI on --ff).
 - **Standardization layer at EOF** (wins cascade): typography scale unified; border-radius mapped to tokens across modal/npcw/alaga/inventory/menu components; rarity text+glow single source; button states (hover brightness, :focus-visible ring, disabled 45%+grayscale, tap-highlight cleanup); glow budget trimmed (skill-ready/autoforage/autobattle halos reduced ~40%, autobattle pulse anim removed); one scrollbar style everywhere; modal/panel spacing rhythm (6·8·12·16).

@@ -1707,3 +1707,38 @@ h2,h3,h4{ font-family:var(--ff); letter-spacing:.4px; }
 .close-panel{ width:38px; height:38px; }
 .close-panel:hover, .mm-x:hover, #npcw-x:hover{ background:rgba(255,255,255,.14); color:#fff; }
 .close-panel:active, .mm-x:active, #npcw-x:active{ transform:scale(.92); }
+
+/* ================================================================
+   🔎 INVENTORY FILTER BAR (master-fix §3 final)
+   ================================================================ */
+#i2-filterbar{ display:flex; flex-direction:column; gap:5px; margin-bottom:6px; flex:0 0 auto; }
+.i2f-row{ display:flex; gap:6px; }
+.i2f-search{
+  flex:1; display:flex; align-items:center; gap:5px; min-width:0;
+  background:rgba(5,3,12,.7); border:1px solid rgba(125,240,255,.25);
+  border-radius:var(--r-sm); padding:0 8px;
+}
+.i2f-search span{ font-size:12px; opacity:.7; }
+.i2f-search input{
+  flex:1; min-width:0; background:transparent; border:none; outline:none;
+  color:#efe8ff; font:600 12px var(--ff); padding:8px 0;
+}
+.i2f-search input::placeholder{ color:#6a6284; }
+#i2f-clr{ background:transparent; border:none; color:#8a80a2; font-size:12px; cursor:pointer; padding:4px; }
+#i2f-sort{
+  background:rgba(5,3,12,.7); border:1px solid rgba(201,162,75,.35); color:#ffd94a;
+  border-radius:var(--r-sm); font:700 11px var(--ff); padding:0 6px; cursor:pointer; max-width:118px;
+}
+.i2f-rars{ display:flex; align-items:center; gap:6px; }
+.i2f-rar{
+  width:22px; height:22px; border-radius:50%; cursor:pointer; padding:0;
+  background:radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--rc) 55%, #000), color-mix(in srgb, var(--rc) 18%, #000));
+  border:2px solid color-mix(in srgb, var(--rc) 45%, transparent);
+  opacity:.5; transition:opacity .12s, transform .12s, box-shadow .12s;
+}
+.i2f-rar.on{ opacity:1; transform:scale(1.12); box-shadow:0 0 8px var(--rc); border-color:var(--rc); }
+#i2f-n{ margin-left:auto; font:700 10px var(--ff); color:#8a80a2; }
+@media (max-width:480px){
+  #i2f-sort{ max-width:96px; }
+  .i2f-rar{ width:26px; height:26px; }   /* fatter touch targets */
+}
