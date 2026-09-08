@@ -1,4 +1,10 @@
 # CHANGELOG
+## 2026-09-08 — Permanent cloud saves (Upstash Redis)
+- `server.js`: new cloud persistence layer — hydrates USERS/GUILDS/MARKET from Upstash Redis on boot (before listen), mirrors changes every 15 s (dirty-flag throttle), full forced flush on SIGTERM/SIGINT.
+- Survives Render free-tier disk wipes: verified via full lifecycle simulation (register → SIGTERM → disk wipe → reboot → login OK; kill -9 wake OK; env-unset file-only fallback OK).
+- `render.yaml`: documents the two env vars (`sync:false` — set values in dashboard).
+- DEPLOY.md: step-by-step Upstash setup guide.
+
 ## 2026-09-08 — UI Fix Pack (post-launch polish)
 - **Settings → Account**: proper profile card when logged in (avatar initial, username in account color, cloud-sync status + last sync time). Guest players see a "Guest / Bisita" card with a Log In button.
 - **Log out** now actually leaves the game: final forced cloud sync → session cleared → local copy of the cloud character wiped → reload lands on the **welcome screen** (via one-shot `agimat_force_welcome` flag), not back in-world.

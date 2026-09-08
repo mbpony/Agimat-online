@@ -23,8 +23,78 @@ let MARKET = { nextId:1, listings:[] }; // listings: {id, seller, sellerName, it
 try{ GUILDS = JSON.parse(fs.readFileSync(GUILDS_FILE,'utf8')); }catch(e){ GUILDS = {}; }
 try{ MARKET = JSON.parse(fs.readFileSync(MARKET_FILE,'utf8')); }catch(e){ MARKET = { nextId:1, listings:[] }; }
 let gTimer=null, mTimer=null;
-function persistGuilds(){ clearTimeout(gTimer); gTimer=setTimeout(()=>{ try{ fs.writeFileSync(GUILDS_FILE, JSON.stringify(GUILDS)); }catch(e){} },250); }
-function persistMarket(){ clearTimeout(mTimer); mTimer=setTimeout(()=>{ try{ fs.writeFileSync(MARKET_FILE, JSON.stringify(MARKET)); }catch(e){} },250); }
+function persistGuilds(){ cloudMarkDirty('guilds'); clearTimeout(gTimer); gTimer=setTimeout(()=>{ try{ fs.writeFileSync(GUILDS_FILE, JSON.stringify(GUILDS)); }catch(e){} },250); }
+function persistMarket(){ cloudMarkDirty('market'); clearTimeout(mTimer); mTimer=setTimeout(()=>{ try{ fs.writeFileSync(MARKET_FILE, JSON.stringify(MARKET)); }catch(e){} },250); }
+
+/* ---------------- CLOUD PERSISTENCE (Upstash Redis REST) ----------------
+   Render's free tier wipes the local disk on every deploy AND on every
+   spin-down/wake cycle. When UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN
+   are set, the three stores are mirrored to a free Upstash Redis database:
+     boot      → hydrate USERS/GUILDS/MARKET from the cloud (cloud wins)
+     changes   → pushed at most once per 15 s per store (dirty-flag throttle;
+                 worst case ≈ 3 stores × 4/min ≈ well under the free 500K/month)
+     shutdown  → final flush on SIGTERM/SIGINT (Render sends SIGTERM)
+   Without the env vars the server behaves exactly as before (file-only). */
+const CLOUD_URL   = (process.env.UPSTASH_REDIS_REST_URL||'').replace(/\/+$/,'');
+const CLOUD_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN||'';
+const CLOUD_ON    = !!(CLOUD_URL && CLOUD_TOKEN);
+const CLOUD_KEYS  = { users:'agimat:users', guilds:'agimat:guilds', market:'agimat:market' };
+const cloudDirty  = { users:false, guilds:false, market:false };
+function cloudMarkDirty(store){ if(CLOUD_ON) cloudDirty[store]=true; }
+async function cloudGet(key){
+  const r=await fetch(CLOUD_URL+'/get/'+encodeURIComponent(key),{headers:{Authorization:'Bearer '+CLOUD_TOKEN}});
+  if(!r.ok) throw new Error('cloud GET '+key+' → HTTP '+r.status);
+  const j=await r.json();
+  return (j && j.result!=null) ? j.result : null;
+}
+async function cloudSet(key,val){
+  const r=await fetch(CLOUD_URL+'/set/'+encodeURIComponent(key),{method:'POST',headers:{Authorization:'Bearer '+CLOUD_TOKEN},body:val});
+  if(!r.ok) throw new Error('cloud SET '+key+' → HTTP '+r.status);
+}
+function cloudSnapshot(store){
+  return store==='users' ? JSON.stringify(USERS)
+       : store==='guilds'? JSON.stringify(GUILDS)
+       : JSON.stringify(MARKET);
+}
+async function cloudFlush(force){                // push dirty stores (force = all, used on shutdown)
+  if(!CLOUD_ON) return;
+  for(const store of Object.keys(cloudDirty)){
+    if(!force && !cloudDirty[store]) continue;
+    try{ await cloudSet(CLOUD_KEYS[store], cloudSnapshot(store)); cloudDirty[store]=false; }
+    catch(e){ console.error('[cloud] flush '+store+' failed:', e.message); }
+  }
+}
+async function cloudHydrate(){                   // boot: cloud copy wins over (possibly wiped) disk
+  if(!CLOUD_ON){ console.log('[cloud] disabled — file storage only (set UPSTASH_REDIS_REST_URL + _TOKEN to enable)'); return; }
+  try{
+    const [u,g,m]=await Promise.all([cloudGet(CLOUD_KEYS.users),cloudGet(CLOUD_KEYS.guilds),cloudGet(CLOUD_KEYS.market)]);
+    if(u!=null){ USERS=JSON.parse(u);  try{ fs.writeFileSync(USERS_FILE ,u); }catch(e){} }
+    if(g!=null){ GUILDS=JSON.parse(g); try{ fs.writeFileSync(GUILDS_FILE,g); }catch(e){} }
+    if(m!=null){ MARKET=JSON.parse(m); try{ fs.writeFileSync(MARKET_FILE,m); }catch(e){} }
+    console.log('[cloud] hydrated — users:'+Object.keys(USERS).length+' guilds:'+Object.keys(GUILDS).length+' listings:'+(MARKET.listings||[]).length);
+    /* first run against an empty database: seed it with whatever the disk had */
+    if(u==null&&Object.keys(USERS).length){ cloudDirty.users=true; }
+    if(g==null&&Object.keys(GUILDS).length){ cloudDirty.guilds=true; }
+    if(m==null&&(MARKET.listings||[]).length){ cloudDirty.market=true; }
+    await cloudFlush();
+  }catch(e){
+    console.error('[cloud] hydrate FAILED — continuing with local files:', e.message);
+  }
+}
+if(CLOUD_ON){
+  setInterval(cloudFlush, 15000);                // throttled mirror
+  let shuttingDown=false;
+  const bye=async(sig)=>{
+    if(shuttingDown) return; shuttingDown=true;
+    console.log('[cloud] '+sig+' — final flush…');
+    try{ fs.writeFileSync(USERS_FILE, JSON.stringify(USERS)); }catch(e){}
+    try{ await cloudFlush(true); }catch(e){}
+    console.log('[cloud] final flush done, bye.');
+    process.exit(0);
+  };
+  process.on('SIGTERM',()=>bye('SIGTERM'));
+  process.on('SIGINT', ()=>bye('SIGINT'));
+}
 const GUILD_THRESH=[0,10000,50000,150000,400000];             // gold -> guild level 1..5
 function guildLevel(g){ let l=1; for(let i=1;i<GUILD_THRESH.length;i++) if(g.gold>=GUILD_THRESH[i]) l=i+1; return l; }
 function guildPerks(lvl){ return { xp:[0,3,5,8,12][lvl-1]||0, atk:[0,1,2,4,6][lvl-1]||0 }; }
@@ -97,6 +167,7 @@ function validateSaveGold(rec, saveStr){
 
 let saveTimer = null;
 function persistUsers(){
+  cloudMarkDirty('users');
   clearTimeout(saveTimer);
   saveTimer = setTimeout(()=>{ try{ fs.writeFileSync(USERS_FILE, JSON.stringify(USERS)); }catch(e){} }, 250);
 }
@@ -615,6 +686,10 @@ wss.on('connection',(ws)=>{
   ws.on('error',()=>{});
 });
 
-server.listen(PORT, '0.0.0.0', ()=>{
-  console.log('AGIMAT ONLINE server on http://0.0.0.0:'+PORT+'  (ws: /ws, '+MAX_CHANNELS+' channels x '+PER_CHANNEL+')');
+/* hydrate accounts from the cloud BEFORE accepting logins, so a freshly
+   woken Render instance never serves an empty user store */
+cloudHydrate().finally(()=>{
+  server.listen(PORT, '0.0.0.0', ()=>{
+    console.log('AGIMAT ONLINE server on http://0.0.0.0:'+PORT+'  (ws: /ws, '+MAX_CHANNELS+' channels x '+PER_CHANNEL+')'+(CLOUD_ON?'  [cloud saves: ON]':''));
+  });
 });

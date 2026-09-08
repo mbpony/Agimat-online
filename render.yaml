@@ -9,3 +9,11 @@ services:
     startCommand: node server.js
     healthCheckPath: /
     autoDeploy: true
+    envVars:
+      # Cloud saves (Upstash Redis) — set BOTH in the Render dashboard:
+      #   Environment → Add Environment Variable
+      # Get them free at https://console.upstash.com (Redis → your db → REST API)
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false

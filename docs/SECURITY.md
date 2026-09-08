@@ -30,3 +30,13 @@ Order of hardening (per spec §25 / master phases):
 5. Enhancement rolls: server RNG
 6. Anti-cheat heuristics: rate limits, plausibility windows, audit log
 Non-negotiables already true: no client-set account fields on other users; passwords hashed (see server.js); tokens per session.
+
+## Cloud persistence (2026-09-08) — IMPLEMENTED
+- Server mirrors `users/guilds/market` stores to Upstash Redis (REST) when
+  `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` are set.
+- Token lives only in Render env vars (never in the repo). Payloads are the same
+  JSON as the local files; Upstash access is bearer-token TLS.
+- Boot order: hydrate from cloud BEFORE `server.listen`, so a woken instance can
+  never serve an empty user store (no accidental re-register window).
+- Failure mode: if Upstash is unreachable, server logs the error and continues
+  file-only; no login lockout.

@@ -46,6 +46,27 @@ git add -A && git commit -m "new world assets" && git push
 
 ---
 
+
+## ☁️ Permanent player saves (Upstash Redis — FREE)
+
+Render's free tier wipes the local disk on **every deploy and every spin-down/wake**.
+To make accounts survive forever, the server mirrors `users/guilds/market` to a free
+Upstash Redis database whenever these two environment variables are set:
+
+1. Create a free account at **https://console.upstash.com** (no credit card).
+2. **Create Database** → name `agimat` → Regional → pick a region near your Render region → Create.
+3. Open the database → **REST API** tab → copy the two values.
+4. In Render: your service → **Environment** → add:
+   - `UPSTASH_REDIS_REST_URL` = the REST URL (looks like `https://xxxx.upstash.io`)
+   - `UPSTASH_REDIS_REST_TOKEN` = the REST token
+5. **Save Changes** → Render redeploys automatically. Boot log should show
+   `[cloud] hydrated — users:N …` and `[cloud saves: ON]`.
+
+How it works: on boot the server loads all accounts from Upstash (cloud wins over the
+possibly-wiped disk); changes are pushed at most every 15 s per store, plus a final
+flush on SIGTERM. Without the env vars the server runs file-only exactly as before.
+Free-tier budget: 500K commands/month; this design uses roughly ~9K/day worst case — safely inside.
+
 ## ⚠️ Free-tier facts (so nothing surprises you)
 
 | Thing | Reality |
