@@ -5336,6 +5336,24 @@ function showWelcome(){
       const note=document.createElement('div'); note.className='chs-loc'; note.style.textAlign='center';
       note.textContent=lang==='en'?'No hero yet on this account.':'Wala pang bayani ang account na ito.';
       box.appendChild(note);
+      /* §12 SAVE MIGRATION: local guest hero exists → one-tap link to this account */
+      let loc=null; try{ loc=JSON.parse(localStorage.getItem('agimat_save3')||'null'); }catch(e){}
+      if(loc&&loc.cls&&CLASSES[loc.cls]){
+        const mb=document.createElement('button'); mb.className='chs-new';
+        mb.style.background='linear-gradient(180deg,#7df0ff,#2a8ab0)'; mb.style.color='#06222e';
+        mb.textContent=(lang==='en'?'📥 LINK GUEST HERO — ':'📥 ILIPAT ANG GUEST NA BAYANI — ')
+          +(loc.name||CLASSES[loc.cls].name)+' · Lv '+(loc.level||1);
+        mb.onclick=async()=>{
+          mb.disabled=true;
+          const r=await api('/api/save',{token:ACCT.token, save:JSON.stringify(loc)});
+          mb.disabled=false;
+          if(r.ok){
+            toast(lang==='en'?'✅ Guest hero linked to your account — safe in the cloud!':'✅ Nailipat ang guest na bayani sa account mo — ligtas na sa cloud!','levelup');
+            renderCharSel(JSON.stringify(loc));
+          } else toast(r.err||'Hindi nailipat.','warn');
+        };
+        box.appendChild(mb);
+      }
     }
     const nb=document.createElement('button'); nb.className='chs-new';
     nb.textContent=(sv&&sv.cls)?(lang==='en'?'✨ CREATE NEW CHARACTER (replaces current)':'✨ GUMAWA NG BAGONG BAYANI (papalitan ang kasalukuyan)')
@@ -5679,18 +5697,33 @@ function initForClass(){
 const hadSave=load();
 /* logout / "mag-log in" from settings sets this flag so the reload lands on the welcome screen */
 const _forceWelcome=(()=>{ try{ if(localStorage.getItem('agimat_force_welcome')==='1'){ localStorage.removeItem('agimat_force_welcome'); return true; } }catch(e){} return false; })();
-if(hadSave && S.cls && !_forceWelcome){
-  if(S.px!=null&&S.px>=0&&S.px<=WORLD_W&&S.py>=0&&S.py<=WORLD_H&&walkable(S.px,S.py,player.r)){ player.x=S.px; player.z=S.py; }
-  initForClass();
-  started=true;
-  computeStats();
-  if(S.hp<=0||S.hp>P.maxHp) S.hp=P.maxHp;
-  updateHUD(); renderForge();
-  if(S.level>=5){ $('btn-autoforage').classList.remove('hidden'); $('btn-autoforage').classList.toggle('on',S.autoForage); }
-  checkPasalubong();
-} else {
+/* ---- BOOT DECISION (account-trap fix + §11 cloud-authoritative) ----
+   OLD BUG: any local save auto-resumed straight into the world — a GUEST
+   save trapped players who wanted to log in (reload → guest again), and a
+   LOGGED-IN boot used the possibly-stale local copy instead of the cloud.
+   NEW:
+     · logged in  → reconcile with cloud first (4s cap), then enter world
+     · guest+save → WELCOME screen: login is always reachable; resuming
+                    the guest hero stays one tap ("Maglaro nang walang account")
+     · otherwise  → welcome/creation as before                            */
+(async()=>{
+  const canResume=hadSave&&S.cls&&!_forceWelcome;
+  if(canResume&&ACCT.token){
+    try{
+      const r=await Promise.race([api('/api/load',{token:ACCT.token}),
+                                  new Promise(res=>setTimeout(()=>res(null),4000))]);
+      if(r&&r.ok&&r.save){
+        try{ const cv=JSON.parse(r.save);
+          if(cv&&cv.cls&&(cv.lastSeen||0)>=(S.lastSeen||0)) adoptSave(r.save);   // cloud wins when newer
+        }catch(e){}
+      } else if(r&&!r.ok&&/log in/i.test(r.err||'')){
+        acctLogout(); showClassSelect(); return;      // expired session → welcome, never silently guest
+      }
+    }catch(e){}
+    bootFromSave(); return;
+  }
   showClassSelect();
-}
+})();
 setInterval(()=>{ if(started) save(); },5000);
 window.addEventListener('beforeunload',()=>{ if(started) save(); });
 requestAnimationFrame(animate);

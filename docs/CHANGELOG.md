@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-09-08 — CRITICAL: guest-account trap fix + cloud-authoritative boot + guest→account migration
+- **Bug (user-reported)**: boot auto-resumed ANY local save straight into the world. A browser holding a GUEST save trapped the player — welcome screen unreachable on reload, so login was impossible from that browser; and a LOGGED-IN boot used the possibly-stale localStorage copy instead of the cloud save.
+- **New boot decision**: logged-in → reconcile with cloud first (4s timeout; cloud save adopted when lastSeen newer — offline progress still wins if local is newer; expired session → clean logout to welcome, never silent guest); guest with local save → WELCOME screen (login always reachable; guest resume stays 1 tap: "Maglaro nang walang account"); no save → welcome/creation.
+- **§12 save migration**: on the character-select panel, when the account has NO hero but a local guest hero exists → "📥 ILIPAT ANG GUEST NA BAYANI — <name> · Lv <n>" one-tap link pushes the guest save into the account (cloud-safe).
+- /api/health upgraded: env-var shape diagnostics (never leaks secrets) — used to solve the Upstash setup (root cause of "Maling username": accounts were wiped every deploy while cloud was OFF; now ON).
+- Boot scenarios headless 7/7 PASS. SW → agimat-v12.
+
 ## 2026-09-08 — Kapuluan Life Pack: quest variety + NPC reputation + contextual interactions (Game Bible #3/#4/#5)
 - **[A] Quest variety**: story chain 6 → 12 (inline + quests.json, push guarded vs duplicates). New engine types: visit (multi-zone exploration w/ per-quest vset dedupe) · forage · fish · cook (achEvent bridge) · enhance · **choice** (auto-ready). Veterans with finished chains get "Bagong kabanata!" reopen. Finale "Ang Nakawang Anting-anting" = MORAL CHOICE epilogue: return (+25k XP, +10 rep with 3 town NPCs) vs keep (+15k gold, +15 Kubrador rep); choice recorded in S.ctx.moral; title "May Budhi".
 - **[B] NPC reputation**: builds on npcRel/tier data from the Universal NPC system. Sources: quest turn-ins (+5, existed), shop purchases (+1, delegated listener), moral choice. Perks: shop discounts 5% @15 / 10% @30 / 15% @100 (buyPrice wrap, per-NPC context via _curNpcShop) + daily material gift at Kaalyado (60+); tier-up toasts; cap 150.
