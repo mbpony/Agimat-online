@@ -1,0 +1,11 @@
+{
+  "_comment": "Relationship tiers — earned via quest turn-ins (+5 each). Badge shows only once pts > 0.",
+  "tiers": [
+    { "id": "stranger",     "label": "Estranghero",  "min": 0 },
+    { "id": "acquaintance", "label": "Kakilala",     "min": 5 },
+    { "id": "friendly",     "label": "Palakaibigan", "min": 15 },
+    { "id": "trusted",      "label": "Pinagkakatiwalaan", "min": 30 },
+    { "id": "ally",         "label": "Kaalyado",     "min": 60 },
+    { "id": "close_ally",   "label": "Matalik na Kaalyado", "min": 100 }
+  ]
+}

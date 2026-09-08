@@ -1,0 +1,41 @@
+{
+  "_comment": "Universal NPC registry — adding an NPC is a DATA task. capabilities drive the UI; questNpc links to the QUESTS chain npc field.",
+  "npcs": {
+    "trader": {
+      "name": "Aling Rosa", "title": "Tagapangalakal ng Barangay", "role": "trader",
+      "icon": "⚖️", "accent": "#d48fc0",
+      "personality": "maternal, matalas sa negosyo, mapagmalasakit",
+      "speech": "malambing pero diretso, tumatawag ng 'anak'",
+      "location": "Barangay Liwanag — Tiangge Row",
+      "capabilities": ["dialogue", "quest", "shop", "heal"],
+      "shopId": "trader", "questNpc": "Aling Rosa"
+    },
+    "blacksmith": {
+      "name": "Panday Iko", "title": "Panday ng Barangay", "role": "blacksmith",
+      "icon": "⚒️", "accent": "#e0a05a",
+      "personality": "tahimik, mapagmataas sa gawa, mainit ang loob sa pandayan",
+      "speech": "maikli ang pangungusap, tumatawag ng 'kaibigan'",
+      "location": "Barangay Liwanag — Forge",
+      "capabilities": ["dialogue", "quest", "shop", "upgrade"],
+      "shopId": "blacksmith", "questNpc": "Panday Iko"
+    },
+    "equipment": {
+      "name": "Ka Bining", "title": "Manghahabi ng Kasuotan", "role": "outfitter",
+      "icon": "🛡️", "accent": "#8fd4a0",
+      "personality": "banayad, may paggalang sa bundok at mga anito",
+      "speech": "mahinahon, puno ng kasabihan",
+      "location": "Barangay Liwanag — Weaver Hut",
+      "capabilities": ["dialogue", "quest", "shop"],
+      "shopId": "equipment", "questNpc": "Ka Bining"
+    },
+    "blackmarket": {
+      "name": "Ang Kubrador", "title": "Mangangalakal ng Dilim", "role": "blackmarket",
+      "icon": "🌑", "accent": "#9a7de0",
+      "personality": "misteryoso, mapagbiro, walang tanong na patakaran",
+      "speech": "pabulong, laging may lihim",
+      "location": "Barangay Liwanag — Shadow Corner",
+      "capabilities": ["dialogue", "quest", "shop", "gamble"],
+      "shopId": "blackmarket", "questNpc": "Ang Kubrador"
+    }
+  }
+}

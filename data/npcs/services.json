@@ -1,0 +1,14 @@
+{
+  "_comment": "Service metadata — icon/label/desc for the Services menu. Runners live in game.js SVC_RUN; capabilities without a runner are ignored (future-safe).",
+  "services": {
+    "shop":     { "icon": "🛒", "label": "Tindahan",       "desc": "Bumili at magbenta ng gamit" },
+    "heal":     { "icon": "💗", "label": "Pagpapagaling",  "desc": "Ibalik ang buong HP (libre, may 60s pahinga)" },
+    "upgrade":  { "icon": "🔨", "label": "Pandayan",       "desc": "Palakasin ang gamit +1 → +10" },
+    "gamble":   { "icon": "🎲", "label": "Mystery Pouch",  "desc": "Random na gamit — Rare o mas mataas" },
+    "craft":    { "icon": "⚗️", "label": "Paggawa",        "desc": "Gumawa ng bagong gamit (darating pa)" },
+    "repair":   { "icon": "🧰", "label": "Pagkukumpuni",   "desc": "Ayusin ang sirang gamit (darating pa)" },
+    "teleport": { "icon": "🌀", "label": "Paglalakbay",    "desc": "Mabilis na biyahe (darating pa)" },
+    "storage":  { "icon": "📦", "label": "Imbakan",        "desc": "Itago ang mga gamit (darating pa)" },
+    "class_advancement": { "icon": "⭐", "label": "Pag-angat ng Uri", "desc": "Ritwal ng pag-unlad (darating pa)" }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "trader": {
+    "greet": "Anak! Halika, tingnan mo ang paninda ko. Sariwa pa galing sa terraces.",
+    "talk": [
+      "Lahat ng bagay may presyo, anak. Pero para sa'yo? May konting tawad.",
+      "Noong bata pa ako, ang tiangge na ito'y tatlong banig lang. Tingnan mo na ngayon!",
+      "Mag-ingat ka sa gabi, anak. Iba ang gumagala kapag wala na ang araw.",
+      "Kapag may sugat ka, lapitan mo lang ako. Libre ang pagpapagaling ko sa mga bayani."
+    ]
+  },
+  "blacksmith": {
+    "greet": "Kaibigan. Bagong bakal, bagong pag-asa. Ano ang kailangan mo?",
+    "talk": [
+      "Ang apoy ng pugon ko, galing sa Sunog Scar. Hindi ordinaryong baga 'yan.",
+      "Ang mahinang sandata, kasing-panganib ng walang sandata.",
+      "Dalhin mo sa akin ang gamit mo. Papalakasin ko — hanggang +10, kung matapang ka.",
+      "Ang tunay na panday, hindi nagmamadali. Pero hindi rin naghihintay."
+    ]
+  },
+  "equipment": {
+    "greet": "Maligayang pagdating, bayani. Ang mga hinabi ko'y may basbas ng bundok.",
+    "talk": [
+      "Bawat sinulid, may dasal. Bawat tela, may proteksyon ng mga ninuno.",
+      "Ang bundok ay nagbibigay sa marunong gumalang. Tandaan mo iyan.",
+      "Kapag ang damit mo'y punit na, hindi lang katawan mo ang nanganganib."
+    ]
+  },
+  "blackmarket": {
+    "greet": "Ssst… lumapit ka. Walang tanong, walang refund. Tayo'y magkaintindihan.",
+    "talk": [
+      "Ang mga paninda ko? Huwag mo nang itanong kung saan galing. Mas mabuti sa'yo.",
+      "Ang mga aswang, hindi nagtatanong kung saan ko kinukuha ang mga gamit ko… ikaw rin dapat.",
+      "Gusto mo ng sugal? Ang Mystery Pouch ko, laging may sorpresa. Minsan maganda pa.",
+      "Kapag sinabi kong bihira 'to… baka totoo. Baka hindi. Kaya nga misteryo, di ba?"
+    ]
+  }
+}

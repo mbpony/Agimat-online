@@ -4735,7 +4735,7 @@ function nearestNPC(){
 }
 function tryInteract(){
   const n=nearestNPC();
-  if(n){ openShop(n.id); return; }
+  if(n){ if(window.openNpcWindow) window.openNpcWindow(n.id); else openShop(n.id); return; }
   if(typeof DGN_GATE!=='undefined'&&!(typeof DGN!=='undefined'&&DGN.active)&&d2(player.x,player.z,DGN_GATE.x,DGN_GATE.z)<6*6&&window.openDungeonSelect){ window.openDungeonSelect(); return; }
   if(d2(player.x,player.z,TENT.x,TENT.z)<13*13){ openPanel('tiangge'); return; }
   toast('Walang malapit na maaaring gamitin. Lumapit sa NPC, Tiangge, o Lagusan.');
@@ -6842,20 +6842,32 @@ function updateQuestHud(){
   el.querySelector('.qh-body').innerHTML=`<b>${q.icon} ${q.title}</b><i>${prog}/${q.n} — ${questReady(q)?'BUMALIK KAY '+q.npc.toUpperCase()+' ✅':q.npc}</i>`;
 }
 setInterval(updateQuestHud,2000);
-/* NPC quest dialog: hook into openShop via tryInteract wrapper */
+/* NPC quest helpers (shared by the Universal NPC Window + legacy wrapper) */
 const _openShop=openShop;
+window._rawOpenShop=id=>_openShop(id);
+const NPC_QUEST_NAMES={trader:'Aling Rosa', blacksmith:'Panday Iko', equipment:'Ka Bining', blackmarket:'Ang Kubrador'};
+window._questStateFor=function(npcName){
+  const q=curQuest(); if(!q||q.npc!==npcName) return null;
+  return {q, ready:questReady(q), prog:q.type==='collect'?questCollectProg(q):S.quests.prog};
+};
+window._questTurnIn=function(q){
+  if(q.type==='collect'){ S.inv[q.target]-=q.n; if(S.inv[q.target]<=0) delete S.inv[q.target]; }
+  S.gold+=q.reward.gold; gainXP(q.reward.xp);
+  S.quests.cur++; S.quests.prog=0;
+  if(S.quests.cur>=QUESTS.length) S.quests.done=true;
+  /* relationship: +5 with the quest giver (Universal NPC system) */
+  try{
+    const nid=Object.keys(NPC_QUEST_NAMES).find(k=>NPC_QUEST_NAMES[k]===q.npc);
+    if(nid){ S.npcRel=S.npcRel||{}; S.npcRel[nid]=(S.npcRel[nid]||0)+5; }
+  }catch(e){}
+  SFX.levelup(); updateHUD(); save(); updateQuestHud();
+};
 openShop=function(id){
   const q=curQuest();
-  const npcNames={trader:'Aling Rosa', blacksmith:'Panday Iko', equipment:'Ka Bining', blackmarket:'Ang Kubrador'};
-  const myName=npcNames[id]||'';
+  const myName=NPC_QUEST_NAMES[id]||'';
   if(q&&q.npc===myName){
     if(questReady(q)){
-      /* turn in */
-      if(q.type==='collect'){ S.inv[q.target]-=q.n; if(S.inv[q.target]<=0) delete S.inv[q.target]; }
-      S.gold+=q.reward.gold; gainXP(q.reward.xp);
-      S.quests.cur++; S.quests.prog=0;
-      if(S.quests.cur>=QUESTS.length) S.quests.done=true;
-      SFX.levelup(); updateHUD(); save(); updateQuestHud();
+      window._questTurnIn(q);
       showModal(`<div class="modal-emoji">📜</div><div class="modal-title">${q.title} — TAPOS!</div>
         <p style="text-align:center">"Salamat, bayani! Tanggapin mo ito."</p>
         <p style="text-align:center;font-weight:800;color:#ffd94a">🪙 ${fmt(q.reward.gold)} + ⭐ ${fmt(q.reward.xp)} XP</p>
@@ -11667,4 +11679,211 @@ CATALOG.push(
     }
   };
   $('btn-settings').onclick=openSettings;
+})();
+
+/* ================================================================
+   🗣️ UNIVERSAL NPC INTERACTION SYSTEM (spec: npc-redesign)
+   ONE reusable window for ALL NPCs. Capabilities are DATA:
+   data/npcs/definitions.json  → npc identity + capabilities
+   data/npcs/dialogue.json     → greetings + talk lines
+   data/npcs/services.json     → service metadata (icon/label/desc)
+   data/npcs/relationships.json→ relationship tiers
+   Adding an NPC = adding data. UI generates itself.
+   Existing shops/quests/enhance are REUSED as service runners.
+   ================================================================ */
+(function universalNpc(){
+  /* ---------- data (fetch + inline fallback, per project rule) ---------- */
+  const NPC_DATA={
+    defs:{
+      trader:{name:'Aling Rosa',title:'Tagapangalakal ng Barangay',icon:'⚖️',accent:'#d48fc0',capabilities:['dialogue','quest','shop','heal'],shopId:'trader',questNpc:'Aling Rosa'},
+      blacksmith:{name:'Panday Iko',title:'Panday ng Barangay',icon:'⚒️',accent:'#e0a05a',capabilities:['dialogue','quest','shop','upgrade'],shopId:'blacksmith',questNpc:'Panday Iko'},
+      equipment:{name:'Ka Bining',title:'Manghahabi ng Kasuotan',icon:'🛡️',accent:'#8fd4a0',capabilities:['dialogue','quest','shop'],shopId:'equipment',questNpc:'Ka Bining'},
+      blackmarket:{name:'Ang Kubrador',title:'Mangangalakal ng Dilim',icon:'🌑',accent:'#9a7de0',capabilities:['dialogue','quest','shop','gamble'],shopId:'blackmarket',questNpc:'Ang Kubrador'},
+    },
+    dlg:{
+      trader:{greet:'Anak! Halika, tingnan mo ang paninda ko.',talk:['Lahat ng bagay may presyo, anak.','Mag-ingat ka sa gabi, anak.']},
+      blacksmith:{greet:'Kaibigan. Bagong bakal, bagong pag-asa.',talk:['Ang mahinang sandata, kasing-panganib ng walang sandata.']},
+      equipment:{greet:'Maligayang pagdating, bayani.',talk:['Bawat sinulid, may dasal.']},
+      blackmarket:{greet:'Ssst… lumapit ka. Walang tanong, walang refund.',talk:['Huwag mo nang itanong kung saan galing.']},
+    },
+    svc:{
+      shop:{icon:'🛒',label:'Tindahan',desc:'Bumili at magbenta ng gamit'},
+      heal:{icon:'💗',label:'Pagpapagaling',desc:'Ibalik ang buong HP (libre, 60s pahinga)'},
+      upgrade:{icon:'🔨',label:'Pandayan',desc:'Palakasin ang gamit +1 → +10'},
+      gamble:{icon:'🎲',label:'Mystery Pouch',desc:'Random na gamit — Rare o mas mataas'},
+    },
+    tiers:[{id:'stranger',label:'Estranghero',min:0},{id:'acquaintance',label:'Kakilala',min:5},{id:'friendly',label:'Palakaibigan',min:15},{id:'trusted',label:'Pinagkakatiwalaan',min:30},{id:'ally',label:'Kaalyado',min:60},{id:'close_ally',label:'Matalik na Kaalyado',min:100}],
+  };
+  (async()=>{ try{
+    const [d,g,s,r]=await Promise.all([
+      fetch('data/npcs/definitions.json').then(x=>x.json()),
+      fetch('data/npcs/dialogue.json').then(x=>x.json()),
+      fetch('data/npcs/services.json').then(x=>x.json()),
+      fetch('data/npcs/relationships.json').then(x=>x.json()),
+    ]);
+    if(d&&d.npcs) NPC_DATA.defs=Object.assign({},NPC_DATA.defs,d.npcs);
+    if(g) NPC_DATA.dlg=Object.assign({},NPC_DATA.dlg,g);
+    if(s&&s.services) NPC_DATA.svc=Object.assign({},NPC_DATA.svc,s.services);
+    if(r&&r.tiers) NPC_DATA.tiers=r.tiers;
+  }catch(e){} })();
+  window._npcData=NPC_DATA;
+
+  /* ---------- relationship ---------- */
+  function relTier(nid){
+    const pts=(S.npcRel&&S.npcRel[nid])||0;
+    let t=NPC_DATA.tiers[0];
+    for(const x of NPC_DATA.tiers) if(pts>=x.min) t=x;
+    return {pts,tier:t};
+  }
+
+  /* ---------- service runners: capability id → action ---------- */
+  const npcHealCd={};   // nid → next allowed time (s)
+  const SVC_RUN={
+    shop(def,nid){ npcwClose(); window._rawOpenShop(def.shopId||nid); },
+    upgrade(){ npcwClose(); openEnhance(); },
+    gamble(def,nid){ npcwClose(); window._rawOpenShop(def.shopId||nid); },
+    heal(def,nid){
+      const now=nowS();
+      if(S.hp>=P.maxHp){ npcwSay('Malusog ka pa, anak! Bumalik ka kapag sugatan ka na.'); return; }
+      if(now<(npcHealCd[nid]||0)){ npcwSay('Sandali lang, anak — hinihintay ko pang lumamig ang mga halamang gamot. ('+Math.ceil(npcHealCd[nid]-now)+'s)'); return; }
+      npcHealCd[nid]=now+60;
+      S.hp=P.maxHp; updateHUD(); SFX.levelup();
+      npcwSay('Hala, ayan! Buo na ulit ang lakas mo. Ingat ka sa labas, ha?');
+      toast('💗 <b>Gumaling ka!</b> Buong HP naibalik.','levelup');
+    },
+  };
+
+  /* ---------- DOM (one window, reused) ---------- */
+  const root=document.createElement('div');
+  root.id='npcw';
+  root.innerHTML=
+    '<div id="npcw-card">'+
+      '<div id="npcw-head">'+
+        '<div id="npcw-portrait"></div>'+
+        '<div id="npcw-id"><b id="npcw-name"></b><i id="npcw-title"></i><em id="npcw-rel"></em></div>'+
+        '<button id="npcw-x">✕</button>'+
+      '</div>'+
+      '<div id="npcw-body">'+
+        '<div id="npcw-dlg"></div>'+
+        '<div id="npcw-panel"></div>'+
+      '</div>'+
+      '<div id="npcw-bar"></div>'+
+    '</div>';
+  document.body.appendChild(root);
+  const E={card:$('npcw-card'),portrait:$('npcw-portrait'),name:$('npcw-name'),title:$('npcw-title'),
+    rel:$('npcw-rel'),dlg:$('npcw-dlg'),panel:$('npcw-panel'),bar:$('npcw-bar')};
+  let CUR=null;           // current npc id
+  let talkIdx=0;
+
+  function npcwSay(txt){ E.dlg.innerHTML='<p>“'+txt+'”</p>'; E.dlg.scrollTop=0; }
+  function npcwClose(){ root.classList.remove('open'); CUR=null; }
+  window.npcwClose=npcwClose;
+  $('npcw-x').onclick=npcwClose;
+  root.addEventListener('pointerdown',e=>{ if(e.target===root) npcwClose(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&root.classList.contains('open')) npcwClose(); });
+
+  /* ---------- quest state → indicator ---------- */
+  function questBadge(def){
+    const st=window._questStateFor(def.questNpc||'');
+    if(!st) return null;
+    return st.ready?{ch:'?',cls:'done',hint:'May ibibigay ka!'}:{ch:'!',cls:'new',hint:'May misyon dito'};
+  }
+
+  /* ---------- panels ---------- */
+  function showQuestPanel(def){
+    const st=window._questStateFor(def.questNpc||'');
+    if(!st){ E.panel.innerHTML='<div class="npcw-note">Wala akong misyon para sa iyo ngayon, bayani.</div>'; return; }
+    const q=st.q;
+    S.quests.acc=S.quests.acc||{};
+    const accepted=!!S.quests.acc[S.quests.cur];
+    E.panel.innerHTML=
+      '<div class="npcw-quest">'+
+        '<div class="nq-head">'+q.icon+' <b>'+q.title+'</b>'+(st.ready?' <span class="nq-done">✓ TAPOS</span>':'')+'</div>'+
+        '<div class="nq-desc">“'+q.text+'”</div>'+
+        '<div class="nq-obj">📌 Layunin: <b>'+st.prog+'/'+q.n+'</b></div>'+
+        '<div class="nq-rw">🎁 Gantimpala: <b>🪙 '+fmt(q.reward.gold)+'</b> + <b>⭐ '+fmt(q.reward.xp)+' XP</b></div>'+
+        (st.ready
+          ?'<button class="npcw-btn gold" id="nq-turnin">📜 IBIGAY ANG MISYON</button>'
+          :accepted
+            ?'<div class="npcw-note">Sige, bayani — hinihintay kita.</div>'
+            :'<div class="nq-row"><button class="npcw-btn gold" id="nq-accept">✔ TANGGAPIN</button><button class="npcw-btn" id="nq-later">Mamaya na</button></div>')+
+      '</div>';
+    const acc=$('nq-accept'); if(acc) acc.onclick=()=>{ S.quests.acc[S.quests.cur]=1; save(); SFX.loot(); npcwSay('Salamat, bayani! Alam kong maaasahan ka.'); showQuestPanel(def); updateQuestHud(); };
+    const lat=$('nq-later'); if(lat) lat.onclick=()=>{ E.panel.innerHTML=''; npcwSay('Sige, nandito lang ako kapag handa ka na.'); };
+    const ti=$('nq-turnin'); if(ti) ti.onclick=()=>{
+      window._questTurnIn(q);
+      const done=S.quests.done;
+      npcwSay(done?'Natapos mo ang lahat ng misyon! Ikaw na ang tunay na bayani ng barangay.':'Salamat, bayani! Tanggapin mo ito.');
+      E.panel.innerHTML='<div class="npcw-note" style="color:#ffd94a;font-weight:800">🪙 +'+fmt(q.reward.gold)+' · ⭐ +'+fmt(q.reward.xp)+' XP'+
+        (done?'':'<br><span style="color:#bfb6d2;font-weight:500">Bagong misyon: <b>'+QUESTS[S.quests.cur].title+'</b> — kausapin si '+QUESTS[S.quests.cur].npc+'</span>')+'</div>';
+      renderHeader(def); renderBar(def);
+    };
+  }
+  function showServicesPanel(def){
+    const caps=(def.capabilities||[]).filter(c=>SVC_RUN[c]&&NPC_DATA.svc[c]);
+    E.panel.innerHTML='<div class="npcw-svc">'+caps.map(c=>{
+      const m=NPC_DATA.svc[c];
+      return '<button class="npcw-svc-tile" data-svc="'+c+'"><b>'+m.icon+'</b><span>'+m.label+'</span><i>'+m.desc+'</i></button>';
+    }).join('')+'</div>';
+    E.panel.querySelectorAll('.npcw-svc-tile').forEach(b=>b.onclick=()=>{ SVC_RUN[b.dataset.svc](def,CUR); });
+  }
+
+  /* ---------- header + action bar ---------- */
+  function renderHeader(def){
+    E.portrait.textContent=def.icon||'🧑';
+    E.portrait.style.borderColor=def.accent||'#f2b134';
+    E.name.textContent=def.name; E.name.style.color=def.accent||'#ffd94a';
+    E.title.textContent=def.title||'';
+    const r=relTier(CUR);
+    E.rel.textContent=r.pts>0?('🤝 '+r.tier.label):'';
+  }
+  function renderBar(def){
+    const caps=def.capabilities||[];
+    const btns=[];
+    if(caps.includes('dialogue')) btns.push({id:'talk',txt:'💬 Usap'});
+    if(caps.includes('quest')){
+      const qb=questBadge(def);
+      btns.push({id:'quest',txt:'📜 Misyon'+(qb?' <span class="npcw-badge '+qb.cls+'">'+qb.ch+'</span>':'')});
+    }
+    const svcCaps=caps.filter(c=>SVC_RUN[c]&&NPC_DATA.svc[c]);
+    if(svcCaps.length===1){ const m=NPC_DATA.svc[svcCaps[0]]; btns.push({id:'svc1',txt:m.icon+' '+m.label}); }
+    else if(svcCaps.length>1) btns.push({id:'services',txt:'🧰 Serbisyo'});
+    E.bar.innerHTML=btns.map(b=>'<button class="npcw-btn" data-act="'+b.id+'">'+b.txt+'</button>').join('');
+    E.bar.querySelectorAll('.npcw-btn').forEach(b=>b.onclick=()=>{
+      const a=b.dataset.act;
+      if(a==='talk'){
+        const lines=(NPC_DATA.dlg[CUR]&&NPC_DATA.dlg[CUR].talk)||['…'];
+        npcwSay(lines[talkIdx++%lines.length]); E.panel.innerHTML='';
+      }
+      else if(a==='quest') showQuestPanel(def);
+      else if(a==='services') showServicesPanel(def);
+      else if(a==='svc1') SVC_RUN[svcCaps[0]](def,CUR);
+    });
+  }
+
+  /* ---------- open ---------- */
+  window.openNpcWindow=function(nid){
+    const def=NPC_DATA.defs[nid];
+    if(!def){ window._rawOpenShop(nid); return; }   // unknown npc → legacy fallback
+    CUR=nid; talkIdx=0;
+    renderHeader(def); renderBar(def);
+    E.panel.innerHTML='';
+    npcwSay((NPC_DATA.dlg[nid]&&NPC_DATA.dlg[nid].greet)||'Kumusta, bayani!');
+    /* auto-open the quest panel when there is something actionable */
+    const qb=questBadge(def);
+    if(qb) showQuestPanel(def);
+    root.classList.add('open');
+    SFX.click&&SFX.click();
+  };
+
+  /* ---------- world-label quest indicators (!, ?, ✓) ---------- */
+  setInterval(()=>{
+    if(!started) return;
+    for(const n of NPCS){
+      const def=NPC_DATA.defs[n.id]; if(!def||!n.label) continue;
+      const qb=questBadge(def);
+      const want=n.icon+' '+n.name+(qb?(qb.cls==='done'?'  ❓':'  ❗'):'');
+      if(n.label.textContent!==want) n.label.textContent=want;
+    }
+  },1500);
 })();

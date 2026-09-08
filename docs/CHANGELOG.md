@@ -1,4 +1,12 @@
 # CHANGELOG
+## 2026-09-08 — Universal NPC Interaction System + PWA launch fix
+- **PWA fix**: sw.js v2 — index.html offline fallback now applies ONLY to page navigations. v1 served index.html for ANY failed fetch (including game.js while Render was waking), which made the installed app open to a blank screen. game.js + three.module.min.js added to precache; VERSION bump auto-cleans old caches.
+- **Universal NPC Window** (spec: npc-redesign): ONE reusable window for all NPCs — portrait, name/title, relationship badge, scrollable dialogue, contextual action bar ([💬 Usap] [📜 Misyon] [🧰 Serbisyo]), tap-outside/✕/Esc to close. World stays visible behind (35% dim). Mobile-first: ≥44px touch targets, bottom-sheet on narrow phones, side placement in short landscape.
+- **Data-driven NPCs**: data/npcs/{definitions,dialogue,services,relationships}.json (+inline fallbacks). Capabilities (dialogue/quest/shop/heal/upgrade/gamble/…) auto-generate the action bar; 1 service = direct button, 2+ = Services grid. Adding an NPC = data only.
+- **Quest integration**: reusable indicators (! new / ? ready — in-window badges AND world labels ❗/❓), quest panel with objectives/rewards/Accept/Turn-in; legacy modal flow kept as fallback; quest turn-ins now grant +5 NPC relationship (Estranghero→Matalik na Kaalyado tiers).
+- **New service**: Aling Rosa heals to full HP (free, 60s cooldown per NPC).
+- Existing shops (trader/blacksmith/equipment/blackmarket), Pandayan enhance, and quest chain fully reused as service runners — zero duplicate systems. Headless tests 18/18 PASS; server e2e green.
+
 ## 2026-09-08 — PWA: installable app (Chrome/Android/iOS)
 - `manifest.webmanifest`: name "Agimat Online — Alamat ng Kapuluan", fullscreen display, landscape orientation, theme #16102a, 192/512 icons + maskable variants (78% safe zone).
 - New app icon: golden agimat medallion with Baybayin engravings on purple glow (`img/icons/`, master art `img/icon_master.jpg`).
