@@ -351,8 +351,8 @@ const XP_FOR = l => {
   const late=l>30 ? Math.round(base*Math.pow(1.045,l-30)) : base;   // extra grind after 30
   return late;
 };
-const LEVEL_CAP = 70;
-const UNLOCKS = {2:'Grand Tiangge hub access',3:'Pasalubong (offline rewards)',4:'Santelmo sightings',5:'Auto-Forage · Sigbin prowls',7:'Kapre elites',8:'Nuno sa Punso',9:'Aswang hunts at the edges',10:'Fiesta Stall · Isla ng Bathala portal',15:'Veteran hunter — elite drops improve',20:'CLASS ADVANCEMENT — buksan ang ☰ menu → 🌟 Pag-angat!',30:'The long road — enemies yield more gold',40:'Legend of the Kapuluan',50:'Anito-blessed',60:'Diwata-touched',70:'BATHALA\'S CHOSEN (cap)'};
+const LEVEL_CAP = 80;   /* raised for the Lv80 advancement ritual */
+const UNLOCKS = {2:'Grand Tiangge hub access',3:'Pasalubong (offline rewards)',4:'Santelmo sightings',5:'Auto-Forage · Sigbin prowls',7:'Kapre elites',8:'Nuno sa Punso',9:'Aswang hunts at the edges',10:'Fiesta Stall · Isla ng Bathala portal',15:'Veteran hunter — elite drops improve',20:'CLASS ADVANCEMENT — buksan ang ☰ menu → 🌟 Pag-angat!',30:'The long road — enemies yield more gold',40:'IKALAWANG PAG-ANGAT — bagong ritwal (\u2630 \u2192 \ud83c\udf1f)!',50:'Anito-blessed',60:'IKATLONG PAG-ANGAT — ang mga bathala ay nakatingin (\u2630 \u2192 \ud83c\udf1f)!',70:'Anito-blessed elder',80:'BATHALA\'S CHOSEN (cap)'};
 const OFFLINE_CAP_MS = 8*3600*1000, OFFLINE_MIN_MS = 60*1000;
 
 const DEFAULT_STATE = () => ({
@@ -12617,5 +12617,243 @@ CATALOG.push(
       chk:()=>CATS.reduce((n,k)=>n+catData[k].items().filter(e=>e.unlocked).length,0)>=25, rw:{gold:2500}},
     {id:'kdx60', icon:'📚', name:'Tagapag-ingat ng Alamat', desc:'Maitala ang 60 entries sa Kodise',
       chk:()=>CATS.reduce((n,k)=>n+catData[k].items().filter(e=>e.unlocked).length,0)>=60, rw:{gold:12000}, title:'Tagapag-ingat ng Alamat'},
+  );
+})();
+
+/* ================================================================
+   🌟 ANG APAT NA PAG-ANGAT — the four advancement rituals
+   (Game Bible: advancement as ritual EVENT · user spec: Lv20/40/60/80)
+   Every class walks a ladder rooted in PHILIPPINE MYTHOLOGY:
+   real epic heroes (Lam-ang, Aliguyon, Bantugan, Bernardo Carpio),
+   deities (Apolaki, Mayari, Sidapa, Lakapati, Kanlaon, Bathala,
+   Anitun Tabu, Dumakulem), Sitan's agents (Mangagaway, Hukluban),
+   and authentic titles (Mumbaki = Ifugao ritual priest, Punong
+   Guro = real arnis grandmaster rank, Lakan = precolonial ruler).
+   Save: S.advT tier 0..4 (ADDITIVE; migration S.adv===true → 1).
+   Tier-1 names/perks (ADV_DEFS) unchanged — never renamed.
+   ================================================================ */
+(function apatNaPagAngat(){
+  /* ---------- the ladders (tiers 2..4; tier 1 = existing ADV_DEFS) ---------- */
+  const ADV_TIERS={
+    babaylan:[
+      {lvl:40, name:'Mumbaki',              icon:'🪶', lore:'Ang ritwal-pari ng mga Ifugao — tagapamagitan sa mga anito ng payyo.',
+        perk:'+10% Max HP · +5% Cooldown Speed', apply:st=>{ st.hpM*=1.10; st.cdr+=5; }},
+      {lvl:60, name:'Sugo ni Lakapati',     icon:'🌾', lore:'Hinirang ni Lakapati, ang mabait na diwata ng kasaganaan at ani.',
+        perk:'+8% Attack · +8% Life Steal', apply:st=>{ st.atkM*=1.08; st.ls+=8; }},
+      {lvl:80, name:'Tinig ni Bathala',     icon:'⚡', lore:'Kapag nagsalita ka, ang langit mismo ang umaalingawngaw.',
+        perk:'+12% ATK · +12% HP · +10% CDR', apply:st=>{ st.atkM*=1.12; st.hpM*=1.12; st.cdr+=10; }},
+    ],
+    arnisador:[
+      {lvl:40, name:'Punong Guro',          icon:'🎓', lore:'Ang tunay na ranggo ng dakilang guro ng arnis — panginoon ng dalawang yantok.',
+        perk:'+15% Crit Damage · +4% Move Speed', apply:st=>{ st.critDmg+=15; st.spdM*=1.04; }},
+      {lvl:60, name:'Bantugan ng Darangen', icon:'🛶', lore:'Muling nabuhay ang prinsipeng mandirigma ng epikong Maranao sa iyong mga kamay.',
+        perk:'+12% Attack · +8% Crit Chance', apply:st=>{ st.atkM*=1.12; st.critCh+=8; }},
+      {lvl:80, name:'Dugong Lam-ang',       icon:'🐓', lore:'Ang dugo ng bayaning Ilocano na nakipaglaban sa buong tribu — at nanalo.',
+        perk:'+20% Attack · +25% Crit Damage', apply:st=>{ st.atkM*=1.20; st.critDmg+=25; }},
+    ],
+    tirador:[
+      {lvl:40, name:'Tagatudla',            icon:'🎯', lore:'Walang batong lumilihis. Ang tudla mo ay panata.',
+        perk:'+20% Crit Damage', apply:st=>{ st.critDmg+=20; }},
+      {lvl:60, name:'Mata ng Tigmamanukan', icon:'🐦', lore:'Ang ibong sugo ni Bathala ay nagpahiram ng paningin nito sa iyo.',
+        perk:'+10% Crit Chance · +8% Attack', apply:st=>{ st.critCh+=10; st.atkM*=1.08; }},
+      {lvl:80, name:'Sinag ni Apolaki',     icon:'☀️', lore:'Bawat bato mo ay sinag ng diyos ng araw at digmaan — tumatama bago pa marinig.',
+        perk:'+15% Attack · +40% Crit Damage', apply:st=>{ st.atkM*=1.15; st.critDmg+=40; }},
+    ],
+    alim:[
+      {lvl:40, name:'Anak ng Habagat',      icon:'🌧️', lore:'Ang hanging habagat ay kumikilala sa iyo bilang kadugo.',
+        perk:'+10% Attack', apply:st=>{ st.atkM*=1.10; }},
+      {lvl:60, name:'Alagad ni Anitun Tabu',icon:'🌩️', lore:'Ang diwata ng hangin at ulan ay bumubulong ng mga lihim ng unos.',
+        perk:'+10% CDR · +10% Max HP', apply:st=>{ st.cdr+=10; st.hpM*=1.10; }},
+      {lvl:80, name:'Apo ng Apat na Hangin',icon:'🌀', lore:'Amihan, Habagat, at lahat ng hangin ng kapuluan — sumusunod sa iyong utos.',
+        perk:'+15% Attack · +15% CDR', apply:st=>{ st.atkM*=1.15; st.cdr+=15; }},
+    ],
+    mandirigma:[
+      {lvl:40, name:'Lakan ng Digmaan',     icon:'👑', lore:'Ranggo ng mga sinaunang pinuno — ang tribo ay sumusunod sa iyong sigaw.',
+        perk:'+10% Defense · +8% Attack', apply:st=>{ st.defM*=1.10; st.atkM*=1.08; }},
+      {lvl:60, name:'Aliguyon ng Hudhud',   icon:'🗡️', lore:'Tulad ng bayani ng Hudhud, ang laban mo ay tumatagal ng taon — at hindi ka napapagod.',
+        perk:'+15% Max HP · +10% Defense', apply:st=>{ st.hpM*=1.15; st.defM*=1.10; }},
+      {lvl:80, name:'Bisig ni Bernardo Carpio', icon:'⛰️', lore:'Ang bisig na pumipigil sa dalawang bundok — ngayon ay pumipigil sa dilim.',
+        perk:'+25% Max HP · +20% Defense', apply:st=>{ st.hpM*=1.25; st.defM*=1.20; }},
+    ],
+    mamamana:[
+      {lvl:40, name:'Tanod ng Kagubatan',   icon:'🌲', lore:'Ang gubat ay hindi mo na tahanan — ikaw na mismo ang gubat.',
+        perk:'+10% Attack', apply:st=>{ st.atkM*=1.10; }},
+      {lvl:60, name:'Alagad ni Dumakulem',  icon:'🏔️', lore:'Ang diyos-mangangaso ng mga bundok ay tinuruan kang tumudla sa pagitan ng dalawang tibok ng puso.',
+        perk:'+10% Crit Chance · +20% Crit Damage', apply:st=>{ st.critCh+=10; st.critDmg+=20; }},
+      {lvl:80, name:'Palaso ni Mayari',     icon:'🌙', lore:'Ang palaso ng diwata ng buwan — tahimik na liwanag na hindi nagmimintis sa gabi.',
+        perk:'+15% Attack · +50% Crit Damage', apply:st=>{ st.atkM*=1.15; st.critDmg+=50; }},
+    ],
+    anino:[
+      {lvl:40, name:'Bangungot',            icon:'😴', lore:'Ikaw ang panaginip na hindi kinagigisnan. Ang mga kalaban mo ay natutulog nang takot.',
+        perk:'+12% Attack', apply:st=>{ st.atkM*=1.12; }},
+      {lvl:60, name:'Tigbanua ng Karimlan', icon:'👁️', lore:'Tulad ng mga aninong iisa ang mata na gumagala sa dilim ng Bagobo — nakikita ka nila, huli na.',
+        perk:'+10% Crit Chance · +6% Move Speed', apply:st=>{ st.critCh+=10; st.spdM*=1.06; }},
+      {lvl:80, name:'Anino ni Sidapa',      icon:'💀', lore:'Ang diyos ng kamatayan ay sumusukat ng buhay sa Bundok Madia-as. Ikaw ang panukat niya.',
+        perk:'+18% Attack · +12% Crit Chance', apply:st=>{ st.atkM*=1.18; st.critCh+=12; }},
+    ],
+    mangkukulam:[
+      {lvl:40, name:'Mangagaway',           icon:'🐍', lore:'Unang alagad ni Sitan — ang panginoon ng karamdaman at pangkukulam.',
+        perk:'+10% Attack · +4% Life Steal', apply:st=>{ st.atkM*=1.10; st.ls+=4; }},
+      {lvl:60, name:'Hukluban',             icon:'🌑', lore:'Ang hukluban ay nakapagpapabago ng anyo at nakapapatay sa isang kaway ng kamay.',
+        perk:'+12% Max HP · +8% Life Steal', apply:st=>{ st.hpM*=1.12; st.ls+=8; }},
+      {lvl:80, name:'Hinirang ni Sitan',    icon:'🔥', lore:'Ang panginoon ng Kasamaan ay pumili ng kanang kamay. Ikaw iyon.',
+        perk:'+18% Attack · +10% Life Steal', apply:st=>{ st.atkM*=1.18; st.ls+=10; }},
+    ],
+    panday:[
+      {lvl:40, name:'Tagapanday ng Apoy',   icon:'🔥', lore:'Hindi na bakal ang pinapanday mo — apoy mismo.',
+        perk:'+8% Attack · +10% Defense', apply:st=>{ st.atkM*=1.08; st.defM*=1.10; }},
+      {lvl:60, name:'Alagad ni Kanlaon',    icon:'🌋', lore:'Ang dakilang diyos ng bulkan ng Kabisayaan ay nagpapahiram ng kanyang pugon sa iyo.',
+        perk:'+10% Attack · +12% Max HP', apply:st=>{ st.atkM*=1.10; st.hpM*=1.12; }},
+      {lvl:80, name:'Panday ng mga Bathala',icon:'⚒️', lore:'Sa iyong palihan pinapanday ang mga sandata ng kalangitan.',
+        perk:'+15% ATK · +15% HP · +10% DEF', apply:st=>{ st.atkM*=1.15; st.hpM*=1.15; st.defM*=1.10; }},
+    ],
+  };
+  const TIER_COSTS=[
+    null, null,                                                    /* [0],[1] handled by legacy flow */
+    {gold:15000,  mats:{anito_dust:40, nuno_stone:5}},             /* T2 · Lv40 */
+    {gold:60000,  mats:{diwata_dew:60, mutya:3}},                  /* T3 · Lv60 */
+    {gold:200000, mats:{mutya:10, santelmo_flame:40}},             /* T4 · Lv80 */
+  ];
+  const TIER_LVL=[0,20,40,60,80];
+
+  /* ---------- helpers ---------- */
+  function tier(){ return S.advT||(S.adv?1:0); }
+  function ladder(cls){ return ADV_TIERS[cls]||[]; }
+  function tierDef(cls,t){ /* t: 1..4 */
+    if(t===1) return ADV_DEFS[cls]?{name:ADV_DEFS[cls].name0||ADV_DEFS[cls].name,icon:ADV_DEFS[cls].icon,perk:ADV_DEFS[cls].perk,lore:''}:null;
+    return ladder(cls)[t-2]||null;
+  }
+  /* mutate ADV_DEFS display name/icon → every existing UI site updates free */
+  function syncName(){
+    const A=ADV_DEFS[S.cls]; if(!A) return;
+    if(!A.name0) A.name0=A.name;               /* preserve tier-1 name */
+    const t=tier();
+    if(t>=2){ const d=tierDef(S.cls,t); A.name=d.name; A.icon=d.icon; }
+    else { A.name=A.name0; }
+  }
+  /* migration + late-load sync (S loads after module parse) */
+  setInterval(()=>{ try{
+    if(S.adv&&!S.advT) S.advT=1;
+    syncName();
+  }catch(e){} },2000);
+
+  /* ---------- stats: tiers 2..4 stack on top of tier 1 ---------- */
+  const _cs=computeStats;
+  computeStats=function(){
+    _cs.apply(this,arguments);
+    const t=tier(); if(t<2||!ADV_TIERS[S.cls]) return;
+    const st={atkM:1,hpM:1,defM:1,spdM:1,critCh:0,critDmg:0,ls:0,cdr:0};
+    for(let k=2;k<=t;k++){ const d=tierDef(S.cls,k); if(d&&d.apply) d.apply(st); }
+    P.atk=Math.round(P.atk*st.atkM);
+    P.maxHp=Math.round(P.maxHp*st.hpM);
+    P.def=Math.round(P.def*st.defM);
+    P.spd*=st.spdM;
+    P.critCh=Math.min(85,P.critCh+st.critCh);
+    P.critDmg+=st.critDmg;
+    P.lifesteal=Math.min(40,P.lifesteal+st.ls);
+    P.cdr=Math.min(65,P.cdr+st.cdr);
+    if(S.hp>P.maxHp) S.hp=P.maxHp;
+  };
+
+  /* ---------- ritual overlay (Bible: advancement as EVENT) ---------- */
+  const ov=document.createElement('div');
+  ov.id='adv-ritual';
+  ov.innerHTML='<div class="ar-glow"></div><div class="ar-rune"></div><div class="ar-sub"></div><div class="ar-name"></div><div class="ar-perk"></div>';
+  document.body.appendChild(ov);
+  const GLYPHS=['ᜀ','ᜊ','ᜃ','ᜄ','ᜎ','ᜋ','ᜉ','ᜐ','ᜆ'];
+  function playRitual(d,done){
+    const aura=(typeof CLASS_AURA!=='undefined'&&CLASS_AURA[S.cls])?CLASS_AURA[S.cls].c:'rgba(255,217,74,.3)';
+    ov.querySelector('.ar-glow').style.background='radial-gradient(circle at 50% 55%,'+aura+' 0%,transparent 60%)';
+    ov.querySelector('.ar-rune').textContent=GLYPHS[Math.floor(Math.random()*GLYPHS.length)];
+    ov.querySelector('.ar-sub').textContent='TINATAWAG KA NG MGA NINUNO…';
+    ov.querySelector('.ar-name').textContent=d.icon+' '+d.name;
+    ov.querySelector('.ar-perk').textContent='✦ '+d.perk;
+    ov.classList.add('show');
+    SFX.levelup();
+    setTimeout(()=>{ screenShake(0.5,0.8); fxRing(player.x,player.z,0xffd94a,0.5,10,1.2); fxRing(player.x,player.z,0x7df0ff,0.3,7,1.0); },900);
+    setTimeout(()=>{ ov.classList.remove('show'); done&&done(); },2600);
+  }
+
+  /* ---------- the new ceremony window (replaces openAdvance) ---------- */
+  openAdvance=function(){
+    const cls=S.cls; if(!ADV_DEFS[cls]) return;
+    syncName();
+    const t=tier(), next=t+1;
+    const ladderHTML=[1,2,3,4].map(k=>{
+      const d=tierDef(cls,k); if(!d) return '';
+      const got=t>=k, now=next===k;
+      return `<div class="ar-step ${got?'got':now?'now':'lock'}">
+        <b>${got?'✓':TIER_LVL[k]}</b>
+        <div><span>${d.icon} ${d.name}</span><i>${d.perk}</i>${d.lore&&(got||now)?`<p>${d.lore}</p>`:''}</div>
+      </div>`;}).join('');
+    if(next>4){
+      showModal(`<div class="modal-emoji">${tierDef(cls,4).icon}</div>
+        <div class="modal-title">ANG RUROK NG LANDAS</div>
+        <p style="text-align:center;color:#bfb6d2">Narating mo na ang tuktok, <b style="color:#ffd94a">${tierDef(cls,4).name}</b>. Ang mga bathala mismo ay yumuyuko.</p>
+        <div class="ar-ladder">${ladderHTML}</div>
+        <button class="modal-btn" onclick="closeModal()">🙏</button>`);
+      return;
+    }
+    const needLvl=TIER_LVL[next];
+    const d=tierDef(cls,next);
+    /* tier 1 keeps its legacy cost; 2..4 use TIER_COSTS */
+    const cost=next===1?{gold:ADV_COST.gold,mats:{anito_dust:ADV_COST.anito_dust}}:TIER_COSTS[next];
+    const lvlOk=S.level>=needLvl;
+    const matOk=Object.entries(cost.mats).every(([m,q])=>(S.inv[m]||0)>=q);
+    const can=lvlOk&&S.gold>=cost.gold&&matOk;
+    const costTxt='🪙 '+fmt(cost.gold)+' + '+Object.entries(cost.mats).map(([m,q])=>`${MATERIALS[m].icon} ${MATERIALS[m].name} ×${q}`).join(' + ');
+    const haveTxt='🪙'+fmt(S.gold)+' · '+Object.entries(cost.mats).map(([m,q])=>`${MATERIALS[m].icon}${S.inv[m]||0}/${q}`).join(' · ');
+    showModal(`<div class="modal-emoji">${d.icon}</div>
+      <div class="modal-title">SEREMONYA NG PAG-ANGAT ${['','I','II','III','IV'][next]}</div>
+      <div class="ar-ladder">${ladderHTML}</div>
+      ${lvlOk
+        ?`<p style="text-align:center;font-size:12px;color:#bfb6d2">Handa ka na. Ang susunod na anyo mo:<br>
+           <span style="font-size:18px;color:#ffd94a;font-weight:800">${d.icon} ${d.name}</span><br>
+           <span style="color:#7dffce;font-size:12px">✦ ${d.perk}</span></p>
+          <p style="text-align:center;font-size:11px"><b>Alay:</b> ${costTxt}<br>
+           <span style="color:${can?'#8aff9a':'#ff8a8a'}">(Mayroon ka: ${haveTxt})</span></p>`
+        :`<p style="text-align:center;font-size:12px;color:#8a80a2">Kailangan mong maging <b style="color:#ffd94a">Level ${needLvl}</b> para sa susunod na ritwal.<br>(Ngayon: Lv ${S.level})</p>`}
+      ${can?'<button class="modal-btn" id="adv-go2">🌟 TANGGAPIN ANG TAWAG</button>'
+          :lvlOk?'<button class="modal-btn" disabled style="opacity:.4">Kulang ang alay…</button>':''}
+      <button class="modal-btn secondary" onclick="closeModal()">Mamaya na</button>`);
+    const b=$('adv-go2');
+    if(b) b.onclick=()=>{
+      if(S.level<needLvl||S.gold<cost.gold) return;
+      if(!Object.entries(cost.mats).every(([m,q])=>(S.inv[m]||0)>=q)) return;
+      S.gold-=cost.gold;
+      for(const [m,q] of Object.entries(cost.mats)){ S.inv[m]-=q; if(S.inv[m]<=0) delete S.inv[m]; }
+      closeModal();
+      playRitual(d,()=>{
+        S.advT=next; if(next>=1) S.adv=true;
+        syncName();
+        computeStats(); S.hp=P.maxHp;
+        for(let i=0;i<10;i++) setTimeout(()=>fxPuff(player.x+rnd(-2,2),groundY(player.x,player.z)+rnd(0.5,4),player.z+rnd(-2,2),0xffd94a,0.5,0.5),i*90);
+        toast(`${d.icon} <b>IKAW NA SI ${d.name.toUpperCase()}!</b> ${d.perk}`,'levelup');
+        if(window._chatSys) window._chatSys(`${d.icon} Umangat bilang ${d.name}! (Ritwal ${['','I','II','III','IV'][next]})`,'xp');
+        achEvent('adv',1);
+        refreshHudClass(); updateHUD(); save();
+      });
+    };
+  };
+  window.openAdvance=openAdvance;
+  /* rebind the 🌟 button (old onclick captured the old closure) */
+  const ab=document.getElementById('btn-advance');
+  if(ab) ab.onclick=()=>openAdvance();
+  /* show 🌟 whenever ANY next ritual is level-eligible (overrides legacy interval — registered later, wins the tick) */
+  setInterval(()=>{
+    if(!ab) return;
+    const t=tier();
+    const show=started&&S.cls&&t<4&&S.level>=TIER_LVL[t+1];
+    ab.style.display=show?'':'none';
+    const em=ab.querySelector('.badge');
+    if(show&&!em){ const e=document.createElement('em'); e.className='badge'; e.textContent='!'; ab.appendChild(e); }
+    if(!show&&em) em.remove();
+  },3000);
+
+  /* ---------- achievements ---------- */
+  ACH_DEFS.push(
+    {id:'adv2', icon:'🌟', name:'Ikalawang Anyo',  desc:'Tapusin ang Ritwal II (Lv40)', chk:()=>(S.advT||0)>=2, rw:{gold:8000}},
+    {id:'adv3', icon:'💫', name:'Ikatlong Anyo',   desc:'Tapusin ang Ritwal III (Lv60)',chk:()=>(S.advT||0)>=3, rw:{gold:25000}},
+    {id:'adv4', icon:'☀️', name:'Rurok ng Landas', desc:'Tapusin ang Ritwal IV (Lv80)', chk:()=>(S.advT||0)>=4, rw:{gold:100000}, title:'Hinirang ng mga Bathala'},
   );
 })();

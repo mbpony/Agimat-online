@@ -1,4 +1,14 @@
 # CHANGELOG
+## 2026-09-08 — Ang Apat na Pag-angat: 4-tier advancement rituals (Lv20/40/60/80)
+- **LEVEL_CAP 70 → 80** (Lv80 = final ritual). UNLOCKS notes for 40/60/80 updated.
+- **4-tier ladders for all 9 classes**, rooted in real Philippine mythology: epic heroes (Lam-ang, Aliguyon of the Hudhud, Bantugan of the Darangen, Bernardo Carpio), deities (Apolaki, Mayari, Sidapa, Lakapati, Kanlaon, Anitun Tabu, Dumakulem, Bathala), Sitan's agents (Mangagaway, Hukluban), authentic titles (Mumbaki = Ifugao ritual priest, Punong Guro = arnis grandmaster rank, Lakan = precolonial ruler, Tigbanua of Bagobo lore).
+- **Ritual as EVENT** (Game Bible): full-screen ceremony overlay — class-colored aura, pulsing Baybayin rune, "TINATAWAG KA NG MGA NINUNO…", name reveal, ring FX + shake, then rewards toast.
+- **Ceremony window** shows the whole ladder (✓ done / ★ current / 🔒 future) with lore lines; peak screen "ANG RUROK NG LANDAS" at T4.
+- **Costs**: T2 15k gold+40 Anito Dust+5 Nuno Stone · T3 60k+60 Diwata Dew+3 Mutya · T4 200k+10 Mutya+40 Santelmo Flame (T1 unchanged 3k+10 dust).
+- **Stats stack multiplicatively across tiers** on top of T1 ADV_DEFS perks (caps raised: crit 85, LS 40, CDR 65). Tier-1 internal names/IDs never touched; display name syncs via ADV_DEFS.name mutation so all existing UI sites (HUD, inventory, skill tree, profile) update for free.
+- **Save additive**: S.advT (0–4), migration S.adv===true→1 via poll. 🌟 button now appears at every eligible gate. Achievements: Ritwal II/III/IV (8k/25k/100k gold; T4 grants title "Hinirang ng mga Bathala").
+- Scope-gate lint clean; headless 11/11 core + guard tests. SW → agimat-v10.
+
 ## 2026-09-08 — Ang Kodise ng Agimat (Game Bible feature #1)
 - **Living encyclopedia w/ progressive reveal**: 10 categories — 🐉 Halimaw · 🪨 Materyales · 🎣 Isda · 🍲 Lutuin · 🐾 Alaga · ᜀ Baybayin Runes · 🗺️ Lupain · 🧙 Uri ng Bayani · ✨ Diwa at Agimat · ⚔️ Alamat na Kagamitan. Locked entries = ❓ ??? + discovery hint (names never leaked); unlocked entries show lore + live stats (kill counts, owned quantities, pet levels).
 - **Discovery**: derives from EXISTING save state (bestiary/inv/pets/gear — retroactive for veterans) + new S.codexSeen (additive) for zones (visit toast "naitala ang lupain"), dishes (cook), fish (catch).

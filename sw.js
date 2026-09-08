@@ -2,7 +2,7 @@
    v2: core files precached; the index.html fallback applies ONLY to page
    navigations (v1 wrongly served index.html for failed game.js fetches,
    which broke launches while the Render free instance was waking up). */
-const VERSION = 'agimat-v9';
+const VERSION = 'agimat-v10';
 const PRECACHE = ['/', '/index.html', '/style.css', '/game.js', '/three.module.min.js',
   '/manifest.webmanifest', '/img/icons/icon-192.png', '/img/icons/icon-512.png'];
 
