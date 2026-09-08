@@ -8871,6 +8871,7 @@ window.openCooking=openCooking;
 /* food buff chip */
 (function foodChip(){
   const c=document.createElement('div');
+  c.id='food-chip';
   c.style.cssText='position:fixed;top:34px;left:calc(50% + 110px);z-index:40;background:rgba(20,14,34,.72);border:1px solid rgba(255,184,74,.4);color:#ffd94a;font:700 10px system-ui;padding:3px 9px;border-radius:999px;backdrop-filter:blur(6px);pointer-events:none;display:none';
   document.body.appendChild(c);
   setInterval(()=>{
@@ -12457,4 +12458,52 @@ CATALOG.push(
   };
   window.openPets=openPets;
   const pb=document.getElementById('btn-pets'); if(pb) pb.onclick=()=>openPets();
+})();
+
+/* ================================================================
+   🧭 HUD REGIONS REBUILD (master-fix §2) — responsive regions
+   instead of fragile absolute offsets.
+     TOP-LEFT   avatar·name·level·HP·XP·gold   (existing .hud-left)
+     TOP-CENTER channel·players·time·buffs·location  (NEW #hud-center)
+     TOP-RIGHT  ☰ menu                        (existing .hud-right)
+     LEFT-MID   quest tracker · BOTTOM-LEFT joystick ·
+     BOTTOM-CENTER chat · RIGHT combat cluster  (all existing)
+   The 4 status chips were pinned at 50%±Npx fixed offsets and
+   collided on narrow screens + toast stack. They are ADOPTED into
+   the flex region (logic untouched — same elements, same timers).
+   ================================================================ */
+(function hudRegions(){
+  const hud=document.getElementById('hud'); if(!hud) return;
+  const right=hud.querySelector('.hud-right');
+  const center=document.createElement('div');
+  center.id='hud-center';
+  hud.insertBefore(center,right);
+
+  /* 📍 location chip (spec: current location in top-center) */
+  const loc=document.createElement('div');
+  loc.id='loc-chip'; loc.className='hc-adopt';
+  loc.style.cssText='background:rgba(20,14,34,.72);border:1px solid rgba(255,217,122,.35);color:#f0d58c;font:700 11px system-ui;padding:4px 10px;border-radius:999px;backdrop-filter:blur(6px);pointer-events:none;display:none';
+  center.appendChild(loc);
+  setInterval(()=>{
+    if(!started){ loc.style.display='none'; return; }
+    const t=document.getElementById('mm-title');
+    if(t&&t.textContent){ loc.textContent='📍 '+t.textContent; loc.style.display='block'; }
+  },1500);
+
+  /* adopt the status chips into the region (order = display order) */
+  const ADOPT=['dn-chip','party-pill','party-buff-chip','food-chip'];
+  function adopt(){
+    for(const id of ADOPT){
+      const el=document.getElementById(id);
+      if(el&&el.parentElement!==center){
+        el.classList.add('hc-adopt');
+        el.style.position='static'; el.style.transform='none';
+        el.style.left='auto'; el.style.top='auto'; el.style.right='auto';
+        center.appendChild(el);
+      }
+    }
+  }
+  adopt();
+  setInterval(adopt,3000);   // chips created by later modules get pulled in too
+  window._hudCenter=center;
 })();

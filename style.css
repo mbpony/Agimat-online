@@ -1557,3 +1557,43 @@ body{background:var(--bg);color:var(--text);font-family:var(--ff);overflow:hidde
   .alg-list{ flex-basis:128px; }
   #pet3d{ height:118px; }
 }
+
+/* ================================================================
+   🧭 HUD REGIONS (master-fix §2) — 3-region top bar, safe-area aware
+   ================================================================ */
+#hud{
+  display:grid;
+  grid-template-columns:minmax(0,auto) minmax(0,1fr) auto;
+  align-items:start; gap:8px;
+  padding:calc(8px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-right))
+          20px calc(10px + env(safe-area-inset-left));
+}
+#hud-center{
+  display:flex; flex-wrap:wrap; gap:5px; justify-content:center; align-items:flex-start;
+  min-width:0; pointer-events:none; padding-top:2px;
+}
+#hud-center .hc-adopt{ position:static !important; transform:none !important; flex:none; }
+
+/* toast stack clears the center chips */
+#toast-stack{ top:calc(96px + env(safe-area-inset-top)); }
+
+/* ---- responsive: tighten as width drops ---- */
+@media (max-width:900px){
+  #hud-center .hc-adopt{ font-size:10px !important; padding:3px 8px !important; }
+}
+@media (max-width:640px){
+  .hud-stats{ width:min(40vw,190px); }
+  #hud-center{ gap:4px; }
+  #loc-chip{ display:none !important; }        /* minimap title covers location */
+}
+/* mobile portrait: center region tucks under the hero plate, left-aligned */
+@media (pointer:coarse) and (orientation:portrait){
+  #hud{ grid-template-columns:minmax(0,1fr) auto; }
+  #hud-center{ grid-column:1 / -1; order:3; justify-content:flex-start; }
+}
+/* short landscape phones: single row, chips shrink hard */
+@media (pointer:coarse) and (orientation:landscape) and (max-height:540px){
+  #hud{ padding-top:calc(4px + env(safe-area-inset-top)); }
+  #hud-center .hc-adopt{ font-size:9px !important; padding:2px 7px !important; }
+  #toast-stack{ top:calc(64px + env(safe-area-inset-top)); }
+}

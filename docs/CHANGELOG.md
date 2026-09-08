@@ -1,4 +1,12 @@
 # CHANGELOG
+## 2026-09-08 — HUD regions rebuild (master-fix §2)
+- **#hud → 3-region responsive grid**: TOP-LEFT hero plate (avatar/name/level/HP/XP/gold) · TOP-CENTER new #hud-center flex region · TOP-RIGHT ☰ menu. Safe-area padding on all four edges.
+- **Status chips adopted, not rebuilt**: dn-chip (day/night), party-pill (channel/players), party-buff-chip, food-chip were 4 independent `position:fixed; left:calc(50%±Npx)` elements that collided on narrow screens and under the toast stack. hudRegions() adopts them into #hud-center (positioning stripped, timers/logic untouched); a 3s sweep also catches chips created later.
+- **New 📍 location chip** in top-center (mirrors minimap zone title; auto-hides ≤640px where the minimap already shows it).
+- **Toast stack moved below the chip row** (was overlapping party/time pills).
+- **Breakpoints**: ≤900px chips shrink · ≤640px tighter hero plate · coarse+portrait: center region wraps to its own row, left-aligned · coarse+landscape ≤540px: hard squeeze + tighter toasts. Existing Sprint-5 mobile top-strip rules (minimap-left layout) preserved — grid overrides only the top-level container.
+- Headless: 10/10 static checks + 5/5 adoption-logic tests. SW → agimat-v6.
+
 ## 2026-09-08 — Alaga v2: companion system upgrade (master-fix §9)
 - **New window**: tabs (🐾 Alaga / 🐃 Sasakyan / 📚 Koleksyon), companion list with rarity colors + lock/AKTIBO states, rotating 3D preview canvas, detail card, favorite ⭐ toggle. Mobile layout ≤480px.
 - **Progression**: active pet earns XP from your kills (common 4 / elite 8 / boss 40), levels 1→30 (need 30·lvl^1.6), +1 bond per 20 shared kills. Bond tiers: Bagong Kakilala → Magkasundo → Matalik → Kadugo, each grants +1% Drop Rate AND +1% XP Gain.
