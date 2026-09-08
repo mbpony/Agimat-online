@@ -1,4 +1,10 @@
 # CHANGELOG
+## 2026-09-08 — Filipino class tints + Mangkukulam chibi swap (chibi update #2)
+- **classTints module**: registry heroes.<cls>.tint {hue,sat,bri} → runtime canvas filter over the KayKit atlas → CanvasTexture cached per class; materials cloned per hero (no cross-class leak). Non-fatal fallback keeps original texture.
+- **Identities**: Babaylan pula't-ginto ritual red · Alim teal elemental · Mangkukulam DARK WITCH (desaturated near-black violet) · Mandirigma war-red Knight · Arnisador crimson Barbarian · Panday ash/coal forge · Tirador earth/sand Rogue · Mamamana forest-green Rogue · Anino shadow-violet hooded.
+- **Mangkukulam model replaced**: placeholder artist GLB → tinted KayKit Mage (caster anims now work for her too); old file kept on disk, unreferenced.
+- Scope-gate lint clean; headless 7/7 PASS (tint application, filter strings, per-class cache, leak isolation, no-tint and procedural fallbacks). SW → agimat-v16.
+
 ## 2026-09-08 — Chibi enemies: KayKit Skeletons (CC0) + enemy GLB animation engine
 - **Assets**: KayKit Character Pack Skeletons 1.0 (CC0, LICENSE.txt shipped) from official GitHub — 4 rigged models (~4.6-5.9k tris, 95 anims each incl. skeleton-specific Awaken/Resurrect clips), embedded textures.
 - **Enemy mapping (registry)**: duwende→Skeleton_Minion (pack skirmisher) · nuno→Skeleton_Mage (caster) · aswang→Skeleton_Rogue (night predator) · bungisngis→Skeleton_Warrior (isla brute). Other 8 enemies stay procedural until later packs. Height honors 2.2×def.scale.

@@ -11101,7 +11101,7 @@ setInterval(()=>{
 /* hero GLB — the artist-made Mangkukulam model.
    Path comes from data/models/registry.json; this line is only the
    fallback for when the registry fetch failed. */
-if(!MODELS.hero.mangkukulam) MODELS.hero.mangkukulam='assets/characters/base/mangkukulam.glb';
+if(!MODELS.hero.mangkukulam) MODELS.hero.mangkukulam='assets/characters/kaykit/Mage.glb';   /* chibi update: witch recolor of the Mage */
 loadGLB(MODELS.hero.mangkukulam).then(()=>{
   /* refresh mesh if the player is already a Mangkukulam */
   if(S.cls==='mangkukulam'&&started&&player.mesh){
@@ -13433,4 +13433,56 @@ CATALOG.push(
   if(urls.length) Promise.all(urls.map(u=>loadGLB(u).catch(()=>null))).then(cs=>{
     console.log('[chibi] enemy models loaded:',cs.filter(Boolean).length+'/'+urls.length);
   });
+})();
+
+/* ================================================================
+   🎨 FILIPINO CLASS TINTS (chibi update #2) — classes that share a
+   KayKit model get distinct identities via runtime texture tinting.
+   registry heroes.<cls>.tint = {hue°, sat, bri} → canvas filter
+   (hue-rotate/saturate/brightness) over the atlas → CanvasTexture,
+   cached per class. Materials are cloned per hero so tints never
+   leak across classes. Mangkukulam = dark-witch Mage recolor
+   (replaces the old placeholder GLB). Non-fatal: any canvas failure
+   keeps the original texture.
+   ================================================================ */
+(function classTints(){
+  const REG=(GAME_DATA.models&&GAME_DATA.models.heroes)||{};
+  const cache={};   // cls -> THREE.CanvasTexture
+  function tintedTexture(cls, srcTex){
+    if(cache[cls]) return cache[cls];
+    const t=REG[cls]&&REG[cls].tint;
+    if(!t||!srcTex||!srcTex.image) return null;
+    try{
+      const img=srcTex.image;
+      const cv=document.createElement('canvas');
+      cv.width=img.width||1024; cv.height=img.height||1024;
+      const ctx=cv.getContext('2d');
+      ctx.filter=`hue-rotate(${t.hue||0}deg) saturate(${(t.sat??1)*100}%) brightness(${(t.bri??1)*100}%)`;
+      ctx.drawImage(img,0,0);
+      const tex=new THREE.CanvasTexture(cv);
+      tex.flipY=srcTex.flipY; tex.colorSpace=srcTex.colorSpace||THREE.SRGBColorSpace;
+      tex.wrapS=srcTex.wrapS; tex.wrapT=srcTex.wrapT;
+      tex.magFilter=srcTex.magFilter; tex.minFilter=srcTex.minFilter;
+      cache[cls]=tex;
+      return tex;
+    }catch(e){ return null; }
+  }
+  const _bh3=buildHero;
+  buildHero=function(cls, appOverride){
+    const g=_bh3.apply(this,arguments);
+    if(!g||!g.userData||!g.userData.glb) return g;      // procedural: untouched
+    try{
+      g.traverse(o=>{
+        if(!o.isMesh||!o.material) return;
+        const mats=Array.isArray(o.material)?o.material:[o.material];
+        const out=mats.map(m0=>{
+          const tex=tintedTexture(cls,m0.map);
+          if(!tex) return m0;
+          const m2=m0.clone(); m2.map=tex; return m2;
+        });
+        o.material=Array.isArray(o.material)?out:out[0];
+      });
+    }catch(e){}
+    return g;
+  };
 })();
