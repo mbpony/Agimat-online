@@ -1,4 +1,12 @@
 # CHANGELOG
+## 2026-09-08 — Visual cohesion pass (master-fix §16/§17)
+- **Design tokens in :root**: radius scale (--r-xs 6 / sm 9 / md 12 / lg 16 / xl 22), shadow scale (--shadow-1/2/3), focus ring (--ring), rarity colors completed (--epic, --legendary), display typeface tokenized (--ff-display = Georgia, branding only — logo/tagline/quote; all UI on --ff).
+- **Standardization layer at EOF** (wins cascade): typography scale unified; border-radius mapped to tokens across modal/npcw/alaga/inventory/menu components; rarity text+glow single source; button states (hover brightness, :focus-visible ring, disabled 45%+grayscale, tap-highlight cleanup); glow budget trimmed (skill-ready/autoforage/autobattle halos reduced ~40%, autobattle pulse anim removed); one scrollbar style everywhere; modal/panel spacing rhythm (6·8·12·16).
+- **§17 desktop enhancement (not scale-up)**: ≥1200px+fine pointer → wider modals/panels/menu/NPC window, larger pet preview + inventory cells, wider chat, button hover lift; ≥1500px → larger quest tracker + minimap.
+- **Close controls unified**: .close-panel/.mm-x/#npcw-x one rounded-square shape + hover/active states.
+- **prefers-reduced-motion** honored globally.
+- CSS brace-balance verified 840/840; 14/14 static checks. SW → agimat-v7.
+
 ## 2026-09-08 — HUD regions rebuild (master-fix §2)
 - **#hud → 3-region responsive grid**: TOP-LEFT hero plate (avatar/name/level/HP/XP/gold) · TOP-CENTER new #hud-center flex region · TOP-RIGHT ☰ menu. Safe-area padding on all four edges.
 - **Status chips adopted, not rebuilt**: dn-chip (day/night), party-pill (channel/players), party-buff-chip, food-chip were 4 independent `position:fixed; left:calc(50%±Npx)` elements that collided on narrow screens and under the toast stack. hudRegions() adopts them into #hud-center (positioning stripped, timers/logic untouched); a 3s sweep also catches chips created later.

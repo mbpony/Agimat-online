@@ -23,6 +23,19 @@
   --weave: repeating-linear-gradient(45deg, rgba(242,177,52,.05) 0 6px, transparent 6px 12px);
   --gborder: linear-gradient(135deg,#f2b134 0%,#8a5a10 30%,#f2b134 50%,#8a5a10 75%,#f2b134 100%);
   --ff:'Segoe UI', system-ui, -apple-system, sans-serif;
+  --ff-display:Georgia,'Times New Roman',serif; /* branding/display ONLY (logo, screen titles) */
+  /* ==== §16 DESIGN TOKENS (cohesion pass) ==== */
+  --epic:#c08aff;
+  --legendary:#ffb84a;
+  --r-xs:6px;   /* chips, tags */
+  --r-sm:9px;   /* small buttons, cells */
+  --r-md:12px;  /* buttons, cards, inputs */
+  --r-lg:16px;  /* cards/windows */
+  --r-xl:22px;  /* modals, sheets */
+  --ring:0 0 0 2px rgba(255,217,122,.65), 0 0 12px rgba(242,177,52,.35);
+  --shadow-1:0 4px 12px rgba(0,0,0,.45);
+  --shadow-2:0 8px 28px rgba(0,0,0,.55);
+  --shadow-3:0 20px 60px rgba(0,0,0,.7);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 html,body{height:100%;overscroll-behavior:none}
@@ -421,7 +434,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--ff);overflow:hidde
 }
 @keyframes wsGlow{0%,100%{opacity:.6;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.12)}}
 .ws-logo{
-  font-family:Georgia,serif;font-size:clamp(34px,8vw,64px);font-weight:900;letter-spacing:4px;
+  font-family:var(--ff-display);font-size:clamp(34px,8vw,64px);font-weight:900;letter-spacing:4px;
   color:var(--gold-hi);text-shadow:0 0 28px rgba(242,177,52,.55), 0 4px 0 rgba(0,0,0,.4);
 }
 .ws-logo span{color:#e8ddc8}
@@ -452,7 +465,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--ff);overflow:hidde
 }
 .cc2-inner{width:min(880px,96vw);padding:18px 10px}
 .cc2-title{
-  text-align:center;font-family:Georgia,serif;font-size:clamp(20px,4.6vw,32px);font-weight:900;
+  text-align:center;font-family:var(--ff-display);font-size:clamp(20px,4.6vw,32px);font-weight:900;
   color:var(--gold-hi);text-shadow:0 0 18px rgba(242,177,52,.4);margin-bottom:14px;
 }
 .cc2-cols{display:flex;gap:16px;align-items:flex-start}
@@ -1046,7 +1059,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--ff);overflow:hidde
 .ws-left .ws-sub{ margin:18px 0 20px; text-align:left; text-shadow:0 2px 8px rgba(0,0,0,.8); }
 .ws-words{ display:flex; flex-direction:column; gap:6px; margin:6px 0 26px; }
 .ws-words span{
-  font-family:Georgia,serif; font-size:clamp(13px,1.8vw,18px); letter-spacing:5px; color:#d9c9a8;
+  font-family:var(--ff-display); font-size:clamp(13px,1.8vw,18px); letter-spacing:5px; color:#d9c9a8;
   text-shadow:0 0 14px rgba(242,177,52,.35), 0 2px 6px rgba(0,0,0,.9); opacity:0;
   animation:wsWord .8s ease forwards;
 }
@@ -1081,7 +1094,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--ff);overflow:hidde
   background:linear-gradient(180deg,#ffd97a,#f2b134 55%,#c8901a); color:#241a06; border:1.5px solid #ffe9b4;
   box-shadow:0 0 18px rgba(242,177,52,.35), 0 4px 0 #a87816; cursor:pointer; font-weight:900; }
 .acct-btn.big:active{ transform:translateY(2px); box-shadow:0 0 12px rgba(242,177,52,.3), 0 1px 0 #a87816; }
-.ws-quote{ margin-top:12px; text-align:center; font-family:Georgia,serif; font-style:italic;
+.ws-quote{ margin-top:12px; text-align:center; font-family:var(--ff-display); font-style:italic;
   font-size:11.5px; color:#a08cc8; line-height:1.6; }
 #welcome-screen .ws-credits{ position:absolute; bottom:10px; left:0; right:0; text-align:center; z-index:2; }
 #welcome-screen .ws-start{ animation:wsPulse 2.2s ease-in-out infinite; }
@@ -1201,7 +1214,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--ff);overflow:hidde
 }
 @keyframes cineGlyph{0%{opacity:0;transform:scale(.7)}35%{opacity:1;transform:scale(1.06)}100%{opacity:.85;transform:scale(1)}}
 .cine-title{
-  margin-top:18px; font-family:Georgia,serif; font-weight:900; letter-spacing:6px;
+  margin-top:18px; font-family:var(--ff-display); font-weight:900; letter-spacing:6px;
   font-size:clamp(18px,4.4vw,34px); color:#ffe9b4; opacity:0;
   text-shadow:0 0 30px rgba(242,177,52,.6); animation:cineTitle 1.6s ease .8s forwards;
 }
@@ -1597,3 +1610,100 @@ body{background:var(--bg);color:var(--text);font-family:var(--ff);overflow:hidde
   #hud-center .hc-adopt{ font-size:9px !important; padding:2px 7px !important; }
   #toast-stack{ top:calc(64px + env(safe-area-inset-top)); }
 }
+
+/* ================================================================
+   🎨 §16/§17 VISUAL COHESION PASS — one design language everywhere.
+   Appended at EOF so these standardizations win the cascade.
+   Tokens live in :root (--r-*, --shadow-*, --ring, rarity colors).
+   ================================================================ */
+
+/* ---- 1 · TYPOGRAPHY SCALE ------------------------------------
+   Display 20 · Title 15 · Body 13 · Sub 11 · Caption 10.
+   Two faces only: --ff (UI) + --ff-display (branding moments). */
+body,button,input,textarea,select{ font-family:var(--ff); }
+h2,h3,h4{ font-family:var(--ff); letter-spacing:.4px; }
+.modal-title{ font-size:20px; }
+#modal-box h3, .panel-head h2, .i2-card h4{ color:var(--gold-hi); font-weight:900; }
+#modal-box h3{ font-size:15px; margin:6px 0; }
+.screen-sub, .ic-sub, .gs-sub, .i2-dsub{ line-height:1.45; }
+
+/* ---- 2 · RADIUS SCALE ------------------------------------------ */
+.modal-btn, .npcw-btn, .alg-tab, .i2-btn, .ws-start{ border-radius:var(--r-md); }
+.mini-btn, .i2-cell, .alg-card, .reward-chip{ border-radius:var(--r-sm); }
+#modal-box{ border-radius:var(--r-xl); }
+.item-card, .fr-row, .npcw-quest, .i2-card, .mm-win{ border-radius:var(--r-lg); }
+.sock, .ch-tag, .lvl-badge, .gold-badge{ border-radius:var(--r-xs); }
+
+/* ---- 3 · RARITY SYSTEM — single source of truth ----------------
+   Text, borders and glows all derive from the same 5 hues.        */
+.rc-common{ color:#c9d4d9; }
+.rc-uncommon{ color:var(--uncommon); }
+.rc-rare{ color:#6fa8ff; }
+.rc-epic{ color:var(--epic); }
+.rc-legendary{ color:var(--legendary); }
+.item-card.rc-epic, .i2-cell.rc-epic{ box-shadow:0 0 10px rgba(192,138,255,.14); }
+.item-card.rc-legendary, .i2-cell.rc-legendary{ box-shadow:0 0 12px rgba(255,184,74,.2); }
+
+/* ---- 4 · BUTTON STATES (hover/focus/active/disabled) ----------- */
+.modal-btn:hover, .mini-btn:hover, .npcw-btn:hover, .alg-tab:hover,
+.i2-btn:hover, .menu-btn:hover{ filter:brightness(1.08); }
+.modal-btn:disabled, .mini-btn:disabled, .npcw-btn:disabled{
+  opacity:.45; filter:grayscale(.4); cursor:not-allowed; transform:none; box-shadow:none;
+}
+:is(button,input,select,textarea):focus-visible{ outline:none; box-shadow:var(--ring); }
+.modal-btn, .mini-btn, .npcw-btn, .alg-tab, .i2-nav, .menu-btn, .ctl-btn{
+  -webkit-tap-highlight-color:transparent; user-select:none;
+}
+
+/* ---- 5 · GLOW BUDGET — trim the loudest effects (§16 'avoid
+   excessive glow'); combat readability + mobile GPU relief ------- */
+.ctl-btn.skill.ready{ box-shadow:0 0 10px rgba(163,150,224,.55), 0 6px 16px rgba(0,0,0,.5), inset 0 2px 4px rgba(255,255,255,.25); }
+.ctl-btn.autoforage.on{ box-shadow:0 0 12px rgba(138,111,240,.7), 0 6px 16px rgba(0,0,0,.5); }
+.ctl-btn.autobattle.on{ box-shadow:0 0 12px rgba(255,138,58,.7), 0 6px 16px rgba(0,0,0,.5); animation:none; }
+
+/* ---- 6 · SCROLLBARS — one style everywhere --------------------- */
+*{ scrollbar-width:thin; scrollbar-color:rgba(242,177,52,.35) transparent; }
+::-webkit-scrollbar{ width:8px; height:8px; }
+::-webkit-scrollbar-thumb{ background:rgba(242,177,52,.3); border-radius:4px; }
+::-webkit-scrollbar-thumb:hover{ background:rgba(242,177,52,.5); }
+::-webkit-scrollbar-track{ background:transparent; }
+
+/* ---- 7 · SPACING RHYTHM in modals/panels (6·8·12·16) ------------ */
+#modal-box{ padding:20px 22px; }
+#modal-box p{ margin:8px 0; }
+.panel-body{ padding:12px 16px 20px; }
+.cat-title{ margin:12px 0 6px; letter-spacing:1.2px; }
+
+/* ---- 8 · §17 DESKTOP — enhance, don't scale-up ------------------ */
+@media (min-width:1200px) and (pointer:fine){
+  #modal-box{ max-width:520px; }
+  .panel{ max-width:900px; }
+  .mm-win{ max-width:720px; }
+  #npcw-card{ width:min(640px,80vw); }
+  .alg-list{ flex-basis:210px; }
+  #pet3d{ height:190px; }
+  .i2-grid{ grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); }
+  #chat-wrap{ width:min(500px,36vw); }
+  .modal-btn:hover{ transform:translateY(-1px); box-shadow:0 5px 0 #8a5a10; }
+  .modal-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #8a5a10; }
+}
+/* big desktop: quest tracker + minimap get room to breathe */
+@media (min-width:1500px) and (pointer:fine){
+  #quest-hud{ max-width:280px; }
+  #minimap-wrap{ transform:scale(1.12); transform-origin:top right; }
+}
+
+/* ---- 9 · MOTION SANITY ------------------------------------------ */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{ animation-duration:.01ms !important; transition-duration:.01ms !important; }
+}
+
+/* ---- 10 · CLOSE CONTROLS — one shape (rounded square, 36-44px) -- */
+.close-panel, .mm-x, #npcw-x, #mm-x{
+  border-radius:var(--r-sm); background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.16); color:#cbbfe0;
+  transition:background .15s, transform .1s;
+}
+.close-panel{ width:38px; height:38px; }
+.close-panel:hover, .mm-x:hover, #npcw-x:hover{ background:rgba(255,255,255,.14); color:#fff; }
+.close-panel:active, .mm-x:active, #npcw-x:active{ transform:scale(.92); }
