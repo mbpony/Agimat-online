@@ -1,4 +1,10 @@
 # CHANGELOG
+## 2026-09-08 — World props: KayKit environment packs (CC0) + zone-adopt fix
+- **Assets (<1MB total)**: Medieval Hexagon nature set (trees/rocks + atlas) → assets/world/nature/ · Dungeon Remastered picks (pillars, columns, lit torches, arch, banners, chests, crates, barrels) → assets/world/dungeon/. LICENSE.txt in both. Sourced from official KayKit GitHub.
+- **data/world-spec.json (35 entries)** — first real use of the existing worldSpec loader: portal shrines (pillar rings + torches at BOTH portal pads) · dungeon-gate arch w/ columns + red banners · Nuno Highlands stone shrine (4 pillars + torch + scattered rocks) · Balete deep-forest clusters · Kawayan grove accents · volcano rock fields · isla golden-chest landmark w/ torches · tiangge crates/barrels. Landmark coordinates from live code (PORTAL_TOWN/ISLE, DGN_GATE, TENT, zone map).
+- **Zone-adopt fix**: mapInstancing partitioned scene children only at boot — async world-spec props would have rendered in BOTH zones. New window._zoneAdopt(o) buckets late-added statics and detaches immediately when off-zone; worldSpec placement calls it per prop. Headless 4/4 (immediate detach, hop attach/detach both ways).
+- All 19 unique models verified over HTTP incl. gltf sidecars (bin/atlas). Scope-gate lint clean. SW → agimat-v18.
+
 ## 2026-09-08 — Weapon attachments (chibi update #3)
 - **KayKit Adventurers weapon set** (29 gltf models + bins/textures, 620KB) copied to assets/characters/kaykit/weapons/; .gltf URI references (bin + class texture PNGs) resolve natively from the same folder.
 - **weaponAttach module**: weapons snap to the rig's handslot.r (mainhand) / handslot.l (offhand) bones. Class flavor table: Mandirigma sword+badge shield · Arnisador sword+dagger · Panday axe+round shield · Anino dual daggers · Tirador crossbow · Mamamana 2H crossbow+quiver · Babaylan staff+open spellbook · Alim staff+closed book · Mangkukulam wand+smokebomb.

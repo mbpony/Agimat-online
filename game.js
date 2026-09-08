@@ -11057,6 +11057,7 @@ setInterval(()=>{
           inst.position.set(bx,groundY(bx,bz),bz);
           inst.rotation.y=(e.rot||0)+(n>1?rnd(0,6.28):0);
           scene.add(inst); placed++;
+          if(window._zoneAdopt) window._zoneAdopt(inst);   // map-instancing bucket
           if(e.collideR) bldRects.push({x0:bx-e.collideR,x1:bx+e.collideR,z0:bz-e.collideR,z1:bz+e.collideR});
         }
       }
@@ -12225,6 +12226,13 @@ CATALOG.push(
   }
   window._zoneActive=()=>active;
   window._zoneDebug=()=>({active,mainland:buckets.mainland.length,isla:buckets.isla.length});
+  /* late-added statics (world-spec props etc.) must join a bucket, or they
+     would render in BOTH zones */
+  window._zoneAdopt=(o)=>{
+    const zone=o.position.x>=SPLIT?'isla':'mainland';
+    buckets[zone].push(o);
+    if(active&&zone!==active) scene.remove(o);
+  };
 
   /* boot: activate wherever the player stands */
   doSwitch(player.x>=SPLIT?'isla':'mainland',true);

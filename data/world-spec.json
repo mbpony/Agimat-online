@@ -1,0 +1,251 @@
+[
+ {
+  "model": "assets/world/dungeon/pillar_decorated.gltf.glb",
+  "tx": 70.2,
+  "ty": 42.6,
+  "height": 3.2,
+  "collideR": 0.7
+ },
+ {
+  "model": "assets/world/dungeon/pillar_decorated.gltf.glb",
+  "tx": 72.8,
+  "ty": 42.6,
+  "height": 3.2,
+  "collideR": 0.7
+ },
+ {
+  "model": "assets/world/dungeon/pillar_decorated.gltf.glb",
+  "tx": 70.2,
+  "ty": 44.6,
+  "height": 3.2,
+  "collideR": 0.7
+ },
+ {
+  "model": "assets/world/dungeon/pillar_decorated.gltf.glb",
+  "tx": 72.8,
+  "ty": 44.6,
+  "height": 3.2,
+  "collideR": 0.7
+ },
+ {
+  "model": "assets/world/dungeon/torch_lit.gltf.glb",
+  "tx": 70.8,
+  "ty": 42.2,
+  "height": 1.6
+ },
+ {
+  "model": "assets/world/dungeon/torch_lit.gltf.glb",
+  "tx": 72.2,
+  "ty": 42.2,
+  "height": 1.6
+ },
+ {
+  "model": "assets/world/dungeon/pillar.gltf.glb",
+  "tx": 144.6,
+  "ty": 50.2,
+  "height": 3.0,
+  "collideR": 0.7
+ },
+ {
+  "model": "assets/world/dungeon/pillar.gltf.glb",
+  "tx": 146.6,
+  "ty": 50.2,
+  "height": 3.0,
+  "collideR": 0.7
+ },
+ {
+  "model": "assets/world/dungeon/torch_lit.gltf.glb",
+  "tx": 144.2,
+  "ty": 52.0,
+  "height": 1.6
+ },
+ {
+  "model": "assets/world/dungeon/torch_lit.gltf.glb",
+  "tx": 147.0,
+  "ty": 52.0,
+  "height": 1.6
+ },
+ {
+  "model": "assets/world/dungeon/wall_arched.gltf.glb",
+  "tx": 62.5,
+  "ty": 53.6,
+  "height": 4.2,
+  "collideR": 0
+ },
+ {
+  "model": "assets/world/dungeon/column.gltf.glb",
+  "tx": 61.4,
+  "ty": 52.2,
+  "height": 2.6,
+  "collideR": 0.5
+ },
+ {
+  "model": "assets/world/dungeon/column.gltf.glb",
+  "tx": 63.6,
+  "ty": 52.2,
+  "height": 2.6,
+  "collideR": 0.5
+ },
+ {
+  "model": "assets/world/dungeon/banner_patternA_red.gltf.glb",
+  "tx": 61.4,
+  "ty": 52.6,
+  "height": 2.2
+ },
+ {
+  "model": "assets/world/dungeon/banner_patternA_red.gltf.glb",
+  "tx": 63.6,
+  "ty": 52.6,
+  "height": 2.2
+ },
+ {
+  "model": "assets/world/dungeon/pillar.gltf.glb",
+  "tx": 101,
+  "ty": 36,
+  "height": 2.8,
+  "collideR": 0.7
+ },
+ {
+  "model": "assets/world/dungeon/pillar.gltf.glb",
+  "tx": 104,
+  "ty": 36,
+  "height": 2.8,
+  "collideR": 0.7
+ },
+ {
+  "model": "assets/world/dungeon/pillar.gltf.glb",
+  "tx": 101,
+  "ty": 39,
+  "height": 2.8,
+  "collideR": 0.7
+ },
+ {
+  "model": "assets/world/dungeon/pillar.gltf.glb",
+  "tx": 104,
+  "ty": 39,
+  "height": 2.8,
+  "collideR": 0.7
+ },
+ {
+  "model": "assets/world/dungeon/torch_lit.gltf.glb",
+  "tx": 102.5,
+  "ty": 37.5,
+  "height": 1.8
+ },
+ {
+  "model": "assets/world/nature/rock_single_A.gltf",
+  "tx": 100,
+  "ty": 41,
+  "height": 1.4,
+  "count": 4,
+  "jitter": 3
+ },
+ {
+  "model": "assets/world/nature/rock_single_C.gltf",
+  "tx": 105,
+  "ty": 34,
+  "height": 1.2,
+  "count": 4,
+  "jitter": 3
+ },
+ {
+  "model": "assets/world/nature/trees_A_large.gltf",
+  "tx": 30,
+  "ty": 66,
+  "height": 7.5,
+  "count": 6,
+  "jitter": 8,
+  "collideR": 1.2
+ },
+ {
+  "model": "assets/world/nature/trees_B_large.gltf",
+  "tx": 44,
+  "ty": 76,
+  "height": 7.0,
+  "count": 6,
+  "jitter": 8,
+  "collideR": 1.2
+ },
+ {
+  "model": "assets/world/nature/tree_single_A.gltf",
+  "tx": 37,
+  "ty": 60,
+  "height": 6.0,
+  "count": 5,
+  "jitter": 10
+ },
+ {
+  "model": "assets/world/nature/tree_single_B.gltf",
+  "tx": 95,
+  "ty": 72,
+  "height": 5.5,
+  "count": 6,
+  "jitter": 9
+ },
+ {
+  "model": "assets/world/nature/trees_B_medium.gltf",
+  "tx": 106,
+  "ty": 80,
+  "height": 5.0,
+  "count": 5,
+  "jitter": 8
+ },
+ {
+  "model": "assets/world/nature/rock_single_D.gltf",
+  "tx": 18,
+  "ty": 18,
+  "height": 2.2,
+  "count": 6,
+  "jitter": 7,
+  "collideR": 0.9
+ },
+ {
+  "model": "assets/world/nature/rock_single_E.gltf",
+  "tx": 25,
+  "ty": 24,
+  "height": 1.8,
+  "count": 5,
+  "jitter": 6
+ },
+ {
+  "model": "assets/world/dungeon/chest_gold.glb",
+  "tx": 168,
+  "ty": 45,
+  "height": 1.1,
+  "collideR": 0.6
+ },
+ {
+  "model": "assets/world/dungeon/torch_lit.gltf.glb",
+  "tx": 167.4,
+  "ty": 44.4,
+  "height": 1.6
+ },
+ {
+  "model": "assets/world/dungeon/torch_lit.gltf.glb",
+  "tx": 168.6,
+  "ty": 44.4,
+  "height": 1.6
+ },
+ {
+  "model": "assets/world/nature/rock_single_B.gltf",
+  "tx": 160,
+  "ty": 40,
+  "height": 1.6,
+  "count": 6,
+  "jitter": 8
+ },
+ {
+  "model": "assets/world/dungeon/crates_stacked.gltf.glb",
+  "tx": 65.2,
+  "ty": 40.6,
+  "height": 1.3,
+  "collideR": 0.6
+ },
+ {
+  "model": "assets/world/dungeon/barrel_large.gltf.glb",
+  "tx": 67.8,
+  "ty": 40.4,
+  "height": 1.1,
+  "collideR": 0.5
+ }
+]
