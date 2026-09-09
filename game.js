@@ -13714,6 +13714,21 @@ window._fitHairToSkull = function(M, HM){
 };
 
 /* ================================================================
+   🧍 CUSTOM FILIPINO CHIBI HEROES — FEATURE SWITCH
+   The Hunyuan3D chibi parts (base/outfit/hair under
+   assets/characters/base/) are standalone objects with no shared
+   skeleton and inconsistent proportions, so they render as a mess
+   (hair over the face, T-pose, textures bleeding). Until proper
+   Filipino hero assets exist, keep them OFF and let the game use the
+   CC0 KayKit models, which have correct proportions, matching outfits,
+   working weapon slots and 76 animations.
+   Set true ONLY after the custom assets are re-authored to a common
+   skeleton + skull proportions (see docs/ASSET_PIPELINE.md).
+   ================================================================ */
+const CUSTOM_HEROES_ENABLED=false;
+window.CUSTOM_HEROES_ENABLED=CUSTOM_HEROES_ENABLED;
+
+/* ================================================================
    🧍 CUSTOM FILIPINO CHIBI HEROES (integration phase)
    User-generated Hunyuan bodies + outfits + hair, composited at
    runtime into ONE hero group:
@@ -13744,8 +13759,9 @@ window._fitHairToSkull = function(M, HM){
     ...PARTS.male.hairs])];
   let READY=false;
   Promise.all(urls.map(u=>loadGLB(u).catch(()=>null))).then(cs=>{
-    READY=cs.every(Boolean)&&true;
-    console.log('[custom-heroes] parts loaded:',cs.filter(Boolean).length+'/'+urls.length,READY?'ACTIVE':'fallback to KayKit');
+    READY=cs.every(Boolean)&&CUSTOM_HEROES_ENABLED;
+    console.log('[custom-heroes] parts loaded:',cs.filter(Boolean).length+'/'+urls.length,
+      READY?'ACTIVE':'OFF (using KayKit)');
     if(READY&&started&&player.mesh){
       const old=player.mesh,nm=buildHero(S.cls);
       nm.position.copy(old.position); nm.rotation.y=old.rotation.y;
@@ -14069,10 +14085,11 @@ window._fitHairToSkull = function(M, HM){
      * which is -55% on hair_f1. */
     fetch('data/models/custom-heroes.json').then(r=>r.json()).then(j=>{ window._customMetrics=j; return j; }),
   ].map(p=>p.catch(()=>null))).then(rs=>{
-    const okAll=rs.slice(0,5).every(Boolean)&&!!window._customMetrics;
+    const okAll=rs.slice(0,5).every(Boolean)&&!!window._customMetrics&&CUSTOM_HEROES_ENABLED;
     if(okAll){ CLIPS=MODEL_CACHE[ANIM_SRC].animations; READY=true; }
+    else if(!CUSTOM_HEROES_ENABLED) console.log('[custom-rig] disabled — KayKit heroes active');
     else if(!window._customMetrics) console.warn('[custom-rig] metrics missing — static compositor stays');
-    console.log('[custom-rig]',okAll?'ACTIVE — 76 anims retargeted':'missing parts, static compositor stays');
+    else console.log('[custom-rig] missing parts, static compositor stays');
     if(READY&&started&&player.mesh){
       const old=player.mesh,nm=buildHero(S.cls);
       nm.position.copy(old.position); nm.rotation.y=old.rotation.y;

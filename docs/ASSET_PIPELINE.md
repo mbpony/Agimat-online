@@ -22,6 +22,23 @@ Characters live in assets/characters/ (registry-driven since Phase 2); portraits
 3. Register in data/models/registry.json (characters/enemies/pets) or data/world-spec.json (props) — never hard-code paths in code.
 4. Test: load time, ground snap, collision radius, shadows, mobile fps.
 
+## 🚨 Active decision (2026-09-09): custom chibi OFF, KayKit ON
+
+The Hunyuan3D chibi parts render as a mess (hair over the face, T-pose in the
+paper-doll, face texture bleeding through). They were also **hiding** the good
+KayKit models, because the custom path took priority in `buildHero`.
+
+`CUSTOM_HEROES_ENABLED=false` in `game.js` now keeps the chibi path OFF so the
+game uses the CC0 KayKit models (correct proportions, matching outfits, working
+weapon slots, 76 animations per class, class-tinted per the registry). The
+custom compositor code remains as a fallback for when proper Filipino assets
+exist. **Set it true only after re-authoring the chibi to a common skeleton +
+skull proportions** (see the "wigs are not wig-sized" section below).
+
+Owner confirmed: quality first now, Filipino identity stays the goal. So the
+plan is to later source/author proper Filipino hero models (common skeleton,
+skull-proportioned hair, fitted outfits) and re-enable the custom path.
+
 ## Custom hero parts — metrics must be re-baked after ANY re-export
 
 `data/models/custom-heroes.json` drives how body / outfit / hair are composited.
