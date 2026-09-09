@@ -58,28 +58,57 @@ function cloudSnapshot(store){
 }
 async function cloudFlush(force){                // push dirty stores (force = all, used on shutdown)
   if(!CLOUD_ON) return;
+  if(!HYDRATE_OK){ console.error('[cloud] flush skipped — hydrate not yet successful (protecting cloud data)'); return; }
   for(const store of Object.keys(cloudDirty)){
     if(!force && !cloudDirty[store]) continue;
+    /* KALIGTASAN: never overwrite the cloud users store with an EMPTY set */
+    if(store==='users'&&!Object.keys(USERS).length){ cloudDirty.users=false; continue; }
     try{ await cloudSet(CLOUD_KEYS[store], cloudSnapshot(store)); cloudDirty[store]=false; }
     catch(e){ console.error('[cloud] flush '+store+' failed:', e.message); }
   }
 }
+let HYDRATE_OK=!CLOUD_ON;   // file-only mode needs no hydrate; cloud mode must hydrate before ANY flush
 async function cloudHydrate(){                   // boot: cloud copy wins over (possibly wiped) disk
   if(!CLOUD_ON){ console.log('[cloud] disabled — file storage only (set UPSTASH_REDIS_REST_URL + _TOKEN to enable)'); return; }
+  for(let attempt=1;attempt<=3;attempt++){
+    try{
+      const [u,g,m]=await Promise.all([cloudGet(CLOUD_KEYS.users),cloudGet(CLOUD_KEYS.guilds),cloudGet(CLOUD_KEYS.market)]);
+      /* MERGE, huwag basta palitan: kung may laman ang disk na wala sa cloud
+         (edge: register habang offline ang cloud), isama — never mawalan */
+      if(u!=null){ const cu=JSON.parse(u); for(const k of Object.keys(USERS)) if(!cu[k]) cu[k]=USERS[k]; USERS=cu; try{ fs.writeFileSync(USERS_FILE,JSON.stringify(USERS)); }catch(e){} }
+      if(g!=null){ GUILDS=JSON.parse(g); try{ fs.writeFileSync(GUILDS_FILE,g); }catch(e){} }
+      if(m!=null){ MARKET=JSON.parse(m); try{ fs.writeFileSync(MARKET_FILE,m); }catch(e){} }
+      HYDRATE_OK=true;
+      console.log('[cloud] hydrated — users:'+Object.keys(USERS).length+' guilds:'+Object.keys(GUILDS).length+' listings:'+(MARKET.listings||[]).length);
+      if(u==null&&Object.keys(USERS).length){ cloudDirty.users=true; }
+      if(g==null&&Object.keys(GUILDS).length){ cloudDirty.guilds=true; }
+      if(m==null&&(MARKET.listings||[]).length){ cloudDirty.market=true; }
+      await cloudFlush();
+      return;
+    }catch(e){
+      console.error('[cloud] hydrate attempt '+attempt+'/3 failed:', e.message);
+      if(attempt<3) await new Promise(r=>setTimeout(r,2000*attempt));
+    }
+  }
+  /* LAHAT ng attempts bigo: BLOCK all cloud writes para HINDI ma-clobber ang
+     cloud data ng empty/partial memory state. Magre-retry sa background. */
+  console.error('[cloud] hydrate FAILED — cloud writes BLOCKED until a successful hydrate (retrying every 60s)');
+  const retry=setInterval(async()=>{
+    if(HYDRATE_OK){ clearInterval(retry); return; }
+    await cloudHydrate0();
+  },60000);
+}
+/* single-shot rehydrate used by the background retry */
+async function cloudHydrate0(){
   try{
     const [u,g,m]=await Promise.all([cloudGet(CLOUD_KEYS.users),cloudGet(CLOUD_KEYS.guilds),cloudGet(CLOUD_KEYS.market)]);
-    if(u!=null){ USERS=JSON.parse(u);  try{ fs.writeFileSync(USERS_FILE ,u); }catch(e){} }
-    if(g!=null){ GUILDS=JSON.parse(g); try{ fs.writeFileSync(GUILDS_FILE,g); }catch(e){} }
-    if(m!=null){ MARKET=JSON.parse(m); try{ fs.writeFileSync(MARKET_FILE,m); }catch(e){} }
-    console.log('[cloud] hydrated — users:'+Object.keys(USERS).length+' guilds:'+Object.keys(GUILDS).length+' listings:'+(MARKET.listings||[]).length);
-    /* first run against an empty database: seed it with whatever the disk had */
-    if(u==null&&Object.keys(USERS).length){ cloudDirty.users=true; }
-    if(g==null&&Object.keys(GUILDS).length){ cloudDirty.guilds=true; }
-    if(m==null&&(MARKET.listings||[]).length){ cloudDirty.market=true; }
-    await cloudFlush();
-  }catch(e){
-    console.error('[cloud] hydrate FAILED — continuing with local files:', e.message);
-  }
+    if(u!=null){ const cu=JSON.parse(u); for(const k of Object.keys(USERS)) if(!cu[k]) cu[k]=USERS[k]; USERS=cu; }
+    if(g!=null&&!Object.keys(GUILDS).length) GUILDS=JSON.parse(g);
+    if(m!=null&&!(MARKET.listings||[]).length) MARKET=JSON.parse(m);
+    HYDRATE_OK=true;
+    cloudDirty.users=true;                        // push the merged state
+    console.log('[cloud] late hydrate OK — users:'+Object.keys(USERS).length+' (merged, writes unblocked)');
+  }catch(e){ /* next retry */ }
 }
 if(CLOUD_ON){
   setInterval(cloudFlush, 15000);                // throttled mirror
