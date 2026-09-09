@@ -1,48 +1,109 @@
 {
- "base_male": {
-  "w": 0.8864,
-  "h": 1.1534,
-  "d": 0.4253,
-  "headW": 0.8864,
-  "headCY": 0.8085,
-  "hairBaseY": 0.7151
- },
- "base_female": {
-  "w": 0.8904,
-  "h": 1.164,
-  "d": 0.3578,
-  "headW": 0.8904,
-  "headCY": 0.823,
-  "hairBaseY": 0.7217
- },
- "outfit_male": {
-  "w": 0.5256,
-  "h": 1.1407,
-  "d": 0.3293
- },
- "outfit_female": {
-  "w": 0.5265,
-  "h": 1.1473,
-  "d": 0.2895
- },
- "hair_m1": {
-  "w": 0.9898,
-  "h": 0.7742,
-  "d": 0.9923
- },
- "hair_m2": {
-  "w": 1.0532,
-  "h": 0.7335,
-  "d": 0.9528
- },
- "hair_f1": {
-  "w": 0.4469,
-  "h": 1.0896,
-  "d": 0.7862
- },
- "hair_f2": {
-  "w": 0.8949,
-  "h": 0.8351,
-  "d": 0.9359
- }
+  "_meta": {
+    "generated": "2026-09-09",
+    "tool": "tools/bake-hero-metrics.js",
+    "note": "Measured from the GLB files themselves. headW/headH/headD are a slice of the body at head height, NOT the bounding box. Do not edit by hand."
+  },
+  "base_male": {
+    "w": 0.6891,
+    "h": 1.1534,
+    "d": 0.4253,
+    "minY": 0,
+    "maxY": 1.1534,
+    "centerX": -0.0005,
+    "centerZ": -0.029,
+    "headW": 0.4415,
+    "headH": 0.4613,
+    "headD": 0.4167,
+    "headCY": 0.9228,
+    "headMinY": 0.6921,
+    "headMaxY": 1.1534,
+    "hairBaseY": 0.6921,
+    "headBoneY": 0.6921,
+    "tris": 5798
+  },
+  "base_female": {
+    "w": 0.8036,
+    "h": 1.164,
+    "d": 0.3578,
+    "minY": 0,
+    "maxY": 1.164,
+    "centerX": 0.0004,
+    "centerZ": -0.0167,
+    "headW": 0.3823,
+    "headH": 0.4656,
+    "headD": 0.3548,
+    "headCY": 0.9312,
+    "headMinY": 0.6984,
+    "headMaxY": 1.164,
+    "hairBaseY": 0.6984,
+    "headBoneY": 0.6984,
+    "tris": 5798
+  },
+  "outfit_male": {
+    "w": 0.5361,
+    "h": 1.1747,
+    "d": 0.4406,
+    "minY": 0,
+    "maxY": 1.1747,
+    "centerX": -0.0142,
+    "centerZ": -0.0278,
+    "alignX": 0.0137,
+    "alignZ": -0.0012,
+    "alignY": 0,
+    "tris": 4854
+  },
+  "outfit_female": {
+    "w": 0.5265,
+    "h": 1.183,
+    "d": 0.3727,
+    "minY": 0,
+    "maxY": 1.183,
+    "centerX": -0.005,
+    "centerZ": -0.0178,
+    "alignX": 0.0054,
+    "alignZ": 0.0011,
+    "alignY": 0,
+    "tris": 5304
+  },
+  "hair_m1": {
+    "w": 0.9898,
+    "h": 0.7742,
+    "d": 0.9923,
+    "minY": 0,
+    "maxY": 0.7742,
+    "centerX": 0,
+    "centerZ": 0,
+    "tris": 1274
+  },
+  "hair_m2": {
+    "w": 1.0532,
+    "h": 0.7335,
+    "d": 0.9528,
+    "minY": 0,
+    "maxY": 0.7335,
+    "centerX": 0,
+    "centerZ": 0,
+    "tris": 1292
+  },
+  "hair_f1": {
+    "w": 0.4469,
+    "h": 1.0896,
+    "d": 0.7862,
+    "minY": 0,
+    "maxY": 1.0896,
+    "centerX": 0,
+    "centerZ": 0,
+    "tris": 1210
+  },
+  "hair_f2": {
+    "w": 0.8949,
+    "h": 0.8351,
+    "d": 0.9359,
+    "minY": 0,
+    "maxY": 0.8351,
+    "centerX": 0,
+    "centerZ": 0,
+    "tris": 940
+  }
 }

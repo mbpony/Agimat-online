@@ -13754,16 +13754,39 @@ CATALOG.push(
       body.scale.setScalar(K);
       g.add(body);
       if(outfit){
-        outfit.scale.setScalar(K*1.02);            // slight overshoot para walang z-fight
-        /* align outfit vertical center to body torso */
-        outfit.position.y=0;
+        const OM=METRICS[P2.outfit.split('/').pop().replace('.glb','')];
+        /* 1:1 with the body — both were authored at the same scale, so the old
+         * K*1.02 overshoot pushed the collar ~0.10 units above the crown. */
+        outfit.scale.setScalar(K);
+        if(OM){
+          /* the outfit is not authored on the body's centre line: outfit_male
+           * sits 0.0137 off in X, which is 0.031 game units once scaled. */
+          outfit.position.set((OM.alignX||0)*K,(OM.alignY||0)*K,(OM.alignZ||0)*K);
+        }else{
+          outfit.position.y=0;
+        }
         g.add(outfit);
       }
       if(hair){
         const HM=METRICS[hairUrl.split('/').pop().replace('.glb','')];
-        const hs=(M.headW*1.06/HM.w)*K;
-        hair.scale.setScalar(hs);
-        hair.position.y=M.hairBaseY*K;
+        if(HM&&M.headW&&M.headH&&M.headD){
+          /* Fit the wig's bounding box to the skull's. A single width ratio
+           * cannot work: hair_m1 is 0.99x0.77 but the head is 0.44x0.46, so the
+           * proportions differ and a uniform scale always misses one axis. */
+          const OV=1.06;                            // slight overshoot so no scalp shows
+          const sx=(M.headW*OV/HM.w)*K, sy=(M.headH*OV/HM.h)*K, sz=(M.headD*OV/HM.d)*K;
+          hair.scale.set(sx,sy,sz);
+          const hcy=((HM.minY||0)+(HM.maxY||HM.h))/2;
+          /* centre the wig on the head box rather than seating it at a guessed Y */
+          hair.position.set((M.centerX||0)*K - sx*(HM.centerX||0),
+                            M.headCY*K - sy*hcy,
+                            (M.centerZ||0)*K - sz*(HM.centerZ||0));
+        }else{
+          /* legacy metrics (pre-2026-09-09) — uniform scale off headW */
+          const hs=((M.headW||0.44)*1.06/(HM&&HM.w||1))*K;
+          hair.scale.setScalar(hs);
+          hair.position.y=(M.hairBaseY||M.h*0.6)*K;
+        }
         g.add(hair);
       }
       const sh=blobShadow(1); sh.position.y=0.02; sh.userData._shadow=true; g.add(sh);
@@ -13970,9 +13993,14 @@ CATALOG.push(
     loadGLB(RIGS.female.body),loadGLB(RIGS.female.outfit),
     loadGLB(ANIM_SRC),
     ...HAIRS.map(u=>loadGLB(u)),
+    /* metrics must land BEFORE READY: buildHero sizes hair from them, and the
+     * old separate fetch raced it — when it lost, hair fell back to {w:1},
+     * which is -55% on hair_f1. */
+    fetch('data/models/custom-heroes.json').then(r=>r.json()).then(j=>{ window._customMetrics=j; return j; }),
   ].map(p=>p.catch(()=>null))).then(rs=>{
-    const okAll=rs.slice(0,5).every(Boolean);
+    const okAll=rs.slice(0,5).every(Boolean)&&!!window._customMetrics;
     if(okAll){ CLIPS=MODEL_CACHE[ANIM_SRC].animations; READY=true; }
+    else if(!window._customMetrics) console.warn('[custom-rig] metrics missing — static compositor stays');
     console.log('[custom-rig]',okAll?'ACTIVE — 76 anims retargeted':'missing parts, static compositor stays');
     if(READY&&started&&player.mesh){
       const old=player.mesh,nm=buildHero(S.cls);
@@ -14002,9 +14030,16 @@ CATALOG.push(
       if(window._tintSkinned) { window._tintSkinned(body,R.body,skinHex); }
       body.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false; } });
       outfit.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false; } });
-      /* normalize to 2.6 units: rigs authored at chibi scale ~1.15 */
-      const K=2.6/1.16;
+      /* normalize to 2.6 units using the measured body height — the old
+       * hard-coded 2.6/1.16 was wrong for both genders (male 1.1534, female
+       * 1.1640) and ignored the metrics entirely. */
+      const MET=window._customMetrics||{};
+      const M=MET['base_'+gender]||{};
+      const OM=MET[R.outfit.split('/').pop().replace('.glb','')]||{};
+      const K=2.6/(M.h||1.16);
       body.scale.setScalar(K); outfit.scale.setScalar(K);
+      /* the outfit is not authored on the body's centre line */
+      outfit.position.set((OM.alignX||0)*K,(OM.alignY||0)*K,(OM.alignZ||0)*K);
       g.add(body); g.add(outfit);
       /* hair on the HEAD BONE */
       const headBone=findBone(body,'head');
@@ -14016,11 +14051,22 @@ CATALOG.push(
         const hm=cHair.scene.clone(true);
         hm.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false;
           if(window._tintHairMat) window._tintHairMat(o,hairUrl,hairHex); } });
-        /* head-bone local space: bone at head base; wig scale ~0.72/hairW */
-        const HM=(window._customMetrics&&window._customMetrics[hairUrl.split('/').pop().replace('.glb','')])||{w:1};
-        const hs=0.62/HM.w;
-        hm.scale.setScalar(hs);
-        hm.position.set(0,-0.02,0);
+        const HM=MET[hairUrl.split('/').pop().replace('.glb','')];
+        if(HM&&M.headW&&M.headH&&M.headD){
+          /* Fit the wig's bbox to the skull's, in head-bone local space. The
+           * bone sits at the base of the skull, so the skull occupies
+           * y 0..headH and is centred on x/z. Scales stay in rig units here —
+           * the bone already inherits the body's K. */
+          const OV=1.06;
+          const sx=M.headW*OV/HM.w, sy=M.headH*OV/HM.h, sz=M.headD*OV/HM.d;
+          hm.scale.set(sx,sy,sz);
+          const hcy=((HM.minY||0)+(HM.maxY||HM.h))/2;
+          hm.position.set(-sx*(HM.centerX||0), M.headH/2 - sy*hcy, -sz*(HM.centerZ||0));
+        }else{
+          /* legacy metrics — uniform scale, seated just under the bone */
+          hm.scale.setScalar(0.62/((HM&&HM.w)||1));
+          hm.position.set(0,-0.02,0);
+        }
         headBone.add(hm);
       }
       /* face plane on the head bone too */
