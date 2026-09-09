@@ -7328,20 +7328,26 @@ const WEEKLY_POOL=[
 ];
 function pick2(pool,seedStr){
   /* deterministic per-day picks so everyone shares the same dailies */
+  if(!pool||!pool.length) return [];
   let h=0; for(const ch of seedStr) h=(h*31+ch.charCodeAt(0))>>>0;
   const a=h%pool.length; let b=(h>>3)%pool.length; if(b===a) b=(b+1)%pool.length;
-  return [pool[a],pool[b]];
+  return [pool[a],pool[b]].filter(q=>q&&q.id);
 }
 function ensurePeriodQuests(){
   if(!S.periodQ) S.periodQ={};
   const dk=dayKeyLocal(), wk=weekKeyLocal();
   if(S.periodQ.dayKey!==dk){
     S.periodQ.dayKey=dk;
-    S.periodQ.daily=pick2(DAILY_POOL,dk).map(q=>({id:q.id,prog:0,done:false,claimed:false}));
+    // Defensive: validate picked defs (quest system is being overhauled; this only
+    // guarantees a well-formed list and never throws).
+    let d=pick2(DAILY_POOL,dk);
+    if(!d.length) d=DAILY_POOL.slice(0,2);
+    S.periodQ.daily=d.map(q=>({id:q.id,prog:0,done:false,claimed:false}));
   }
   if(S.periodQ.weekKey!==wk){
     S.periodQ.weekKey=wk;
-    S.periodQ.weekly=[WEEKLY_POOL[(wk.charCodeAt(wk.length-1)+wk.length)%WEEKLY_POOL.length]].map(q=>({id:q.id,prog:0,done:false,claimed:false}));
+    const wq=WEEKLY_POOL[(wk.charCodeAt(wk.length-1)+wk.length)%WEEKLY_POOL.length]||WEEKLY_POOL[0];
+    S.periodQ.weekly=wq?[{id:wq.id,prog:0,done:false,claimed:false}]:[];
   }
 }
 function qDef(id){ return DAILY_POOL.find(q=>q.id===id)||WEEKLY_POOL.find(q=>q.id===id); }
@@ -7403,7 +7409,7 @@ harvestNode=function(n){ _harvest_pq(n); window._questProg('forage',1); };
 function openPeriodQuests(){
   ensurePeriodQuests();
   const row=(q,weekly)=>{
-    const def=qDef(q.id);
+    const def=qDef(q.id); if(!def) return '';   // stale/unknown quest id → skip
     const pct=Math.min(100,Math.round(q.prog/def.n*100));
     return `<div class="fr-row">
       <span style="font-size:18px">${weekly?'🗓️':'📅'}</span>
@@ -7425,7 +7431,7 @@ function openPeriodQuests(){
   document.querySelectorAll('[data-claim]').forEach(bt=>bt.onclick=()=>{
     const q=[...(S.periodQ.daily||[]),...(S.periodQ.weekly||[])].find(x=>x.id===bt.dataset.claim);
     if(!q||!q.done||q.claimed) return;
-    const def=qDef(q.id);
+    const def=qDef(q.id); if(!def) return;   // stale id → nothing to claim
     q.claimed=true;
     S.gold+=def.rw.gold; gainXP(def.rw.xp);
     SFX.levelup();
