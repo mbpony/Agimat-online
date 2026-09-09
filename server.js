@@ -51,6 +51,18 @@ async function cloudSet(key,val){
   const r=await fetch(CLOUD_URL+'/set/'+encodeURIComponent(key),{method:'POST',headers:{Authorization:'Bearer '+CLOUD_TOKEN},body:val});
   if(!r.ok) throw new Error('cloud SET '+key+' → HTTP '+r.status);
 }
+/* Live diagnostics so a broken cloud is VISIBLE at /api/health instead of a
+   silent wipe. prod's old health only proved the env vars were set, not that
+   Upstash actually accepts writes. */
+const CLOUD_STAT={hydrated:false,lastError:null,lastFlushOk:null,probe:null};
+async function cloudProbe(){
+  if(!CLOUD_ON){ CLOUD_STAT.probe={ok:false,err:'cloud off'}; return CLOUD_STAT.probe; }
+  const k='agimat:probe', v='ok-'+Date.now();
+  try{ await cloudSet(k,v); const g=await cloudGet(k);
+    CLOUD_STAT.probe={ok:g===v,err:null,at:Date.now()};
+  }catch(e){ CLOUD_STAT.probe={ok:false,err:e.message,at:Date.now()}; }
+  return CLOUD_STAT.probe;
+}
 function cloudSnapshot(store){
   return store==='users' ? JSON.stringify(USERS)
        : store==='guilds'? JSON.stringify(GUILDS)
@@ -63,8 +75,8 @@ async function cloudFlush(force){                // push dirty stores (force = a
     if(!force && !cloudDirty[store]) continue;
     /* KALIGTASAN: never overwrite the cloud users store with an EMPTY set */
     if(store==='users'&&!Object.keys(USERS).length){ cloudDirty.users=false; continue; }
-    try{ await cloudSet(CLOUD_KEYS[store], cloudSnapshot(store)); cloudDirty[store]=false; }
-    catch(e){ console.error('[cloud] flush '+store+' failed:', e.message); }
+    try{ await cloudSet(CLOUD_KEYS[store], cloudSnapshot(store)); cloudDirty[store]=false; CLOUD_STAT.lastFlushOk=store; CLOUD_STAT.lastError=null; }
+    catch(e){ console.error('[cloud] flush '+store+' failed:', e.message); CLOUD_STAT.lastError=e.message; }
   }
 }
 let HYDRATE_OK=!CLOUD_ON;   // file-only mode needs no hydrate; cloud mode must hydrate before ANY flush
@@ -78,7 +90,7 @@ async function cloudHydrate(){                   // boot: cloud copy wins over (
       if(u!=null){ const cu=JSON.parse(u); for(const k of Object.keys(USERS)) if(!cu[k]) cu[k]=USERS[k]; USERS=cu; try{ fs.writeFileSync(USERS_FILE,JSON.stringify(USERS)); }catch(e){} }
       if(g!=null){ GUILDS=JSON.parse(g); try{ fs.writeFileSync(GUILDS_FILE,g); }catch(e){} }
       if(m!=null){ MARKET=JSON.parse(m); try{ fs.writeFileSync(MARKET_FILE,m); }catch(e){} }
-      HYDRATE_OK=true;
+      HYDRATE_OK=true; CLOUD_STAT.hydrated=true; cloudProbe();
       console.log('[cloud] hydrated — users:'+Object.keys(USERS).length+' guilds:'+Object.keys(GUILDS).length+' listings:'+(MARKET.listings||[]).length);
       if(u==null&&Object.keys(USERS).length){ cloudDirty.users=true; }
       if(g==null&&Object.keys(GUILDS).length){ cloudDirty.guilds=true; }
@@ -87,6 +99,7 @@ async function cloudHydrate(){                   // boot: cloud copy wins over (
       return;
     }catch(e){
       console.error('[cloud] hydrate attempt '+attempt+'/3 failed:', e.message);
+      CLOUD_STAT.lastError='hydrate: '+e.message;
       if(attempt<3) await new Promise(r=>setTimeout(r,2000*attempt));
     }
   }
@@ -112,6 +125,7 @@ async function cloudHydrate0(){
 }
 if(CLOUD_ON){
   setInterval(cloudFlush, 15000);                // throttled mirror
+  setInterval(cloudProbe, 60000);                // keep the health probe fresh
   let shuttingDown=false;
   const bye=async(sig)=>{
     if(shuttingDown) return; shuttingDown=true;
@@ -242,6 +256,17 @@ function handleAPI(req,res,p){
       env:{
         url: rawU? (rawU.startsWith('https://')?'set✓':'set-but-odd(len '+rawU.length+', starts "'+rawU.slice(0,4)+'")') : 'MISSING',
         token: rawT? 'set✓ (len '+rawT.length+')' : 'MISSING',
+      },
+      /* REAL cloud health: does Upstash actually accept writes? A broken cloud
+         here (hydrated:false or probe.ok:false) is exactly what causes the
+         "accounts wipe on every deploy" symptom on Render's disk-less free tier. */
+      cloudDetail:{
+        hydrated:CLOUD_STAT.hydrated,
+        lastError:CLOUD_STAT.lastError,
+        lastFlushOk:CLOUD_STAT.lastFlushOk,
+        probe:CLOUD_STAT.probe?{ok:CLOUD_STAT.probe.ok,err:CLOUD_STAT.probe.err}:null,
+        dataDir:DATA_DIR,
+        onPersistentPath:(DATA_DIR==='/data'||DATA_DIR.startsWith('/data/')),
       }});
   }
   if(req.method!=='POST') return sendJSON(res,405,{ok:false,err:'POST only'});
