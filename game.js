@@ -716,7 +716,7 @@ const WORLD_MAPS={
     art:'assets/maps/barangay-liwanag.jpg', fog:0xa8c8e8,
     lore:'“Dito nagsisimula ang iyong alamat.”',
     spawns:{ town:{x:266,z:174} }, defaultSpawn:'town',
-    portals:[ {id:'p_to_test', to:'map_test', at:{x:250,z:210}, r:5, label:'Mt. Pinatubo (TEST)'} ],
+    portals:[ {id:'p_to_sagada', to:'map_sagada', at:{x:250,z:210}, r:5, label:'Sagada Highlands'} ],
   },
   map_test:{
     id:'map_test', name:'Mt. Pinatubo — Ashen Frontier', region:'TEST Instance', icon:'🌋',
@@ -726,6 +726,26 @@ const WORLD_MAPS={
     lore:'“Ang abo ay humihinga pa.”',
     spawns:{ entrance:{x:448,z:136} }, defaultSpawn:'entrance',
     portals:[ {id:'p_to_start', to:'map_starting', at:{x:452,z:140}, r:5, label:'Barangay Liwanag'} ],
+  },
+  /* LZ-R02 — Sagada Highlands (per Sagada_Highlands_Map_Spec_v3.md).
+     Data+art integration now; per-map 3D terrain is the follow-up Layer B step. */
+  map_sagada:{
+    id:'map_sagada', name:'Sagada Highlands', region:'Mountains of Whispers', icon:'🌲',
+    recLevel:[10,25], enemyTier:2, lootTier:2,
+    resources:['mountain herbs','cold crystals','ancient stone','mist essence','pine wood'],
+    art:'assets/maps/sagada-highlands.jpg', fog:0xb8ccd8,
+    lore:'“Some paths are not meant to be found, but felt.”',
+    zones:[
+      {id:'Z1',name:'Misty Arrival Trail',lv:[10,12]},
+      {id:'Z2',name:'Sagada Village',lv:[10,15]},
+      {id:'Z3',name:'Pine Forest',lv:[12,16]},
+      {id:'Z4',name:'Echo Valley',lv:[13,17]},
+      {id:'Z5',name:'Limestone Caves',lv:[14,18]},
+      {id:'Z6',name:'Cliffside Trail',lv:[16,22]},
+      {id:'Z7',name:'Ancient Mountain Shrine',lv:[18,25]},
+    ],
+    spawns:{ arrival:{x:266,z:150} }, defaultSpawn:'arrival',
+    portals:[ {id:'p_to_banaue', to:'map_starting', at:{x:250,z:210}, r:5, label:'Barangay Liwanag'} ],
   },
 };
 window.WORLD_MAPS=WORLD_MAPS;
@@ -9756,9 +9776,9 @@ root.innerHTML=`
     </div>
   </div>
   <div id="i2-mapwrap">
-    <div class="i2-maphead"><b>🗺️ Barangay Liwanag</b><span>Banaue Highlands · Simula (Lv 1–10)</span></div>
+    <div id="i2-maphead"><b>🗺️ Barangay Liwanag</b><span>Banaue Highlands · Simula (Lv 1–10)</span></div>
     <canvas id="i2-map" width="1280" height="854"></canvas>
-    <div class="i2-maplegend">
+    <div id="i2-maplegend">
       <span><i class="dot you"></i>Ikaw</span>
       <span><i class="dot party"></i>Ka-party</span>
       <span><i class="dot boss"></i>World Boss</span>
@@ -10027,7 +10047,7 @@ function i2Nav(which){
   $('i2-invmain').style.display=which==='inventory'?'flex':'none';
   $('i2-mapwrap').classList.toggle('open',which==='map');
   $('i2-profwrap').classList.toggle('open',which==='profile'||which==='skills');
-  if(which==='map') i2DrawMap();
+  if(which==='map'){ if(window._setMapArt) window._setMapArt(curMap()); i2DrawMap(); }
   if(which==='profile') i2Profile();
   if(which==='skills'){
     const C=CLASSES[S.cls]||{skills:[]};

@@ -157,3 +157,13 @@ game "look like that" is **Layer A (map-screen skin + markers)**, which the exis
   correct spawns and zero console errors.
 - Deferred: per-map 3D terrain (Layer B / Phase 3) and per-map fog/sky tint (the day/night
   system currently owns fog color).
+
+## 9. Status — Sagada Highlands (LZ-R02) data+art integration (2026-09-10)
+
+- Compressed regional art shipped at `assets/maps/sagada-highlands.jpg` (1280w ~317 KB).
+- `WORLD_MAPS.map_sagada` added: name/region/icon, Lv 10–25, enemy/loot tier 2, resources,
+  cool-misty fog, lore, the 7 zones (Z1–Z7 with level bands per spec v3), spawn `arrival`,
+  and a return portal. Banaue's portal now leads to `map_sagada` (canonical south link).
+- Map tab shows the Sagada art + header; round-trip Banaue↔Sagada verified
+  (`tools/pw-sagada.js`, `docs/sagada-map.png`), zero console errors.
+- Per-map 3D terrain (true Layer B) remains the next dedicated, carefully-verified step.
