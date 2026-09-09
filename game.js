@@ -13891,4 +13891,282 @@ CATALOG.push(
     }catch(e){}
     return g;
   };
+  /* bridge for the rigged path: resolve a face texture for an app config */
+  window._faceTexFor=function(app,cb){
+    const fi=Math.max(0,Math.min(N-1,app.face??((S.app&&S.app.face)??0)));
+    const ec=app.eyeColor??((S.app&&S.app.eyeColor)??0);
+    const eyeHex=(typeof ec==='number')?(EYE_COLORS[ec]??EYE_COLORS[0]):EYE_COLORS[0];
+    faceTex(fi,eyeHex,cb);
+  };
+})();
+
+/* ================================================================
+   🦴 CUSTOM HERO RIG RETARGET (integration phase 2)
+   The custom chibi bodies are now SKINNED to a KayKit-compatible
+   23-bone deform skeleton (offline auto-skinner: capsule weights,
+   kaykit local rest rotations, fitted to chibi landmarks).
+   Runtime: borrow the KayKit 76-clip library via QUATERNION-ONLY
+   retarget (rotation tracks bind by name; positions keep chibi
+   rest → no proportion distortion; hips.position scaled by height
+   ratio for locomotion bounce).
+   · body + outfit are separately-skinned twins driven by two
+     mixers in lockstep (identical skeletons)
+   · hair + face plane now attach to the HEAD BONE → sumusunod
+     na sa animation
+   · weapon slots: handslot.l/r exist in the rig — weaponAttach
+     works (findBone made sanitize-tolerant)
+   · state machine reuses the glbHeroAnim pattern
+   Replaces the static compositor path when rigs are loaded;
+   falls back: rigged → static composite → KayKit → procedural.
+   ================================================================ */
+(function customHeroRig(){
+  const D='assets/characters/base/';
+  const RIGS={
+    male:{body:D+'base_male_rig.glb',outfit:D+'outfit_male_rig.glb'},
+    female:{body:D+'base_female_rig.glb',outfit:D+'outfit_female_rig.glb'},
+  };
+  const HAIRS=[D+'hair_m1.glb',D+'hair_m2.glb',D+'hair_f1.glb',D+'hair_f2.glb'];
+  const ANIM_SRC='assets/characters/kaykit/Knight.glb';
+  let READY=false, CLIPS=null, HIP_RATIO=0.69; // chibi hips ~0.28 / kaykit 0.406
+  const mixers=new Set();
+
+  function sanitize(n){ return n.replace(/[^a-zA-Z0-9_]/g,''); }
+  function findBone(root,name){
+    const want=sanitize(name);
+    let hit=null;
+    root.traverse(o=>{ if(!hit&&(o.isBone||o.isObject3D)&&sanitize(o.name||'')===want) hit=o; });
+    return hit;
+  }
+  window._findBoneSan=findBone;
+
+  /* quaternion-only clip filter (+hips bounce) — cached */
+  const clipCache={};
+  function retargetClip(clip){
+    if(clipCache[clip.name]) return clipCache[clip.name];
+    const tracks=[];
+    for(const tr of clip.tracks){
+      if(tr.name.endsWith('.quaternion')) tracks.push(tr);
+      else if(tr.name==='hips.position'){
+        const t2=tr.clone();
+        const v=t2.values;
+        for(let k=0;k<v.length;k++) v[k]*=HIP_RATIO;
+        tracks.push(t2);
+      }
+    }
+    const c=new THREE.AnimationClip(clip.name,clip.duration,tracks);
+    clipCache[clip.name]=c;
+    return c;
+  }
+
+  const PROFILE_ATTACK={
+    melee:['1H_Melee_Attack_Slice_Diagonal','1H_Melee_Attack_Chop'],
+    ranged:['1H_Ranged_Shoot','2H_Ranged_Shoot'],
+    caster:['Spellcast_Shoot','Spellcast_Raise'],
+  };
+  const REGH=(GAME_DATA.models&&GAME_DATA.models.heroes)||{};
+
+  Promise.all([
+    loadGLB(RIGS.male.body),loadGLB(RIGS.male.outfit),
+    loadGLB(RIGS.female.body),loadGLB(RIGS.female.outfit),
+    loadGLB(ANIM_SRC),
+    ...HAIRS.map(u=>loadGLB(u)),
+  ].map(p=>p.catch(()=>null))).then(rs=>{
+    const okAll=rs.slice(0,5).every(Boolean);
+    if(okAll){ CLIPS=MODEL_CACHE[ANIM_SRC].animations; READY=true; }
+    console.log('[custom-rig]',okAll?'ACTIVE — 76 anims retargeted':'missing parts, static compositor stays');
+    if(READY&&started&&player.mesh){
+      const old=player.mesh,nm=buildHero(S.cls);
+      nm.position.copy(old.position); nm.rotation.y=old.rotation.y;
+      scene.remove(old); scene.add(nm); player.mesh=nm;
+      toast('🦴 <b>Buhay na buhay!</b> Ang mga bayani ay gumagalaw na nang buo.','levelup');
+    }
+  });
+
+  function findClip(names){ for(const n of names){ const c=CLIPS.find(a=>a.name===n); if(c) return c; } return null; }
+
+  const _bh=buildHero;
+  buildHero=function(cls, appOverride){
+    if(!READY) return _bh.apply(this,arguments);
+    try{
+      const app=appOverride||heroApp();
+      const gender=(app.gender==='female')?'female':'male';
+      const R=RIGS[gender];
+      const cBody=MODEL_CACHE[R.body], cOut=MODEL_CACHE[R.outfit];
+      if(!cBody||!cOut) return _bh.apply(this,arguments);
+      const g=new THREE.Group();
+      const body=SkeletonUtils.clone(cBody.scene);
+      const outfit=SkeletonUtils.clone(cOut.scene);
+      /* tint skin (reuse compositor tint cache via canvas) */
+      const skinHex=(typeof app.skin==='number')?SKIN_TONES[app.skin]??SKIN_TONES[1]:(app.skin||SKIN_TONES[1]);
+      const hairHex=(typeof app.hairColor==='number')?HAIR_COLORS[app.hairColor]??HAIR_COLORS[0]:(app.hairColor||HAIR_COLORS[0]);
+      if(window._tintSkinned) { window._tintSkinned(body,R.body,skinHex); }
+      body.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false; } });
+      outfit.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false; } });
+      /* normalize to 2.6 units: rigs authored at chibi scale ~1.15 */
+      const K=2.6/1.16;
+      body.scale.setScalar(K); outfit.scale.setScalar(K);
+      g.add(body); g.add(outfit);
+      /* hair on the HEAD BONE */
+      const headBone=findBone(body,'head');
+      const hi=Math.max(0,Math.min(3,app.hairStyle??0));
+      const order=(gender==='female')?[2,3,0,1]:[0,1,2,3];
+      const hairUrl=HAIRS[order[hi]];
+      const cHair=MODEL_CACHE[hairUrl];
+      if(cHair&&headBone&&cHair.scene&&cHair.scene.clone){
+        const hm=cHair.scene.clone(true);
+        hm.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false;
+          if(window._tintHairMat) window._tintHairMat(o,hairUrl,hairHex); } });
+        /* head-bone local space: bone at head base; wig scale ~0.72/hairW */
+        const HM=(window._customMetrics&&window._customMetrics[hairUrl.split('/').pop().replace('.glb','')])||{w:1};
+        const hs=0.62/HM.w;
+        hm.scale.setScalar(hs);
+        hm.position.set(0,-0.02,0);
+        headBone.add(hm);
+      }
+      /* face plane on the head bone too */
+      if(window._attachFaceToBone&&headBone) window._attachFaceToBone(headBone,app,gender);
+      const sh=blobShadow(1); sh.position.y=0.02; sh.userData._shadow=true; g.add(sh);
+      /* mixers + clip table */
+      const mixB=new THREE.AnimationMixer(body), mixO=new THREE.AnimationMixer(outfit);
+      const prof=(REGH[cls]&&REGH[cls].animProfile)||'melee';
+      const clips={
+        idle:findClip(['Idle','Unarmed_Idle']),
+        run:findClip(['Running_A','Walking_A']),
+        attack:findClip(PROFILE_ATTACK[prof]||PROFILE_ATTACK.melee),
+        dodge:findClip(['Dodge_Forward']),
+        death:findClip(['Death_A']),
+      };
+      const acts={};
+      for(const [k,cl] of Object.entries(clips)){
+        if(!cl) continue;
+        const rc=retargetClip(cl);
+        acts[k]={b:mixB.clipAction(rc),o:mixO.clipAction(rc)};
+        if(k==='attack'||k==='dodge'){ acts[k].b.setLoop(THREE.LoopOnce); acts[k].o.setLoop(THREE.LoopOnce); }
+        if(k==='death'){ for(const s2 of ['b','o']){ acts[k][s2].setLoop(THREE.LoopOnce); acts[k][s2].clampWhenFinished=true; } }
+      }
+      const st={mixers:[mixB,mixO],acts,cur:null,oneUntil:0,_root:g};
+      st.play=(name,fade)=>{ const a=st.acts[name]; if(!a||st.cur===name) return;
+        const prev=st.acts[st.cur];
+        for(const s2 of ['b','o']){ a[s2].reset().play(); if(prev) prev[s2].crossFadeTo(a[s2],fade??0.18,false); }
+        st.cur=name; };
+      st.playOnce=(name,dur)=>{ const a=st.acts[name]; if(!a) return;
+        const prev=st.acts[st.cur];
+        for(const s2 of ['b','o']){ const act=a[s2];
+          act.reset(); act.setEffectiveTimeScale((act.getClip().duration/Math.max(0.2,dur))||1); act.play();
+          if(prev&&prev[s2]!==act) prev[s2].crossFadeTo(act,0.1,false); }
+        st.cur=name; st.oneUntil=nowS()+dur; };
+      if(acts.idle){ acts.idle.b.play(); acts.idle.o.play(); st.cur='idle'; }
+      mixers.add(st);
+      g.userData.glbAnim=st;              // same interface — glbHeroAnim's driver picks it up? no: it has own mixers set. Drive here.
+      const dummy=new THREE.Group();
+      g.userData.legL=dummy; g.userData.legR=dummy; g.userData.armL=dummy;
+      g.userData.armR=dummy; g.userData.weapArm=dummy; g.userData.glb=true; g.userData.customRig=true;
+      return g;
+    }catch(e){ console.warn('[custom-rig] build fail',e); return _bh.apply(this,arguments); }
+  };
+
+  /* driver: mixer updates + local player state machine */
+  let lastT=performance.now()/1000;
+  (function tick(){
+    requestAnimationFrame(tick);
+    const t=performance.now()/1000, dt=Math.min(0.1,t-lastT); lastT=t;
+    for(const st of mixers){
+      if(st._root&&!st._root.parent&&(!player.mesh||st._root!==player.mesh)){ mixers.delete(st); continue; }
+      for(const m of st.mixers) m.update(dt);
+    }
+    if(!started||!player.mesh) return;
+    const st=player.mesh.userData&&player.mesh.userData.customRig&&player.mesh.userData.glbAnim;
+    if(!st) return;
+    const ts=nowS();
+    if(player.dead){ st.play('death',0.25); return; }
+    if(ts<st.oneUntil) return;
+    if(player.atkAnim>0){ st.playOnce('attack',Math.max(0.3,player.atkAnimDur||0.3)); return; }
+    if(player.dodgeUntil&&ts<player.dodgeUntil){ st.playOnce('dodge',0.32); return; }
+    st.play(player.moving?'run':'idle');
+  })();
+
+  /* remote ka-party: run/idle from movement */
+  setInterval(()=>{
+    if(!window._kaParty) return;
+    for(const r of window._kaParty.values()){
+      const st=r.mesh&&r.mesh.userData&&r.mesh.userData.customRig&&r.mesh.userData.glbAnim;
+      if(!st) continue;
+      const moved=(r._lx2!==undefined)&&(Math.abs(r.x-r._lx2)+Math.abs(r.z-r._lz2)>0.05);
+      r._lx2=r.x; r._lz2=r.z;
+      st.play(moved?'run':'idle');
+    }
+  },150);
+})();
+
+/* helper exports used by customHeroRig (tint skinned + face-on-bone) */
+(function rigHelpers(){
+  const tintCache={};
+  window._tintSkinned=function(root,url,hex){
+    try{
+      const key=url+'|'+hex;
+      root.traverse(o=>{
+        if(!o.isMesh||!o.material||!o.material.map) return;
+        if(!tintCache[key]){
+          const img=o.material.map.image; if(!img) return;
+          const cv=document.createElement('canvas');
+          cv.width=img.width; cv.height=img.height;
+          const ctx=cv.getContext('2d');
+          ctx.drawImage(img,0,0);
+          ctx.globalCompositeOperation='multiply';
+          const MID=0xc98a5e;
+          const r=Math.min(255,Math.round(((hex>>16)&255)/((MID>>16)&255)*255));
+          const g2=Math.min(255,Math.round(((hex>>8)&255)/((MID>>8)&255)*255));
+          const b=Math.min(255,Math.round((hex&255)/(MID&255)*255));
+          ctx.fillStyle='rgb('+r+','+g2+','+b+')';
+          ctx.fillRect(0,0,cv.width,cv.height);
+          const tex=new THREE.CanvasTexture(cv);
+          tex.flipY=o.material.map.flipY; tex.colorSpace=THREE.SRGBColorSpace;
+          tintCache[key]=tex;
+        }
+        o.material=o.material.clone(); o.material.map=tintCache[key];
+      });
+    }catch(e){}
+  };
+  const hairTintCache={};
+  window._tintHairMat=function(mesh,url,hex){
+    try{
+      if(!mesh.material||!mesh.material.map) return;
+      const key=url+'|'+hex;
+      if(!hairTintCache[key]){
+        const img=mesh.material.map.image; if(!img) return;
+        const cv=document.createElement('canvas');
+        cv.width=img.width; cv.height=img.height;
+        const ctx=cv.getContext('2d');
+        ctx.drawImage(img,0,0);
+        ctx.globalCompositeOperation='multiply';
+        const r=Math.min(255,((hex>>16)&255)*2),g2=Math.min(255,((hex>>8)&255)*2),b=Math.min(255,(hex&255)*2);
+        ctx.fillStyle='rgb('+r+','+g2+','+b+')';
+        ctx.fillRect(0,0,cv.width,cv.height);
+        const tex=new THREE.CanvasTexture(cv);
+        tex.flipY=mesh.material.map.flipY; tex.colorSpace=THREE.SRGBColorSpace;
+        hairTintCache[key]=tex;
+      }
+      mesh.material=mesh.material.clone(); mesh.material.map=hairTintCache[key];
+    }catch(e){}
+  };
+  /* face plane sa head bone (bone-local coords) */
+  window._attachFaceToBone=function(bone,app,gender){
+    try{
+      for(const c of [...bone.children]) if(c.userData&&c.userData._face) bone.remove(c);
+      const geo=new THREE.PlaneGeometry(0.34,0.34,8,1);
+      const pa=geo.attributes.position;
+      for(let k=0;k<pa.count;k++){ const x=pa.getX(k); pa.setZ(k,-Math.abs(x)*x*x*1.2); }
+      geo.computeVertexNormals();
+      const mat=new THREE.MeshBasicMaterial({transparent:true,depthWrite:false});
+      const plane=new THREE.Mesh(geo,mat);
+      plane.position.set(0,0.13,(gender==='female'?0.155:0.17));
+      plane.renderOrder=2;
+      plane.userData._face=true;
+      /* reuse facePlanes texture pipeline via a tiny bridge */
+      if(window._faceTexFor) window._faceTexFor(app,tex=>{ mat.map=tex; mat.needsUpdate=true; });
+      bone.add(plane);
+    }catch(e){}
+  };
+  /* metrics bridge for hair scaling */
+  fetch('data/models/custom-heroes.json').then(r=>r.json()).then(j=>{ window._customMetrics=j; }).catch(()=>{});
 })();
