@@ -44,30 +44,35 @@ All 9 now gate. The gate is cheap and safe:
 Snapshot before the change: `legacy/skills.pre-ultgate.json`. Verified the diff is
 exactly 7 `requires` fields and nothing else (deep-compared, key-order-insensitive).
 
-## Finding 2 — skill points are oversupplied past ~Lv35 ⚠️
+## Finding 2 — RETRACTED ❌ skill points are *not* oversupplied
 
-| class | ranks available | points the optimal damage build uses at Lv60 | left over |
-|---|---|---|---|
-| mandirigma | 63 | 13 | **46** |
-| babaylan | 63 | 18 | 41 |
-| arnisador | 63 | 18 | 41 |
-| mangkukulam | 64 | 18 | 41 |
-| mamamana | 65 | 19 | 40 |
-| panday | 63 | 19 | 40 |
-| alim | 62 | 20 | 39 |
-| anino | 64 | 21 | 38 |
-| tirador | 65 | 24 | 35 |
+**This finding was wrong. Do not act on it.**
 
-With `maxRank: 5` and only **3 equip slots**, the damage side of a build is
-essentially finished for 13–24 points. Players earn 59.
+The original claim was that players earn 59 points at Lv60 but the optimal build
+uses only 13–24, so progression stalls around Lv35. That was an artifact of the
+simulator valuing **DPS only**. A DPS-optimal 3-slot build genuinely does stop
+needing points — but real players keep buying defensive and utility ranks.
 
-*Caveat, stated honestly:* the model only values DPS. A real player would sink
-leftovers into defensive and utility passives, so the points are not literally
-wasted. The real symptom is that **skill progression stops feeling rewarding
-around Lv35** — after that, levels grant points with nowhere meaningful to go.
+`npm run balance` §1 now reports both numbers:
 
-Options: raise `maxRank` on late-band skills, add more passives in the 40–60 band,
-or taper point gain after Lv40.
+```
+   class            ranks  dps build  full build  truly left
+   babaylan            63      18/59       59/59           0
+   mandirigma          63      13/59       59/59           0
+   tirador             65      24/59       59/59           0
+   ...all 9 classes: 59/59, 0 left
+```
+
+Every class absorbs all 59 points once defensive ranks are counted. **The tree
+was never oversupplied.** The original measurement answered "when does the
+*damage* side finish" and I reported it as "when does *progression* finish".
+
+I also tried raising `maxRank` 3→5 on the 40+ passives to "fix" this. Measured
+against the corrected metric it changed nothing (59/59 either way) while buffing
+the already-strong classes, so it was **reverted**. Ranks remain 62–65.
+
+Lesson recorded so it is not repeated: a model that optimises one axis cannot be
+used to claim a resource is wasted.
 
 ## Finding 3 — mandirigma is a real outlier, and the cause is ATK growth ⚠️
 
@@ -143,12 +148,95 @@ re-flagged later.
 
 ---
 
+## Implemented 2026-09-09 — results
+
+All tuning applied to `data/skills/definitions.json`. **47 value changes, 47
+lines, no code changes, no base-stat changes.** Re-run `npm run balance` to
+reproduce.
+
+### Outliers: 22 → 0
+
+Single-target DPS vs class median, ±25% threshold:
+
+| checkpoint | before | after |
+|---|---|---|
+| Lv10 | 4 classes breach | 0 |
+| Lv20 | 3 | 0 |
+| Lv30 | 3 | 0 |
+| Lv40 | 3 | 0 |
+| Lv50 | 3 | 0 |
+| Lv60 | 3 | 0 |
+| **total** | **22** | **0** |
+
+### Before → after DPS curve
+
+```
+class             Lv10        Lv20        Lv40        Lv60
+babaylan        18 → 28     41 → 62    119 → 171   202 → 285
+arnisador       42 → 40     81 → 78    216 → 199   317 → 292
+tirador         35 → 36     74 → 80    156 → 171   264 → 284
+alim            48 → 44    100 → 92    210 → 194   307 → 284
+mandirigma      23 → 31     53 → 73    110 → 156   161 → 228
+mamamana        34 → 37     74 → 85    140 → 160   223 → 250
+anino           38 → 36     93 → 90    197 → 186   327 → 307
+mangkukulam     41 → 41     77 → 77    176 → 176   250 → 250
+panday          25 → 27     57 → 64    148 → 153   247 → 251
+```
+
+### AoE spread tightened
+
+mandirigma −44% → **−22%**, anino +29% → **+23%**. Full range now −22% to +26%.
+
+### What was changed, and why
+
+**mandirigma** (was −35% single / −44% AoE, worst in game). Base stats untouched
+to preserve the Tank identity — multipliers raised instead: `md_hampas` 1.5→2.1,
+`md_sugod` 1.2→1.6, `md_walis` 1.3→1.7, `md_durog` 1.8→2.9, `md_bagsak` 2.2→3.3,
+`md_alon` 1.7→2.2, `md_piitan` 0.9→1.5, `md_hukbo` 3.0→4.5 + cd 75→65.
+
+**babaylan** (was −47% at Lv10). Root cause: it has exactly **one** damage skill
+before Lv15, so at Lv10 it spent 4 of 9 points with nothing to buy. Fixed by
+shortening `ba_tawag` cd 4→3 and lifting `ba_bulalakaw` (0.8→1.1, cd 9→8),
+`bb_hampas2` (1.6→2.0), `bb_sumpa2` (1.5→1.9, cd 13→12), `ba_panawagan` (1.5→2.2).
+
+**mamamana** (weakest secondaries in the game, best-3 rate 0.632). Lifted
+`mm_lason` 1.0→1.45, `mm_tanda` 1.2→1.8, `mm_tatlo` 0.95→1.5, `mm_lason2` 1.3→2.0,
+`mm_agila` 2.5→3.2.
+
+**tirador** `ti_tudla` 1.8→2.2, `ti_bihira` 2.2→2.8, `ti_talbog` 1.2→1.7,
+`ti_pabuya` 1.8→2.1. **panday** `pa_hampas` 1.6→1.8, `pa_pukpok` 1.7→2.0.
+
+**Trimmed the top three** (each was >+25% at several checkpoints):
+`ar_ulan` 0.6→0.48 ×5 hits, `al_kidlat` 2.2→1.8, `al_siklab` 1.6→1.45,
+`ar_hagod` 1.4→1.25, `an_talim` 1.5→1.35, `an_saksak2` 1.7→1.5.
+
+> ⚠️ `ar_ulan` is a 5-hit combo. Editing only its first effect would have raised
+> it from 3.0 to 4.8 total — a buff disguised as a trim. Caught by checking the
+> effect count before patching. Watch for this on any multi-hit skill.
+
+### Not fully resolved
+
+**panday's Lv28 cliff is reduced, not removed**: the Lv20→Lv30 jump went
+2.07× → **1.86×**. It is driven by three unlocks clustering at Lv22 (`pd_palo2`),
+Lv25 (`pd_baga` passive) and Lv28 (`pd_pukpok`). Flattening it further would mean
+moving skills between level bands, which is a progression-design change rather
+than a tuning one — left for a deliberate decision.
+
+### Save compatibility
+
+Verified safe. Nothing strips learned skills on load — only the explicit
+`respec()` button clears `S.sk.learned` (`game.js:11243`, wired to a UI click at
+`:11675`). Existing saves keep every skill and rank they had.
+
+---
+
 ## Suggested priority
 
-1. **Lv1–15 tuning** — widest spread, highest impact on new players.
-2. **mandirigma multipliers** — `md_durog` / `md_bagsak` / `md_hukbo`.
-3. **Late-game point sink** — more 40–60 passives, or higher `maxRank` late.
-4. **panday Lv28 cliff** — smooth or redistribute.
+1. ~~**Lv1–15 tuning**~~ ✅ done — babaylan/panday/mamamana lifted, 0 breaches at Lv10
+2. ~~**mandirigma multipliers**~~ ✅ done — −35% → −20% at Lv60, no longer flagged
+3. ~~**Late-game point sink**~~ ❌ **was a non-issue** — see retracted Finding 2
+4. 🔶 **panday Lv28 cliff** — reduced 2.07× → 1.86×, needs a progression-design
+   decision to go further (moving skills between level bands)
 
 Re-run `npm run balance` after each change; §3/§4/§5 will show whether the spread
 actually narrowed.

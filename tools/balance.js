@@ -266,6 +266,34 @@ function combatDps(cls, L, obj = 'single') {
   return best;
 }
 
+/* ---- full build: keep spending after DPS plateaus ----
+   A real player does not sit on 40 unspent points; they buy defensive and
+   utility ranks once the damage side is done. This measures the true SINK
+   capacity of the tree, which a DPS-only greedy cannot see. */
+function fullBuildSpend(cls, L) {
+  const b = combatDps(cls, L);
+  const rank = { ...b.rank };
+  let pool = pointsAt(L) - Object.values(b.spent).reduce((a, x) => a + x, 0);
+  const tree = BYCLASS[cls];
+  const buyable = (d) => {
+    const r = rank[d.id] || 0;
+    if (r >= (d.maxRank || 1)) return false;
+    if (L < d.requiredLevel) return false;
+    for (const [rid, need] of Object.entries(d.requires || {})) if ((rank[rid] || 0) < need) return false;
+    return pool >= (d.pointCost || 1);
+  };
+  let bought = 0;
+  for (let guard = 0; guard <= pointsAt(L); guard++) {
+    // prefer the highest-level skill that still has ranks, so the sink is realistic
+    const cand = tree.filter(buyable).sort((a, b2) => b2.requiredLevel - a.requiredLevel)[0];
+    if (!cand) break;
+    pool -= (cand.pointCost || 1);
+    rank[cand.id] = (rank[cand.id] || 0) + 1;
+    bought++;
+  }
+  return { spent: pointsAt(L) - pool, left: pool, ranks: Object.values(rank).reduce((a, x) => a + x, 0) };
+}
+
 /* ================= 1. PROGRESSION FEASIBILITY ================= */
 console.log('AGIMAT ONLINE — skill balance & progression');
 console.log('model: naked character, base crit 10%/150%, no gear/talents/food');
@@ -276,12 +304,15 @@ const LEVELS = [10, 20, 30, 40, 50, 60];
 const classIds = Object.keys(CLS);
 
 console.log('== 1. point economy at Lv60 (59 points earned) ==');
-console.log('   class            ranks avail  spent  left  Lv60 ult cost  reachable');
+console.log('   "dps build"  = points the DPS-optimal 3-slot build uses');
+console.log('   "full build" = points used once the player also buys defensive/utility ranks');
+console.log('   class            ranks  dps build  full build  truly left  Lv60 ult cost  reachable');
 const rows = [];
 for (const cls of classIds) {
   const totalRanks = BYCLASS[cls].reduce((a, s) => a + (s.maxRank || 1), 0);
   const c = combatDps(cls, 60);
   const used = Object.values(c.spent).reduce((a, b) => a + b, 0);
+  const full = fullBuildSpend(cls, 60);
   const ults = BYCLASS[cls].filter((s) => s.branch === 'ultimate')
     .sort((a, b) => a.requiredLevel - b.requiredLevel);
   const top = ults[ults.length - 1];
@@ -289,15 +320,18 @@ for (const cls of classIds) {
   const cost = minCost(top.id, 1, 60);
   const reach = cost <= pointsAt(60);
   const chosen = (c.rank[top.id] || 0) > 0;
-  console.log('   ' + cls.padEnd(16) + String(totalRanks).padStart(7) + String(used).padStart(7) +
-    String(c.pool).padStart(6) + String(cost).padStart(13) +
-    '   ' + (reach ? 'yes' : 'NO') + (chosen ? '' : '  (optimal build skips it)'));
+  console.log('   ' + cls.padEnd(16) + String(totalRanks).padStart(5) +
+    (String(used) + '/' + pointsAt(60)).padStart(11) +
+    (String(full.spent) + '/' + pointsAt(60)).padStart(12) +
+    String(full.left).padStart(12) + String(cost).padStart(13) +
+    '   ' + (reach ? 'yes' : 'NO') + (chosen ? '' : '  (dps build skips it)'));
   if (!reach) fail++;
-  rows.push({ cls, c, used, totalRanks });
+  rows.push({ cls, c, used, totalRanks, full });
 }
 console.log('   → every Lv60 ultimate must be legally reachable on 59 points: ' + (fail ? 'FAIL ' + fail : 'PASS'));
-console.log('   note: "optimal build skips it" means the strongest 3-slot build does not use it —');
-console.log('         a flavour/build-choice signal, not a progression blocker.');
+const avgLeft = Math.round(rows.reduce((a, r) => a + r.full.left, 0) / rows.length);
+console.log('   → average points with nowhere to go: ' + avgLeft + ' of 59');
+console.log('     (under ~10 means the tree absorbs a full build; over ~25 means progression stalls)');
 
 /* the newly-gated ults: confirm the gate is satisfiable, not a dead end */
 console.log('');
