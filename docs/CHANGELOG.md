@@ -1,4 +1,10 @@
 # CHANGELOG
+## 2026-09-09 — Face preset system: decal planes + eye colors (concept deferred items ✓)
+- **Assets (self-made, zero licensing)**: face_parts_sheet.png generated in-style (4 eye styles + 4 brows + 4 mouths), sliced to 12 transparent parts, composed into 4 face presets (assets/faces/face_1..4.png, 512², 55-77KB): 🙂 Mabait · 😤 Determinado · 😌 Mahinahon · 😠 Mabangis. presets.json carries ids + 9 eye colors.
+- **facePlanes module** (Animal Crossing technique): face = curved decal plane (cylindrical bend, renderOrder 2, transparent) floating at head front — UV-independent kaya gumagana sa kahit anong generated body. Eye COLOR via canvas iris-recolor (brown-zone detection r>g>b + luminance band, shading preserved), cached per preset|color. Auto-attached via buildHero wrap to all custom heroes (player, remotes, previews).
+- **Creation wizard**: Mukha preset picker (thumbnail cards) sa ANYO step; randomize includes face; S.app.face persisted (additive). Eye-color swatches now visibly change the face.
+- Rationale vs libreng online packs: lahat ng face packs ay naka-lock sa sariling UV/base model (VRoid, DAZ, 2D sprites) — hindi compatible sa unique UV atlases ng Hunyuan bodies natin; decal plane ang industry-standard workaround. Headless 4/4; scope-gate clean. SW → agimat-v21.
+
 ## 2026-09-09 — Character Creation v3: concept-model adaptation (welcome-page identity)
 - **Flow restructured 4 → 6 steps** per user's concept doc: KASARIAN → ANYO → LANDAS → DIWA → AGIMAT → SIMULA. Gender is now screen 1 with big ♂/♀ cards ("Lakas sa Puso" / "Ganda sa Diwa"); name moved to the ceremonial final screen.
 - **Anyo (screen 2)**: hair styles, hair color, NEW eye color (9 colors per concept: brown→cyan; stored in S.app.eyeColor for future eye-mesh tinting), skin tones, 🎲 Randomize button.

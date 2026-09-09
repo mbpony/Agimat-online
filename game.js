@@ -5177,7 +5177,7 @@ let CLASS_TAGALOG={
   mangkukulam:{tl:'Mangkukulam',desc:'Bruha ng mga sumpa — munyeka, karayom, at lason. Mag-ingat sa kanyang bulong.'},
 };
 if (GAME_DATA.classes && GAME_DATA.classes.tagalog) CLASS_TAGALOG = GAME_DATA.classes.tagalog;
-const charDraft={name:'', gender:'male', skin:1, hairStyle:0, hairColor:0, eyeColor:0, cls:null};
+const charDraft={name:'', gender:'male', skin:1, hairStyle:0, hairColor:0, eyeColor:0, face:0, cls:null};
 const EYE_COLORS=[0x4a2c1a, 0x2a1a10, 0x101010, 0x7a5a2a, 0x2a5a9a, 0x2a7a4a, 0x6a3a9a, 0xc9a24b, 0x2a8a9a];
 let ccRenderer=null, ccScene=null, ccCam=null, ccMesh=null, ccYaw=0.5, ccRAF=0;
 
@@ -5455,6 +5455,8 @@ function ccRebuildMesh(){
     skin:SKIN_TONES[charDraft.skin],
     hairColor:HAIR_COLORS[charDraft.hairColor],
     hairStyle:charDraft.hairStyle,
+    eyeColor:charDraft.eyeColor,
+    face:charDraft.face,
   });
   ccMesh.traverse(o=>{ if(o.isMesh&&o.material._isFx) o.visible=false; });
   ccScene.add(ccMesh);
@@ -5568,6 +5570,7 @@ function showCharCreate(){
     charDraft.hairStyle=Math.floor(Math.random()*HAIR_STYLES.length);
     charDraft.hairColor=Math.floor(Math.random()*HAIR_COLORS.length);
     charDraft.eyeColor=Math.floor(Math.random()*EYE_COLORS.length);
+    charDraft.face=Math.floor(Math.random()*4);
     showCharCreate._syncAnyo&&showCharCreate._syncAnyo();
     ccRebuildMesh();
   };
@@ -5581,6 +5584,20 @@ function showCharCreate(){
       b.onclick=()=>{ eyeEl.querySelectorAll('button').forEach(x=>x.classList.remove('sel')); b.classList.add('sel');
         charDraft.eyeColor=i; ccRebuildMesh(); };
       eyeEl.appendChild(b);
+    });
+  }
+  /* FACE presets (concept: preset-based faces) */
+  const faceEl=$('cc-face');
+  if(faceEl){ faceEl.innerHTML='';
+    const FACES=['🙂 Mabait','😤 Determinado','😌 Mahinahon','😠 Mabangis'];
+    FACES.forEach((nm,i)=>{
+      const b=document.createElement('button');
+      b.innerHTML='<img src="assets/faces/face_'+(i+1)+'.png" alt="" loading="lazy"><span>'+nm.split(' ')[1]+'</span>';
+      b.className='cc2-face';
+      if(i===charDraft.face)b.classList.add('sel');
+      b.onclick=()=>{ faceEl.querySelectorAll('button').forEach(x=>x.classList.remove('sel')); b.classList.add('sel');
+        charDraft.face=i; ccRebuildMesh(); };
+      faceEl.appendChild(b);
     });
   }
   const skinEl=$('cc-skin'); skinEl.innerHTML='';
@@ -5616,6 +5633,7 @@ function showCharCreate(){
       el.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('sel',i===v));
     });
     const he=$('cc-hair'); if(he) he.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('sel',i===charDraft.hairStyle));
+    const fe=$('cc-face'); if(fe) fe.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('sel',i===charDraft.face));
   };
   /* ---- STEP 2: DIWA ---- */
   const dwEl=$('cc-diwa'); dwEl.innerHTML='';
@@ -5652,7 +5670,7 @@ function showCharCreate(){
   $('cc-confirm').onclick=()=>{
     if($('cc-confirm').disabled) return;
     S.name=charDraft.name.trim();
-    S.app={gender:charDraft.gender, skin:charDraft.skin, hairStyle:charDraft.hairStyle, hairColor:charDraft.hairColor, eyeColor:charDraft.eyeColor??0};
+    S.app={gender:charDraft.gender, skin:charDraft.skin, hairStyle:charDraft.hairStyle, hairColor:charDraft.hairColor, eyeColor:charDraft.eyeColor??0, face:charDraft.face??0};
     S.diwa=charDraft.diwa; S.agimat0=charDraft.agimat0;
     cancelAnimationFrame(ccRAF);
     $('char-create').classList.add('hidden');
@@ -13777,4 +13795,100 @@ CATALOG.push(
       }
     }
   })();
+})();
+
+/* ================================================================
+   🙂 FACE PLANE SYSTEM (concept doc: face/eye presets + eye color)
+   Animal Crossing technique: the face is a small curved DECAL PLANE
+   floating just in front of the head — UV-independent, so it works
+   on ANY generated body. 4 composed presets (assets/faces/face_N.png,
+   eyes+brow+mouth), eye COLOR via canvas hue-tint of the brown iris
+   pixels (cached per preset|color). Wired into the customHeroes
+   compositor via a buildHero wrap; charDraft.facePreset drives the
+   creation preview live. Save: S.app.face (additive).
+   ================================================================ */
+(function facePlanes(){
+  const N=4;
+  const texCache={};   // 'i|eyeHex' -> THREE.CanvasTexture
+  const imgCache={};   // i -> HTMLImageElement (or null while loading)
+  function faceImg(i,cb){
+    if(imgCache[i]!==undefined){ if(imgCache[i]) cb(imgCache[i]); return; }
+    imgCache[i]=null;
+    const im=new Image();
+    im.onload=()=>{ imgCache[i]=im; cb(im); };
+    im.onerror=()=>{};
+    im.src='assets/faces/face_'+(i+1)+'.png';
+  }
+  function faceTex(i,eyeHex,cb){
+    const key=i+'|'+eyeHex;
+    if(texCache[key]){ cb(texCache[key]); return; }
+    faceImg(i,im=>{
+      try{
+        const cv=document.createElement('canvas');
+        cv.width=im.width; cv.height=im.height;
+        const ctx=cv.getContext('2d');
+        ctx.drawImage(im,0,0);
+        /* iris recolor: brownish pixels (r>g>b, mid luminance) → eye color */
+        const d=ctx.getImageData(0,0,cv.width,cv.height);
+        const px=d.data;
+        const er=(eyeHex>>16)&255, eg=(eyeHex>>8)&255, eb=eyeHex&255;
+        for(let k=0;k<px.length;k+=4){
+          if(px[k+3]<40) continue;
+          const r=px[k],g=px[k+1],b=px[k+2];
+          const lum=(r+g+b)/3;
+          if(r>g&&g>b&&lum>35&&lum<210&&(r-b)>25){   // brown iris zone
+            const t=lum/160;                          // keep shading
+            px[k]=Math.min(255,er*t); px[k+1]=Math.min(255,eg*t); px[k+2]=Math.min(255,eb*t);
+          }
+        }
+        ctx.putImageData(d,0,0);
+        const tex=new THREE.CanvasTexture(cv);
+        tex.colorSpace=THREE.SRGBColorSpace;
+        texCache[key]=tex;
+        cb(tex);
+      }catch(e){}
+    });
+  }
+  /* attach face plane to a custom hero group */
+  window._attachFace=function(g,app){
+    if(!g||!g.userData||!g.userData.custom) return;
+    const fi=Math.max(0,Math.min(N-1,app.face??0));
+    const eyeHex=(typeof app.eyeColor==='number')?(EYE_COLORS[app.eyeColor]??EYE_COLORS[0]):EYE_COLORS[0];
+    const gender=(app.gender==='female')?'female':'male';
+    /* find metrics through the compositor's normalization: hero is 2.6 units tall,
+       head center ≈ 0.808/1.153 of height → y≈1.82; face sits at front of head */
+    const y=2.6*0.72, z=(gender==='female'?0.36:0.40);
+    const w=0.72, h=0.72;
+    const geo=new THREE.PlaneGeometry(w,h,8,1);
+    /* curve the plane slightly around the head (cylindrical bend) */
+    const posA=geo.attributes.position;
+    for(let k=0;k<posA.count;k++){
+      const x=posA.getX(k);
+      posA.setZ(k,-Math.abs(x)*x*x*0.55);
+    }
+    geo.computeVertexNormals();
+    const mat=new THREE.MeshBasicMaterial({transparent:true,depthWrite:false,side:THREE.FrontSide});
+    const plane=new THREE.Mesh(geo,mat);
+    plane.position.set(0,y,z);
+    plane.renderOrder=2;
+    plane.userData._face=true; plane.userData._noBob=false;
+    faceTex(fi,eyeHex,tex=>{ mat.map=tex; mat.needsUpdate=true; });
+    /* remove old face if rebuilt */
+    for(const c of [...g.children]) if(c.userData&&c.userData._face) g.remove(c);
+    g.add(plane);
+    plane.userData._baseY=plane.position.y;
+  };
+  /* hook the compositor */
+  const _bh=buildHero;
+  buildHero=function(cls, appOverride){
+    const g=_bh.apply(this,arguments);
+    try{
+      if(g&&g.userData&&g.userData.custom){
+        const app=appOverride||heroApp();
+        window._attachFace(g,{face:app.face??((S.app&&S.app.face)??0),
+          eyeColor:app.eyeColor??((S.app&&S.app.eyeColor)??0), gender:app.gender});
+      }
+    }catch(e){}
+    return g;
+  };
 })();

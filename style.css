@@ -1938,3 +1938,23 @@ h2,h3,h4{ font-family:var(--ff); letter-spacing:.4px; }
   .cc2-genders button{ min-height:120px; }
   .cc2-genders button em{ width:52px; height:52px; font-size:30px; }
 }
+
+/* ---- face preset picker (creation ANYO step) ---- */
+.cc2-faces{ display:flex; gap:8px; flex-wrap:wrap; margin:4px 0 8px; }
+.cc2-face{
+  width:74px; padding:6px 4px 5px; border-radius:12px; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  background:linear-gradient(180deg, rgba(36,26,62,.9), rgba(18,12,34,.94));
+  border:2px solid rgba(255,255,255,.14); color:#efe8ff;
+  transition:transform .12s, border-color .12s;
+}
+.cc2-face img{
+  width:52px; height:52px; object-fit:contain; border-radius:8px;
+  background:radial-gradient(circle at 50% 42%, rgba(232,185,138,.9), rgba(200,150,110,.85));
+}
+.cc2-face span{ font:700 9.5px var(--ff); color:#a99cc4; }
+.cc2-face.sel{
+  border-color:var(--gold); transform:translateY(-2px);
+  box-shadow:0 0 14px rgba(242,177,52,.35);
+}
+.cc2-face.sel span{ color:var(--gold-hi); }

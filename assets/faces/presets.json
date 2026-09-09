@@ -1,0 +1,43 @@
+{
+ "presets": [
+  {
+   "id": "face_1",
+   "name": "Mabait",
+   "eyes": 1,
+   "brow": 1,
+   "mouth": 1
+  },
+  {
+   "id": "face_2",
+   "name": "Determinado",
+   "eyes": 2,
+   "brow": 2,
+   "mouth": 2
+  },
+  {
+   "id": "face_3",
+   "name": "Mahinahon",
+   "eyes": 3,
+   "brow": 3,
+   "mouth": 3
+  },
+  {
+   "id": "face_4",
+   "name": "Mabangis",
+   "eyes": 4,
+   "brow": 4,
+   "mouth": 4
+  }
+ ],
+ "eyeColors": [
+  "#4a2c1a",
+  "#2a1a10",
+  "#101010",
+  "#7a5a2a",
+  "#2a5a9a",
+  "#2a7a4a",
+  "#6a3a9a",
+  "#c9a24b",
+  "#2a8a9a"
+ ]
+}
