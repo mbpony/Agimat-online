@@ -32,8 +32,7 @@ const HAIRS = ['hair_m1', 'hair_m2', 'hair_f1', 'hair_f2'];
  * widest slice — on a chibi the head is the widest thing up there. */
 const HEAD_TOP_FRAC = 0.75;   // start scanning at 75% of body height
 
-function readPart(io, name) {
-  const file = path.join(DIR, name + '.glb');
+function readPartAbs(io, file) {
   if (!fs.existsSync(file)) throw new Error('missing asset: ' + file);
   return io.read(file).then((doc) => {
     const meshes = doc.getRoot().listMeshes();
@@ -49,9 +48,11 @@ function readPart(io, name) {
         tris += idx ? idx.getCount() / 3 : n / 3;
       }
     }
-    return { name, pts, tris: Math.round(tris) };
+    return { name: path.basename(file, '.glb'), pts, tris: Math.round(tris) };
   });
 }
+
+function readPart(io, name) { return readPartAbs(io, path.join(DIR, name + '.glb')); }
 
 function box(pts) {
   const min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
@@ -196,6 +197,34 @@ const r4 = (v) => Math.round(v * 1e4) / 1e4;
       '  -> hair was ' + (oldW / newW).toFixed(2) + 'x too wide');
   }
   console.log('');
+
+  /* ---- KayKit reference ----
+   * Weapons under assets/characters/kaykit/weapons/ are authored for the KayKit
+   * rig. Parented to a chibi bone they inherit the chibi's K instead of
+   * KayKit's, so they render kaykitH/chibiH times too large (2.98x for the
+   * current assets — a 1.78-tall sword becomes 4.00 on a 2.6-tall hero).
+   * weaponAttach needs this ratio, so measure it here rather than hard-code. */
+  const KAYKIT_REF = 'assets/characters/kaykit/Knight.glb';
+  const kaykitFile = path.join(ROOT, KAYKIT_REF);
+  if (fs.existsSync(kaykitFile)) {
+    const kp = await readPartAbs(io, kaykitFile);
+    const kb = box(kp.pts);
+    out.kaykitRef = {
+      file: KAYKIT_REF,
+      h: r4(kb.size[1]),
+      minY: r4(kb.min[1]),
+      /* multiply a KayKit weapon's scale by this when attaching it to a
+       * chibi bone, so it keeps the size it was authored for */
+      weaponScale: r4(out.base_male.h / kb.size[1]),
+    };
+    console.log('  kaykitRef  ' + KAYKIT_REF + '  h=' + out.kaykitRef.h +
+      '  weaponScale=' + out.kaykitRef.weaponScale);
+    console.log('    (a KayKit weapon on a chibi bone otherwise renders ' +
+      (kb.size[1] / out.base_male.h).toFixed(2) + 'x too large)');
+    console.log('');
+  } else {
+    console.log('  kaykitRef: ' + KAYKIT_REF + ' not found — weaponScale not baked\n');
+  }
 
   if (dry) { console.log('--dry: not written'); return; }
   fs.writeFileSync(OUT, JSON.stringify(out, null, 2) + '\n');

@@ -105,5 +105,11 @@
     "centerX": 0,
     "centerZ": 0,
     "tris": 940
+  },
+  "kaykitRef": {
+    "file": "assets/characters/kaykit/Knight.glb",
+    "h": 3.4364,
+    "minY": -1.1218,
+    "weaponScale": 0.3356
   }
 }

@@ -13587,9 +13587,16 @@ CATALOG.push(
     tirador:'crossbow_2handed.gltf', mamamana:'crossbow_2handed.gltf',
     babaylan:'staff.gltf', alim:'staff.gltf', mangkukulam:'staff.gltf',
   };
+  /* GLTFLoader runs every node name through PropertyBinding.sanitizeNodeName
+   * (jsm/loaders/GLTFLoader.js:3593), which strips the reserved characters
+   * [\[\]\.:\/]. So the rig's "handslot.r" is stored as "handslotr" and an
+   * exact-match lookup never finds it — refresh() then hit `if(!R&&!L) return`
+   * and silently attached nothing. Match on the sanitized name instead. */
+  function sanit(n){ return (n||'').replace(/[^a-zA-Z0-9_]/g,''); }
   function findBone(root,name){
+    const want=sanit(name);
     let hit=null;
-    root.traverse(o=>{ if(!hit&&o.name===name) hit=o; });
+    root.traverse(o=>{ if(!hit&&(o.isBone||o.isObject3D)&&sanit(o.name)===want) hit=o; });
     return hit;
   }
   function weaponFor(cls){
@@ -13606,16 +13613,30 @@ CATALOG.push(
     if(!bone) return;
     for(const c of [...bone.children]) if(c.userData&&c.userData._weap) bone.remove(c);
   }
-  function attach(bone,url,cls){
+  /* KayKit weapons are authored for the KayKit rig (Knight.glb is 3.4364 tall)
+   * but the custom chibi body is 1.1534. A weapon parented to a chibi bone
+   * inherits the chibi's K = 2.6/1.1534 = 2.2542 instead of KayKit's
+   * 2.6/3.4364 = 0.7566, so it renders 2.98x too large — sword_1handed came out
+   * 4.00 units tall on a 2.6-tall hero. The ratio is measured by
+   * tools/bake-hero-metrics.js, not hard-coded. It must NOT be applied when the
+   * host is a KayKit model, where the weapons are already the right size. */
+  function weaponScaleFor(mesh){
+    const ud=(mesh&&mesh.userData)||{};
+    if(!ud.custom&&!ud.customRig) return 1;              // KayKit/procedural host
+    const kr=window._customMetrics&&window._customMetrics.kaykitRef;
+    return (kr&&kr.weaponScale)?kr.weaponScale:0.3356;   // fallback if metrics absent
+  }
+  function attach(bone,url,cls,scale){
     if(!bone||!url) return;
     loadGLB(W+url.replace(/\.gltf$/,'.gltf')).then(c=>{
       if(!c) return;
       clearSlot(bone);
       const m=c.scene.clone(true);              // static meshes: plain clone OK
       m.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false; } });
-      /* normalize size: weapons are authored at rig scale; the hero group
-         was scaled by 2.6/h on the MODEL, and bones inherit that — so no
-         extra scaling needed. Flag for cleanup. */
+      /* Origins are already correct per asset — grips sit at the origin for
+       * swords/axes/daggers (17-28% up), shields and books are centred — so
+       * only the scale needs correcting. Verified 2026-09-09. */
+      if(scale&&Math.abs(scale-1)>1e-4) m.scale.setScalar(scale);
       m.userData._weap=true;
       bone.add(m);
     }).catch(()=>{});
@@ -13630,8 +13651,9 @@ CATALOG.push(
     if(player.mesh.userData._weapSig===sig) return;      // unchanged
     player.mesh.userData._weapSig=sig;
     clearSlot(R); clearSlot(L);
-    if(w.main) attach(R,w.main,cls);
-    if(w.off)  attach(L,w.off,cls);
+    const ws=weaponScaleFor(player.mesh);
+    if(w.main) attach(R,w.main,cls,ws);
+    if(w.off)  attach(L,w.off,cls,ws);
   }
   /* re-attach on equip changes + slow sweep for mesh swaps (GLB arrival, advance, respawn) */
   const _eq2=equipItem;
