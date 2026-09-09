@@ -1,4 +1,13 @@
 # CHANGELOG
+## 2026-09-09 — Character Creation v3: concept-model adaptation (welcome-page identity)
+- **Flow restructured 4 → 6 steps** per user's concept doc: KASARIAN → ANYO → LANDAS → DIWA → AGIMAT → SIMULA. Gender is now screen 1 with big ♂/♀ cards ("Lakas sa Puso" / "Ganda sa Diwa"); name moved to the ceremonial final screen.
+- **Anyo (screen 2)**: hair styles, hair color, NEW eye color (9 colors per concept: brown→cyan; stored in S.app.eyeColor for future eye-mesh tinting), skin tones, 🎲 Randomize button.
+- **Landas (screen 3)**: existing class banners + info panel retained (concept's list+preview+info pattern; 3D preview updates on pick — already live via compositor).
+- **Simula (screen 6)**: character-sheet summary table (Kasarian/Landas/Buhok/Diwa/Agimat/Simula: Barangay Liwanag — Banaue Highlands), quote "Ang simula ng isang alamat", confirm = "⚔️ SIMULAN ANG PAGLALAKBAY — <NAME>" (concept's recommended CTA). Birth cinematic unchanged (already implements concept §9).
+- **Welcome-page visual identity applied**: cc2-inner uses exact .ws-panel gradient/border/glow; ⚜️ AGIMAT ONLINE ⚜️ brand header; serif display titles; ornate gborder hairline; pedestal glow vignette. Consistent na ang creation sa welcome.
+- Concept items deferred (hindi pa kaya ng assets): face/eyebrow/mouth presets (need texture variants), eye STYLE picker (need eye meshes), accessories, per-class signature preview anims (needs rig retarget), zoom control. Data model already ID-based (concept §10 ✓). Chat-over-modal rule already enforced by uiOverlayManager ✓.
+- Headless 12/12 wizard-flow tests; 10/10 structural checks; scope-gate clean. SW → agimat-v20.
+
 ## 2026-09-09 — Custom Filipino chibi heroes: integration phase 1 (compositor)
 - **Pose bake**: base+outfit meshes' arms lowered 50° from T-pose (y-band 0.40-0.62H, pivot x=±0.155) — natural relaxed stance; QC-verified silhouettes. Metrics (head width, hair seat height, part dims) baked to data/models/custom-heroes.json.
 - **customHeroes module**: runtime compositor — body (skin-tinted canvas multiply vs mid-tan reference so tone[1]≈identity) + outfit layer (×1.02 anti-z-fight) + hair (scaled to headW×1.06, seated at hairBaseY, HAIR_COLORS tint ×2 lighten-multiply for near-black hair textures). Tint cache per url|color. Composite normalized to 2.6 game units.

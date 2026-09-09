@@ -1846,3 +1846,95 @@ h2,h3,h4{ font-family:var(--ff); letter-spacing:.4px; }
 @media (pointer:coarse) and (max-width:1024px){
   #btn-context{ right:calc(210px + env(safe-area-inset-right)); bottom:calc(130px + env(safe-area-inset-bottom)); }
 }
+
+/* ================================================================
+   🎨 CHARACTER CREATION v3 — concept-model adaptation, WELCOME-PAGE
+   design language: deep purple/navy, gold ornament, serif display,
+   glowing panel borders (same tokens as .ws-panel / .ws-logo).
+   ================================================================ */
+.cc2-brand{
+  font-family:var(--ff-display); font-weight:900; font-size:17px; letter-spacing:3px;
+  color:#ffd94a; text-shadow:0 0 18px rgba(242,177,52,.5), 0 2px 8px #000;
+  text-align:center; margin-bottom:2px;
+}
+.cc2-brand span{ color:#f2b134; font-size:12px; letter-spacing:5px; }
+#char-create .cc2-inner{
+  background:linear-gradient(180deg, rgba(26,17,44,.94), rgba(14,9,26,.96));
+  border:2px solid rgba(242,177,52,.5); border-radius:16px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 0 40px rgba(242,177,52,.12), 0 24px 60px rgba(0,0,0,.6);
+}
+#char-create .cc2-title{
+  font-family:var(--ff-display); letter-spacing:1.5px; color:var(--gold-hi);
+  text-shadow:0 2px 12px rgba(0,0,0,.7);
+}
+/* ornate top hairline like the welcome quote panel */
+#char-create .cc2-inner::before{
+  content:''; display:block; height:2.5px; margin:0 14%;
+  background:var(--gborder); border-radius:2px;
+}
+
+/* ---- gender cards (screen 1 ng concept) ---- */
+.cc2-genders{ display:flex; gap:12px; justify-content:center; margin:14px 0; }
+.cc2-genders button{
+  flex:1; max-width:220px; min-height:150px; cursor:pointer; border-radius:16px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  background:linear-gradient(180deg, rgba(36,26,62,.9), rgba(18,12,34,.94));
+  border:2px solid rgba(255,255,255,.14); color:#efe8ff;
+  transition:transform .15s, border-color .15s, box-shadow .15s;
+}
+.cc2-genders button em{
+  font-style:normal; font-size:38px; width:64px; height:64px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.06); border:2px solid rgba(255,255,255,.2);
+}
+.cc2-genders button[data-v="male"] em{ color:#7dc8ff; }
+.cc2-genders button[data-v="female"] em{ color:#ff8ab0; }
+.cc2-genders button b{ font:900 15px var(--ff-display); letter-spacing:2px; }
+.cc2-genders button small{ font:600 10.5px var(--ff); color:#a99cc4; }
+.cc2-genders button.sel{
+  border-color:var(--gold); transform:translateY(-3px);
+  box-shadow:0 0 24px rgba(242,177,52,.35), 0 12px 30px rgba(0,0,0,.5);
+}
+.cc2-genders button.sel em{ border-color:var(--gold); box-shadow:0 0 16px rgba(242,177,52,.4); }
+
+/* ---- anyo toolbar ---- */
+.cc2-anyo-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+.cc2-mini{
+  padding:7px 12px; border-radius:10px; cursor:pointer; font:800 11px var(--ff);
+  background:rgba(242,177,52,.12); border:1px solid rgba(242,177,52,.45); color:var(--gold-hi);
+}
+.cc2-mini:active{ transform:scale(.95); }
+
+/* ---- character sheet (screen 4 ng concept) ---- */
+.cc2-sheet{
+  margin-top:10px; border-radius:12px; overflow:hidden;
+  border:1px solid rgba(242,177,52,.35);
+  background:rgba(5,3,12,.5);
+}
+.cc2-row{
+  display:flex; justify-content:space-between; gap:10px; padding:7px 12px;
+  border-bottom:1px solid rgba(255,255,255,.06); font:600 12px var(--ff);
+}
+.cc2-row:last-child{ border-bottom:none; }
+.cc2-row span{ color:#a99cc4; }
+.cc2-row b{ color:#efe8ff; text-align:right; }
+.cc2-quote{
+  margin-top:10px; text-align:center; font-family:var(--ff-display); font-style:italic;
+  font-size:12.5px; color:#d9c9a8; opacity:.85;
+}
+
+/* stepper: 6 items fit */
+#char-create .cc-stepper{ flex-wrap:wrap; row-gap:4px; }
+#char-create .cc-stepper span{ font-size:9.5px; letter-spacing:.8px; }
+
+/* preview pedestal glow — match welcome vignette mood */
+#char-create .cc2-preview{
+  background:
+    radial-gradient(ellipse at 50% 74%, rgba(242,177,52,.10), transparent 55%),
+    radial-gradient(ellipse at 50% 30%, rgba(125,240,255,.05), transparent 60%);
+  border-radius:14px;
+}
+@media (max-width:760px){
+  .cc2-genders button{ min-height:120px; }
+  .cc2-genders button em{ width:52px; height:52px; font-size:30px; }
+}

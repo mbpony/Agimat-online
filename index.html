@@ -147,12 +147,15 @@
     <div class="cc-bg"></div>
     <div class="cc2-inner">
       <div class="cc2-head">
-        <div class="cc2-title" id="cc-step-title">Piliin ang Iyong Landas</div>
+        <div class="cc2-brand">⚜️ AGIMAT <span>ONLINE</span> ⚜️</div>
+        <div class="cc2-title" id="cc-step-title">Piliin ang Kasarian</div>
         <div class="cc-stepper" id="cc-stepper">
-          <span data-s="0" class="on">◆ LANDAS</span><i></i>
+          <span data-s="0" class="on">◆ KASARIAN</span><i></i>
           <span data-s="1">◇ ANYO</span><i></i>
-          <span data-s="2">◇ DIWA</span><i></i>
-          <span data-s="3">◇ AGIMAT</span>
+          <span data-s="2">◇ LANDAS</span><i></i>
+          <span data-s="3">◇ DIWA</span><i></i>
+          <span data-s="4">◇ AGIMAT</span><i></i>
+          <span data-s="5">◇ SIMULA</span>
         </div>
       </div>
       <div class="cc2-cols">
@@ -164,36 +167,50 @@
         </div>
         <div class="cc2-form">
           <div class="cc-step" id="cc-step-0">
+            <p class="cc-stepnote">Sino ka sa mundong ito? <i>Magkaibang landas, iisang destinasyon.</i></p>
+            <div class="cc2-genders" id="cc-gender">
+              <button data-v="male" class="sel"><em>♂</em><b>LALAKI</b><small>Lakas sa Puso</small></button>
+              <button data-v="female"><em>♀</em><b>BABAE</b><small>Ganda sa Diwa</small></button>
+            </div>
+          </div>
+          <div class="cc-step hidden" id="cc-step-1">
+            <div class="cc2-anyo-head">
+              <label class="cc2-label" style="margin:0">Hubugin ang iyong sariling anyo</label>
+              <button id="cc-random" class="cc2-mini" title="Random na anyo">🎲 Randomize</button>
+            </div>
+            <label class="cc2-label">Buhok</label>
+            <div class="cc2-opts" id="cc-hair"></div>
+            <label class="cc2-label">Kulay ng Buhok</label>
+            <div class="cc2-swatches" id="cc-haircolor"></div>
+            <label class="cc2-label">Kulay ng Mata</label>
+            <div class="cc2-swatches" id="cc-eyecolor"></div>
+            <label class="cc2-label">Kulay ng Balat</label>
+            <div class="cc2-swatches" id="cc-skin"></div>
+          </div>
+          <div class="cc-step hidden" id="cc-step-2">
+            <p class="cc-stepnote">Siyam na landas. Walang hangganang kakayahan.</p>
             <div class="cc2-classes" id="cc-classes"></div>
             <div class="cc2-classinfo" id="cc-classinfo">Piliin ang isang landas upang makita ang detalye.</div>
           </div>
-          <div class="cc-step hidden" id="cc-step-1">
+          <div class="cc-step hidden" id="cc-step-3">
+            <p class="cc-stepnote">Ang <b>Diwa</b> ang espiritwal na ugat ng iyong bayani — maliit na biyaya, malaking kahulugan.</p>
+            <div class="cc-pickgrid" id="cc-diwa"></div>
+            <div class="cc2-classinfo" id="cc-diwainfo">Piliin ang iyong diwa.</div>
+          </div>
+          <div class="cc-step hidden" id="cc-step-4">
+            <p class="cc-stepnote">Bawat bayani ay may unang <b>Agimat</b> — mana mula sa mga ninuno.</p>
+            <div class="cc-pickgrid" id="cc-agimat"></div>
+            <div class="cc2-classinfo" id="cc-agimatinfo">Piliin ang iyong unang agimat.</div>
+          </div>
+          <div class="cc-step hidden" id="cc-step-5">
+            <p class="cc-stepnote">Handa ka na bang simulan ang iyong paglalakbay?</p>
             <label class="cc2-label">Pangalan ng Bayani</label>
             <div class="cc2-name-row">
               <input id="cc-name" type="text" maxlength="16" placeholder="Ilagay ang pangalan…" autocomplete="off">
               <button id="cc-dice" title="Random na pangalan">🎲</button>
             </div>
-            <label class="cc2-label">Kasarian</label>
-            <div class="cc2-opts" id="cc-gender">
-              <button data-v="male" class="sel">👨 Lalaki</button>
-              <button data-v="female">👩 Babae</button>
-            </div>
-            <label class="cc2-label">Kulay ng Balat</label>
-            <div class="cc2-swatches" id="cc-skin"></div>
-            <label class="cc2-label">Buhok</label>
-            <div class="cc2-opts" id="cc-hair"></div>
-            <div class="cc2-swatches" id="cc-haircolor"></div>
-          </div>
-          <div class="cc-step hidden" id="cc-step-2">
-            <p class="cc-stepnote">Ang <b>Diwa</b> ang espiritwal na ugat ng iyong bayani — maliit na biyaya, malaking kahulugan.</p>
-            <div class="cc-pickgrid" id="cc-diwa"></div>
-            <div class="cc2-classinfo" id="cc-diwainfo">Piliin ang iyong diwa.</div>
-          </div>
-          <div class="cc-step hidden" id="cc-step-3">
-            <p class="cc-stepnote">Bawat bayani ay may unang <b>Agimat</b> — mana mula sa mga ninuno.</p>
-            <div class="cc-pickgrid" id="cc-agimat"></div>
-            <div class="cc2-classinfo" id="cc-agimatinfo">Piliin ang iyong unang agimat.</div>
-            <div id="cc-summary"></div>
+            <div id="cc-summary" class="cc2-sheet"></div>
+            <div class="cc2-quote">“Ang simula ng isang alamat.”</div>
           </div>
           <div class="cc-nav">
             <button id="cc-back" class="cc-navbtn">← BALIK</button>

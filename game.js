@@ -5177,7 +5177,8 @@ let CLASS_TAGALOG={
   mangkukulam:{tl:'Mangkukulam',desc:'Bruha ng mga sumpa — munyeka, karayom, at lason. Mag-ingat sa kanyang bulong.'},
 };
 if (GAME_DATA.classes && GAME_DATA.classes.tagalog) CLASS_TAGALOG = GAME_DATA.classes.tagalog;
-const charDraft={name:'', gender:'male', skin:1, hairStyle:0, hairColor:0, cls:null};
+const charDraft={name:'', gender:'male', skin:1, hairStyle:0, hairColor:0, eyeColor:0, cls:null};
+const EYE_COLORS=[0x4a2c1a, 0x2a1a10, 0x101010, 0x7a5a2a, 0x2a5a9a, 0x2a7a4a, 0x6a3a9a, 0xc9a24b, 0x2a8a9a];
 let ccRenderer=null, ccScene=null, ccCam=null, ccMesh=null, ccYaw=0.5, ccRAF=0;
 
 /* ================================================================
@@ -5467,15 +5468,17 @@ function ccRebuildMesh(){
    4-STAGE CREATION: 0 LANDAS · 1 ANYO · 2 DIWA · 3 AGIMAT
    ================================================================ */
 const CC_STEPS=[
-  {t:'Piliin ang Iyong Landas', k:'LANDAS'},
-  {t:'Hubugin ang Iyong Anyo',  k:'ANYO'},
-  {t:'Piliin ang Iyong Diwa',   k:'DIWA'},
+  {t:'Piliin ang Kasarian',        k:'KASARIAN'},
+  {t:'Hubugin ang Iyong Anyo',     k:'ANYO'},
+  {t:'Piliin ang Iyong Landas',    k:'LANDAS'},
+  {t:'Piliin ang Iyong Diwa',      k:'DIWA'},
   {t:'Tanggapin ang Iyong Agimat', k:'AGIMAT'},
+  {t:'Simulan ang Paglalakbay',    k:'SIMULA'},
 ];
 let ccStep=0;
 function ccGotoStep(n){
-  ccStep=Math.max(0,Math.min(3,n));
-  for(let i=0;i<4;i++) $('cc-step-'+i).classList.toggle('hidden',i!==ccStep);
+  ccStep=Math.max(0,Math.min(5,n));
+  for(let i=0;i<6;i++) $('cc-step-'+i).classList.toggle('hidden',i!==ccStep);
   $('cc-step-title').textContent=CC_STEPS[ccStep].t;
   $('cc-stepper').querySelectorAll('span').forEach((sp,i)=>{
     sp.classList.toggle('on',i===ccStep);
@@ -5483,24 +5486,26 @@ function ccGotoStep(n){
     sp.textContent=(i<ccStep?'✦ ':i===ccStep?'◆ ':'◇ ')+CC_STEPS[i].k;
   });
   $('cc-back').style.visibility=ccStep===0?'hidden':'visible';
-  $('cc-next').classList.toggle('hidden',ccStep===3);
-  $('cc-confirm').classList.toggle('hidden',ccStep!==3);
-  if(ccStep===3) ccRenderSummary();
+  $('cc-next').classList.toggle('hidden',ccStep===5);
+  $('cc-confirm').classList.toggle('hidden',ccStep!==5);
+  if(ccStep===5) ccRenderSummary();
   ccValidateStep();
 }
 function ccStepOK(){
-  if(ccStep===0) return !!charDraft.cls;
-  if(ccStep===1) return charDraft.name.trim().length>=2;
-  if(ccStep===2) return !!charDraft.diwa;
-  if(ccStep===3) return !!charDraft.agimat0 && !!charDraft.cls && charDraft.name.trim().length>=2;
+  if(ccStep===0) return !!charDraft.gender;
+  if(ccStep===1) return true;
+  if(ccStep===2) return !!charDraft.cls;
+  if(ccStep===3) return !!charDraft.diwa;
+  if(ccStep===4) return !!charDraft.agimat0;
+  if(ccStep===5) return charDraft.name.trim().length>=2 && !!charDraft.cls && !!charDraft.diwa && !!charDraft.agimat0;
   return false;
 }
 function ccValidateStep(){
   const ok=ccStepOK();
   $('cc-next').disabled=!ok;
-  if(ccStep===3){
+  if(ccStep===5){
     $('cc-confirm').disabled=!ok;
-    $('cc-confirm').textContent=ok?'⚔️ ISILANG SI '+charDraft.name.trim().toUpperCase()+'!':'⚔️ HANDA NA!';
+    $('cc-confirm').textContent=ok?'⚔️ SIMULAN ANG PAGLALAKBAY — '+charDraft.name.trim().toUpperCase():'⚔️ SIMULAN ANG PAGLALAKBAY';
   }
 }
 function ccRenderSummary(){
@@ -5508,10 +5513,16 @@ function ccRenderSummary(){
   const C=charDraft.cls?CLASSES[charDraft.cls]:null;
   const dw=DIWA_DEFS.find(d=>d.id===charDraft.diwa);
   const ag=AGIMAT0_DEFS.find(a=>a.id===charDraft.agimat0);
-  el.innerHTML=C?`<b style="color:#ffd94a;font-size:16px">${charDraft.name.trim()||'—'}</b><br>
-    ${CLASS_TAGALOG[charDraft.cls].tl} · ${C.role}<br>
-    ${dw?dw.icon+' Diwa ng '+dw.name+' <span style="opacity:.7">('+dw.fx+')</span>':'—'}<br>
-    ${ag?ag.icon+' '+ag.name+' <span style="opacity:.7">('+ag.fx+')</span>':'—'}`:'';
+  const adv=(window._advDisplay&&charDraft.cls)?window._advDisplay(charDraft.cls):null;
+  const row=(k,v)=>`<div class="cc2-row"><span>${k}</span><b>${v}</b></div>`;
+  el.innerHTML=C?
+    row('Kasarian', charDraft.gender==='female'?'Babae':'Lalaki')+
+    row('Landas', CLASS_TAGALOG[charDraft.cls].tl+(adv?' ('+adv+')':''))+
+    row('Buhok', (HAIR_STYLES[charDraft.hairStyle]?HAIR_STYLES[charDraft.hairStyle].name:'—'))+
+    row('Diwa', dw?dw.icon+' '+dw.name:'—')+
+    row('Agimat', ag?ag.icon+' '+ag.name:'—')+
+    row('Simula', '🏮 Barangay Liwanag — Banaue Highlands')
+    :'';
 }
 function showCharCreate(){
   $('char-create').classList.remove('hidden');
@@ -5529,25 +5540,49 @@ function showCharCreate(){
       $('cc-classinfo').innerHTML=`<b style="color:var(--gold-hi)">${CLASS_TAGALOG[id].tl}</b> · ${C.role} · ${C.weapon}<br>${CLASS_TAGALOG[id].desc}<br>
         <span style="opacity:.8">Mga unang kasanayan: ${C.skills.map(s2=>s2.icon+' '+s2.name).join(' · ')}</span>
         ${id==='alim'?'<br><i style="opacity:.7">(Ang Alim ay laging matandang pantas — may sariling anyo.)</i>':''}`;
-      ccRebuildMesh(); ccValidateStep();
+      ccRebuildMesh(); ccValidateStep(); ccRenderSummary();
     };
     clEl.appendChild(b);
   }
-  /* ---- STEP 1: ANYO ---- */
+  /* ---- STEP 0: KASARIAN (gender cards) + STEP 5: pangalan ---- */
   const nameEl=$('cc-name');
   nameEl.value=charDraft.name||'';
   nameEl.oninput=()=>{ charDraft.name=nameEl.value; ccValidateStep(); };
   $('cc-dice').onclick=()=>{
     const pool=FILIPINO_NAMES[charDraft.gender];
     charDraft.name=pool[Math.floor(Math.random()*pool.length)];
-    nameEl.value=charDraft.name; ccValidateStep();
+    nameEl.value=charDraft.name; ccValidateStep(); ccRenderSummary();
   };
   $('cc-gender').querySelectorAll('button').forEach(b=>b.onclick=()=>{
     $('cc-gender').querySelectorAll('button').forEach(x=>x.classList.remove('sel'));
     b.classList.add('sel');
     charDraft.gender=b.dataset.v;
+    /* gender-appropriate default hair (custom pipeline: f-hairs muna sa babae) */
+    charDraft.hairStyle=0;
     ccRebuildMesh(); ccValidateStep();
   });
+  /* ---- STEP 1: ANYO — randomize ---- */
+  const rndBtn=$('cc-random');
+  if(rndBtn) rndBtn.onclick=()=>{
+    charDraft.skin=Math.floor(Math.random()*SKIN_TONES.length);
+    charDraft.hairStyle=Math.floor(Math.random()*HAIR_STYLES.length);
+    charDraft.hairColor=Math.floor(Math.random()*HAIR_COLORS.length);
+    charDraft.eyeColor=Math.floor(Math.random()*EYE_COLORS.length);
+    showCharCreate._syncAnyo&&showCharCreate._syncAnyo();
+    ccRebuildMesh();
+  };
+  /* eye color swatches */
+  const eyeEl=$('cc-eyecolor');
+  if(eyeEl){ eyeEl.innerHTML='';
+    EYE_COLORS.forEach((c,i)=>{
+      const b=document.createElement('button');
+      b.style.background='#'+c.toString(16).padStart(6,'0');
+      if(i===charDraft.eyeColor)b.classList.add('sel');
+      b.onclick=()=>{ eyeEl.querySelectorAll('button').forEach(x=>x.classList.remove('sel')); b.classList.add('sel');
+        charDraft.eyeColor=i; ccRebuildMesh(); };
+      eyeEl.appendChild(b);
+    });
+  }
   const skinEl=$('cc-skin'); skinEl.innerHTML='';
   SKIN_TONES.forEach((c,i)=>{
     const b=document.createElement('button');
@@ -5575,6 +5610,13 @@ function showCharCreate(){
       charDraft.hairColor=i; ccRebuildMesh(); };
     hcEl.appendChild(b);
   });
+  showCharCreate._syncAnyo=()=>{
+    [['cc-skin',charDraft.skin],['cc-haircolor',charDraft.hairColor],['cc-eyecolor',charDraft.eyeColor]].forEach(([id,v])=>{
+      const el=$(id); if(!el) return;
+      el.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('sel',i===v));
+    });
+    const he=$('cc-hair'); if(he) he.querySelectorAll('button').forEach((x,i)=>x.classList.toggle('sel',i===charDraft.hairStyle));
+  };
   /* ---- STEP 2: DIWA ---- */
   const dwEl=$('cc-diwa'); dwEl.innerHTML='';
   DIWA_DEFS.forEach(d=>{
@@ -5610,7 +5652,7 @@ function showCharCreate(){
   $('cc-confirm').onclick=()=>{
     if($('cc-confirm').disabled) return;
     S.name=charDraft.name.trim();
-    S.app={gender:charDraft.gender, skin:charDraft.skin, hairStyle:charDraft.hairStyle, hairColor:charDraft.hairColor};
+    S.app={gender:charDraft.gender, skin:charDraft.skin, hairStyle:charDraft.hairStyle, hairColor:charDraft.hairColor, eyeColor:charDraft.eyeColor??0};
     S.diwa=charDraft.diwa; S.agimat0=charDraft.agimat0;
     cancelAnimationFrame(ccRAF);
     $('char-create').classList.add('hidden');
