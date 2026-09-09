@@ -46,6 +46,36 @@ git add -A && git commit -m "new world assets" && git push
 
 ---
 
+## 🔒 Branch protection on `main` (enabled 2026-09-09)
+
+A ruleset named **`protect-main`** is active on the default branch:
+
+| Rule | Effect |
+|---|---|
+| `non_fast_forward` | force-pushes to `main` are rejected — history cannot be rewritten |
+| `deletion` | `main` cannot be deleted |
+| *(no `pull_request` rule)* | direct `git push` still works, so auto-deploy is unaffected |
+
+Settings → Branches → `protect-main` to change it.
+
+**Why:** the repo auto-deploys to Render on every push, so anyone able to push
+to `main` can put code in front of live players. Blocking force-pushes and
+deletion means a leaked credential can add a commit but cannot erase or rewrite
+history.
+
+Note that the `agimat dev` fine-grained token cannot modify these settings
+(Administration is read-only on it) — verified 2026-09-09: setting branch
+protection, creating rulesets and managing webhooks all return `403`.
+
+## Re-adding the remote in a fresh chat session
+
+The Arena workspace snapshot strips `.git/config`, so the remote URL does not
+survive between sessions. Run `./tools/push.sh` — it re-adds `origin`
+(`github.com/mbpony/Agimat-online`) and shows a dry-run diff before pushing.
+
+
+---
+
 
 ## ☁️ Permanent player saves (Upstash Redis — FREE)
 
