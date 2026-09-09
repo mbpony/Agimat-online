@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-09-09 — Custom Filipino chibi heroes: integration phase 1 (compositor)
+- **Pose bake**: base+outfit meshes' arms lowered 50° from T-pose (y-band 0.40-0.62H, pivot x=±0.155) — natural relaxed stance; QC-verified silhouettes. Metrics (head width, hair seat height, part dims) baked to data/models/custom-heroes.json.
+- **customHeroes module**: runtime compositor — body (skin-tinted canvas multiply vs mid-tan reference so tone[1]≈identity) + outfit layer (×1.02 anti-z-fight) + hair (scaled to headW×1.06, seated at hairBaseY, HAIR_COLORS tint ×2 lighten-multiply for near-black hair textures). Tint cache per url|color. Composite normalized to 2.6 game units.
+- **Priority chain**: custom parts (8/8 loaded) → KayKit models → procedural. Wired via buildHero wrap: local player, ka-party remotes, inventory 3D preview, creation preview lahat sakop. Live-swap on load with "Bagong pangangatawan!" toast.
+- **Bob animation** (pre-rig): children-level bob+lean while moving (root position owned by main anim loop — no conflict), shadow/_noBob excluded. Full KayKit rig retarget = next phase.
+- Female gets f-hairs first in picker order; both genders can use all 4 styles. Headless 4/4 (composite, female variant, fallback on missing part). SW → agimat-v19.
+
 ## 2026-09-08 — World props: KayKit environment packs (CC0) + zone-adopt fix
 - **Assets (<1MB total)**: Medieval Hexagon nature set (trees/rocks + atlas) → assets/world/nature/ · Dungeon Remastered picks (pillars, columns, lit torches, arch, banners, chests, crates, barrels) → assets/world/dungeon/. LICENSE.txt in both. Sourced from official KayKit GitHub.
 - **data/world-spec.json (35 entries)** — first real use of the existing worldSpec loader: portal shrines (pillar rings + torches at BOTH portal pads) · dungeon-gate arch w/ columns + red banners · Nuno Highlands stone shrine (4 pillars + torch + scattered rocks) · Balete deep-forest clusters · Kawayan grove accents · volcano rock fields · isla golden-chest landmark w/ torches · tiangge crates/barrels. Landmark coordinates from live code (PORTAL_TOWN/ISLE, DGN_GATE, TENT, zone map).

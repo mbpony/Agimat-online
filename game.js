@@ -13578,3 +13578,161 @@ CATALOG.push(
   equipItem=function(){ _eq2.apply(this,arguments); setTimeout(refresh,50); };
   setInterval(refresh,2000);
 })();
+
+/* ================================================================
+   🧍 CUSTOM FILIPINO CHIBI HEROES (integration phase)
+   User-generated Hunyuan bodies + outfits + hair, composited at
+   runtime into ONE hero group:
+     body (skin-tinted) + outfit (worn layer) + hair (style+color)
+   · metrics from data/models/custom-heroes.json (baked at build)
+   · hair scaled to head width ×1.06, seated at hairBaseY
+   · skin tint via canvas multiply on the body texture (cached per
+     tone) — face detail survives because tint multiplies luminance
+   · hair tint likewise per HAIR_COLORS entry
+   · TAKES PRIORITY over KayKit models for the LOCAL PLAYER + remote
+     players + inventory/creation previews via buildHero wrap; the
+     KayKit rig path remains the fallback when parts are missing.
+   NOTE: procedural bob animation (no skeleton yet) — walk bob +
+   attack lunge via the existing legacy anim fields; full KayKit
+   rig retarget is the planned next step.
+   ================================================================ */
+(function customHeroes(){
+  const D='assets/characters/base/';
+  const PARTS={
+    male:{body:D+'base_male.glb',outfit:D+'outfit_male.glb',hairs:[D+'hair_m1.glb',D+'hair_m2.glb',D+'hair_f1.glb',D+'hair_f2.glb']},
+    female:{body:D+'base_female.glb',outfit:D+'outfit_female.glb',hairs:[D+'hair_f1.glb',D+'hair_f2.glb',D+'hair_m1.glb',D+'hair_m2.glb']},
+  };
+  let METRICS=null;
+  fetch('data/models/custom-heroes.json').then(r=>r.json()).then(j=>{METRICS=j;}).catch(()=>{});
+  const urls=[...new Set([PARTS.male.body,PARTS.male.outfit,PARTS.female.body,PARTS.female.outfit,
+    ...PARTS.male.hairs])];
+  let READY=false;
+  Promise.all(urls.map(u=>loadGLB(u).catch(()=>null))).then(cs=>{
+    READY=cs.every(Boolean)&&true;
+    console.log('[custom-heroes] parts loaded:',cs.filter(Boolean).length+'/'+urls.length,READY?'ACTIVE':'fallback to KayKit');
+    if(READY&&started&&player.mesh){
+      const old=player.mesh,nm=buildHero(S.cls);
+      nm.position.copy(old.position); nm.rotation.y=old.rotation.y;
+      scene.remove(old); scene.add(nm); player.mesh=nm;
+      toast('🧍 <b>Bagong pangangatawan!</b> Ang mga bayani ng kapuluan ay ipinanganak muli.','levelup');
+    }
+  });
+
+  /* ---- tinted texture cache: key = url|tint ---- */
+  const tintCache={};
+  function tinted(url,hex){
+    const key=url+'|'+hex;
+    if(tintCache[key]) return tintCache[key];
+    const c=MODEL_CACHE[url]; if(!c) return null;
+    let src=null;
+    c.scene.traverse(o=>{ if(!src&&o.isMesh&&o.material&&o.material.map) src=o.material.map; });
+    if(!src||!src.image) return null;
+    try{
+      const img=src.image;
+      const cv=document.createElement('canvas');
+      cv.width=img.width; cv.height=img.height;
+      const ctx=cv.getContext('2d');
+      ctx.drawImage(img,0,0);
+      ctx.globalCompositeOperation='multiply';
+      ctx.fillStyle='#'+hex.toString(16).padStart(6,'0');
+      ctx.fillRect(0,0,cv.width,cv.height);
+      const tex=new THREE.CanvasTexture(cv);
+      tex.flipY=src.flipY; tex.colorSpace=THREE.SRGBColorSpace;
+      tex.wrapS=src.wrapS; tex.wrapT=src.wrapT;
+      tintCache[key]=tex;
+      return tex;
+    }catch(e){ return null; }
+  }
+  function instPart(url,tintHex){
+    const c=MODEL_CACHE[url]; if(!c) return null;
+    const m=c.scene.clone(true);
+    m.traverse(o=>{
+      if(!o.isMesh) return;
+      o.castShadow=true; o.frustumCulled=false;
+      if(tintHex!=null){
+        const t=tinted(url,tintHex);
+        if(t){ o.material=o.material.clone(); o.material.map=t; }
+      }
+    });
+    return m;
+  }
+
+  /* skin tint refs: SKIN_TONES are absolute colors; body texture is already
+     mid-tan — derive multiplier ≈ tone/midTan so tone 1 ≈ identity */
+  const MID=0xc98a5e;
+  function skinMul(toneHex){
+    const r=Math.min(255,Math.round(((toneHex>>16)&255)/((MID>>16)&255)*255));
+    const g=Math.min(255,Math.round(((toneHex>>8)&255)/((MID>>8)&255)*255));
+    const b=Math.min(255,Math.round((toneHex&255)/(MID&255)*255));
+    return (r<<16)|(g<<8)|b;
+  }
+  /* hair tint: hair texture is near-black; LIGHTEN via screen-ish trick —
+     multiply toward the color after normalizing (use color directly ×2) */
+  function hairMul(hex){
+    const r=Math.min(255,((hex>>16)&255)*2), g=Math.min(255,((hex>>8)&255)*2), b=Math.min(255,(hex&255)*2);
+    return (r<<16)|(g<<8)|b;
+  }
+
+  const _bh=buildHero;
+  buildHero=function(cls, appOverride){
+    if(!READY||!METRICS) return _bh.apply(this,arguments);
+    try{
+      const app=appOverride||heroApp();
+      const gender=(app.gender==='female')?'female':'male';
+      const P2=PARTS[gender], M=METRICS['base_'+gender];
+      const g=new THREE.Group();
+      const skinHex=(typeof app.skin==='number')?SKIN_TONES[app.skin]??SKIN_TONES[1]:(app.skin||SKIN_TONES[1]);
+      const hairHex=(typeof app.hairColor==='number')?HAIR_COLORS[app.hairColor]??HAIR_COLORS[0]:(app.hairColor||HAIR_COLORS[0]);
+      const body=instPart(P2.body, skinMul(skinHex));
+      if(!body) return _bh.apply(this,arguments);
+      const outfit=instPart(P2.outfit,null);
+      const hi=Math.max(0,Math.min(3,app.hairStyle??0));
+      const hairUrl=P2.hairs[hi];
+      const hair=instPart(hairUrl, hairMul(hairHex));
+      /* normalize composite to game height 2.6 */
+      const K=2.6/M.h;
+      body.scale.setScalar(K);
+      g.add(body);
+      if(outfit){
+        outfit.scale.setScalar(K*1.02);            // slight overshoot para walang z-fight
+        /* align outfit vertical center to body torso */
+        outfit.position.y=0;
+        g.add(outfit);
+      }
+      if(hair){
+        const HM=METRICS[hairUrl.split('/').pop().replace('.glb','')];
+        const hs=(M.headW*1.06/HM.w)*K;
+        hair.scale.setScalar(hs);
+        hair.position.y=M.hairBaseY*K;
+        g.add(hair);
+      }
+      const sh=blobShadow(1); sh.position.y=0.02; sh.userData._shadow=true; g.add(sh);
+      for(const k of g.children){ if(!k.userData._shadow) k.userData._baseY=k.position.y; }
+      /* legacy anim API no-ops (bob handled by anim loop via userData.glb) */
+      const dummy=new THREE.Group();
+      g.userData={legL:dummy,legR:dummy,armL:dummy,armR:dummy,weapArm:dummy,glb:true,custom:true};
+      return g;
+    }catch(e){ return _bh.apply(this,arguments); }
+  };
+  /* light bob for custom heroes (walang rig pa): offset the PART CHILDREN
+     (main anim loop owns the root position, so we bob one level down) */
+  (function bobTick(){
+    requestAnimationFrame(bobTick);
+    if(!started) return;
+    const meshes=[player.mesh];
+    if(window._kaParty) for(const r of window._kaParty.values()) meshes.push(r.mesh);
+    const t=performance.now()/1000;
+    for(const m of meshes){
+      if(!m||!m.userData||!m.userData.custom) continue;
+      const moving=(m===player.mesh)?player.moving:true;
+      const bob=moving?Math.abs(Math.sin(t*9))*0.05:Math.sin(t*2)*0.012;
+      const lean=moving?Math.sin(t*9)*0.045:0;
+      for(const k of m.children){
+        if(k.userData&&k.userData._shadow) continue;
+        if(k.userData&&k.userData._noBob) continue;
+        k.position.y=(k.userData._baseY||0)+bob;
+        k.rotation.z=lean;
+      }
+    }
+  })();
+})();
