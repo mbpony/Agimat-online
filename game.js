@@ -9598,8 +9598,17 @@ css.textContent=`
 .i2-nav{min-width:110px;padding:9px 12px;border-radius:11px 11px 0 0;border:1px solid #4a3f66;border-bottom:none;background:rgba(34,26,52,.85);color:#bfb6d2;font:800 12px system-ui;cursor:pointer}
 .i2-nav.on{background:linear-gradient(180deg,#6a5a9a,#43356a);color:#ffe9b0}
 #i2-mapwrap{flex:1;display:none;padding:10px 14px;min-height:0}
-#i2-mapwrap.open{display:flex;align-items:center;justify-content:center}
-#i2-map{max-width:100%;max-height:100%;border-radius:14px;border:2px solid #5a4a7a;box-shadow:0 10px 50px rgba(0,0,0,.5)}
+#i2-mapwrap.open{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:0}
+#i2-maphead{display:flex;align-items:baseline;gap:10px;flex:0 0 auto}
+#i2-maphead b{font:800 16px system-ui;color:#ffd94a}
+#i2-maphead span{font:600 11.5px system-ui;color:#bfb6d2}
+#i2-map{flex:0 1 auto;max-width:100%;max-height:100%;border-radius:14px;border:2px solid #5a4a7a;box-shadow:0 10px 50px rgba(0,0,0,.5)}
+#i2-maplegend{display:flex;align-items:center;gap:14px;flex:0 0 auto;font:700 11px system-ui;color:#cfc6e2}
+#i2-maplegend .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:middle}
+#i2-maplegend .dot.you{background:#fff;box-shadow:0 0 0 2px #f2b134}
+#i2-maplegend .dot.party{background:#7dffb0}
+#i2-maplegend .dot.boss{background:#ff6a6a}
+#i2-maplegend .hint{margin-left:auto;color:#8a80a2;font-weight:600}
 #i2-profwrap{flex:1;display:none;padding:10px 14px;overflow-y:auto}
 #i2-profwrap.open{display:block}
 @media (max-width:820px){
@@ -9668,7 +9677,16 @@ root.innerHTML=`
       </div>
     </div>
   </div>
-  <div id="i2-mapwrap"><canvas id="i2-map" width="768" height="420"></canvas></div>
+  <div id="i2-mapwrap">
+    <div class="i2-maphead"><b>🗺️ Barangay Liwanag</b><span>Banaue Highlands · Simula (Lv 1–10)</span></div>
+    <canvas id="i2-map" width="1280" height="854"></canvas>
+    <div class="i2-maplegend">
+      <span><i class="dot you"></i>Ikaw</span>
+      <span><i class="dot party"></i>Ka-party</span>
+      <span><i class="dot boss"></i>World Boss</span>
+      <span class="hint">Konseptong mapa — gabay lamang, hindi eksaktong sukat.</span>
+    </div>
+  </div>
   <div id="i2-profwrap"></div>
   <div class="inv2-nav">
     <button class="i2-nav" data-nav="profile">👤 Profile</button>
@@ -9964,34 +9982,50 @@ function i2Nav(which){
 root.querySelectorAll('.i2-nav').forEach(b=>b.onclick=()=>i2Nav(b.dataset.nav));
 
 /* ---------- 🗺️ full map tab (bonus feature) ---------- */
+/* Illustrated region map — Barangay Liwanag / Banaue Highlands concept art.
+   The artwork is a concept (not to scale); live markers are projected into its
+   illustrated (non-panel) area so player/party/boss pins stay on the terrain
+   instead of drifting over the baked-in legend/info panels. */
+const regionArt=new Image();
+let regionArtReady=false;
+regionArt.onload=()=>{ regionArtReady=true; if(I2.open&&I2.nav==='map') i2DrawMap(); };
+regionArt.src='assets/maps/barangay-liwanag.jpg';
+const ART_VIEW={l:0.02,r:0.845,t:0.02,b:0.985};
 function i2DrawMap(){
   const cv=$('i2-map'), ctx=cv.getContext('2d');
-  const sx=cv.width/WORLD_W, sy=cv.height/WORLD_H;
   ctx.clearRect(0,0,cv.width,cv.height);
-  ctx.imageSmoothingEnabled=false;
-  ctx.drawImage(mmBase,0,0,cv.width,cv.height);
-  /* landmarks */
-  const mark=(wx,wz,txt,col)=>{
-    ctx.font='800 11px system-ui'; ctx.textAlign='center';
-    ctx.fillStyle='rgba(0,0,0,.55)';
-    const w=ctx.measureText(txt).width+8;
-    ctx.fillRect(wx*sx-w/2,wz*sy-16,w,13);
-    ctx.fillStyle=col; ctx.fillText(txt,wx*sx,wz*sy-6);
-  };
-  mark(66.5*TILE,43.5*TILE,'🏮 Grand Tiangge','#ffd94a');
-  mark(DGN_GATE.x,DGN_GATE.z,'🌀 Lagusan','#c8a8ff');
-  mark(PORTAL_ISLE.x,PORTAL_ISLE.z,'🏝️ Isla','#8affd8');
-  mark(VOLCANO.tx*TILE,(VOLCANO.ty+6)*TILE,'🌋 Bulkan','#ff8a5e');
-  if(WBOSS.active){ const sp=WBOSS_SPOTS[WBOSS.active]; mark(sp.x,sp.z,'☠️ '+ENEMY_DEFS[WBOSS.active].name,'#ff6a6a'); }
+  const art=regionArtReady;
+  if(art){ ctx.imageSmoothingEnabled=true;  ctx.drawImage(regionArt,0,0,cv.width,cv.height); }
+  else   { ctx.imageSmoothingEnabled=false; ctx.drawImage(mmBase,0,0,cv.width,cv.height); }
+  const px = art ? (x)=> (ART_VIEW.l+(x/WORLD_W)*(ART_VIEW.r-ART_VIEW.l))*cv.width  : (x)=> x/WORLD_W*cv.width;
+  const pz = art ? (z)=> (ART_VIEW.t+(z/WORLD_H)*(ART_VIEW.b-ART_VIEW.t))*cv.height : (z)=> z/WORLD_H*cv.height;
+  if(!art){
+    const sx=cv.width/WORLD_W, sy=cv.height/WORLD_H;
+    const mark=(wx,wz,txt,col)=>{
+      ctx.font='800 11px system-ui'; ctx.textAlign='center';
+      ctx.fillStyle='rgba(0,0,0,.55)';
+      const w=ctx.measureText(txt).width+8;
+      ctx.fillRect(wx*sx-w/2,wz*sy-16,w,13);
+      ctx.fillStyle=col; ctx.fillText(txt,wx*sx,wz*sy-6);
+    };
+    mark(66.5*TILE,43.5*TILE,'🏮 Grand Tiangge','#ffd94a');
+    mark(DGN_GATE.x,DGN_GATE.z,'🌀 Lagusan','#c8a8ff');
+    mark(PORTAL_ISLE.x,PORTAL_ISLE.z,'🏝️ Isla','#8affd8');
+    mark(VOLCANO.tx*TILE,(VOLCANO.ty+6)*TILE,'🌋 Bulkan','#ff8a5e');
+  }
+  if(WBOSS.active){ const sp=WBOSS_SPOTS[WBOSS.active];
+    ctx.font='800 '+(art?26:14)+'px system-ui'; ctx.textAlign='center';
+    ctx.fillText('☠️', px(sp.x), pz(sp.z)); }
   /* ka-party */
   if(window._kaParty) for(const r of window._kaParty.values()){
-    ctx.fillStyle='#7df0ff'; ctx.beginPath(); ctx.arc(r.x*sx,r.z*sy,3.5,0,6.28); ctx.fill();
+    ctx.fillStyle='#7dffb0'; ctx.beginPath(); ctx.arc(px(r.x),pz(r.z),art?5:3.5,0,6.28); ctx.fill();
   }
   /* you */
-  ctx.fillStyle='#fff'; ctx.strokeStyle='#f2b134'; ctx.lineWidth=2.5;
-  ctx.beginPath(); ctx.arc(player.x*sx,player.z*sy,5,0,6.28); ctx.fill(); ctx.stroke();
-  ctx.font='800 10px system-ui'; ctx.fillStyle='#ffd94a';
-  ctx.fillText('IKAW',player.x*sx,player.z*sy+16);
+  const X=px(player.x), Z=pz(player.z);
+  ctx.fillStyle='#fff'; ctx.strokeStyle='#f2b134'; ctx.lineWidth=art?3:2.5;
+  ctx.beginPath(); ctx.arc(X,Z,art?7:5,0,6.28); ctx.fill(); ctx.stroke();
+  ctx.font='800 '+(art?13:10)+'px system-ui'; ctx.textAlign='center'; ctx.fillStyle='#ffd94a';
+  ctx.fillText('IKAW',X,Z+(art?22:16));
 }
 setInterval(()=>{ if(I2.open&&I2.nav==='map') i2DrawMap(); },1500);
 
