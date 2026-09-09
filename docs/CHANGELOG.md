@@ -1,4 +1,11 @@
 # CHANGELOG
+## 2026-09-09 — Outfit fitting refinement (shrinkwrap-outward)
+- **tools/fit_outfit.py (reusable)**: outfit verts na nakabaon o sobrang lapit sa body surface ay itinutulak palabas along the weighted body normal (4-NN average) to exactly 0.014 margin, 35% tangential retention para hindi maflatten ang folds. Male: 2128/4996 verts moved · Female: 2668/5614.
+- **Penetration verified out**: min outfit-body distance 0.0025/0.0008 → lahat ng dating clipping ay wala na; median clearance ~0.025-0.027.
+- **tools/skin_to_kaykit.py (extracted bilang reusable tool)**: ang inline auto-skinner ay proper script na — fitted outfits re-skinned sa 23-bone rig (outfit_male_rig/outfit_female_rig replaced; three.js parse verified 1 skinned + 23 bones each).
+- **Static compositor path updated too**: outfit_male/female.glb = fitted + arm-lowered versions, kaya pareho ang fit ng rigged at static fallback paths.
+- Future outfits: fit_outfit.py → skin_to_kaykit.py pipeline, dalawang command lang. SW → agimat-v23.
+
 ## 2026-09-09 — Rig retarget: custom chibi heroes now FULLY ANIMATED (integration phase 2)
 - **Offline auto-skinner** (python): T-pose bodies+outfits (recovered from git 1cf7a1f) skinned to a KayKit-compatible 23-deform-bone skeleton (IK/control bones dropped). Bones fitted to chibi landmarks (crotch scan sa midline verts, shoulder band mass, arm reach); KayKit LOCAL rest rotations preserved para tugma ang retarget. Weights: capsule distance sa bone segments, 2-bone blend, side masking (L bones never grab R verts), y-band gating (arm/leg zones), RIGID head (y>0.60H → 100% head bone — chibi head moves as one). Fresh GLB export w/ IBMs, JOINTS_0/WEIGHTS_0.
 - **Outputs**: base_male_rig / base_female_rig / outfit_male_rig / outfit_female_rig (~1.2-1.6MB each). three.js parse verified: 1 skinned mesh + 23 bones each; 68/122 KayKit clip tracks bindable by name (23-bone subset, expected).
