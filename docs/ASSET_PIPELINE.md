@@ -53,10 +53,40 @@ under-fits a wig.
 ### Fitting, not guessing
 A single width ratio cannot fit a wig: `hair_m1` is 0.99 × 0.77 but the skull is
 0.44 × 0.46, so the proportions differ and a uniform scale always misses one
-axis. Both compositor paths now fit the hair's bounding box to the skull's on
-all three axes (×1.06 overshoot so no scalp shows) and centre it on the head
-box. Verified for all 4 wigs × 2 genders: hair spans y 1.529–2.631 against a
-crown at 2.600, and the rigged and static paths place it identically.
+axis. Both compositor paths now call the shared `_fitHairToSkull(M, HM)`, which
+fits the hair's bounding box to the skull's on all three axes (×1.06 overshoot so
+no scalp shows) and anchors it to the crown, letting any excess length hang down
+rather than bulging symmetrically. Verified for all 4 wigs × 2 genders: hair
+spans y 1.50–2.60 against a crown at 2.60, head-sized on every axis, and the
+rigged and static paths place it identically.
+
+### ⚠️ The wig assets are not wig-sized — re-author them
+Measured 2026-09-09. The skull is 0.4613 tall, but:
+
+| asset | height | × skull | × whole character (1.1534) |
+|---|---|---|---|
+| hair_m1 | 0.7742 | 1.68× | 67% |
+| hair_m2 | 0.7335 | 1.59× | 64% |
+| **hair_f1** | **1.0896** | **2.36×** | **94%** |
+| hair_f2 | 0.8351 | 1.81× | 72% |
+
+They were generated as standalone objects at their own scale, not authored to a
+head. Fitting therefore has to distort them, and `HAIR_DISTORTION_CAP` controls
+how much. **Do not tighten it expecting less distortion** — it is the allowed
+ratio between the largest and smallest axis scale, so a *lower* cap forces the
+wig to keep its own proportions instead, which makes `hair_f1` hang to y 0.46 on
+a 2.6-tall character (knee-length). Measured:
+
+| cap | hair_f1 size | hangs down to |
+|---|---|---|
+| 1.0 uniform | 1.05 × 2.57 × 1.86 | y 0.03 — the floor |
+| 1.2 | 1.05 × 2.14 × 1.55 | y 0.46 — the knees |
+| 1.5 | 1.05 × 1.71 × 1.24 | y 0.89 — thighs |
+| ≥2.33 exact | 1.05 × 1.10 × 1.00 | y 1.50 — shoulders, head-sized |
+
+It is set to **2.5** purely as a safety net for future assets; it does not bind
+on the current four. Regenerate the wigs at skull proportions in Hunyuan3D and
+the distortion disappears on its own.
 
 Also fixed: outfits were authored off the body's centre line (`outfit_male` by
 0.0137, i.e. 0.031 game units) and are now shifted by the baked `alignX/Y/Z`;

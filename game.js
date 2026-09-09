@@ -13639,13 +13639,67 @@ CATALOG.push(
   setInterval(refresh,2000);
 })();
 
+/* Fit a wig's bounding box onto the skull's.
+ *
+ * Shared by the static compositor and the rigged path so both place hair
+ * identically. All values are in body/rig units (the caller applies the K
+ * scale to game units).
+ *
+ *   M  - metrics for base_<gender>  (headW/headH/headD, centerX/centerZ)
+ *   HM - metrics for the hair part  (w/h/d, minY/maxY, centerX/centerZ)
+ *
+ * A plain uniform scale cannot work: hair_m1 is 0.99x0.77 but the skull is
+ * 0.44x0.46, so any single ratio misses an axis. But an exact per-axis fit
+ * distorts badly (hair_f1 is long hair, 0.45x1.09, and squashing it into the
+ * skull flattens it ~50%). So axis scales are allowed to differ by at most
+ * HAIR_DISTORTION_CAP, and any excess length hangs DOWN from the crown rather
+ * than bulging out symmetrically.
+ *
+ * Returns {sx,sy,sz, px,py,pz} where p is in skull-local space: origin at the
+ * base of the skull, x/z centred. The rigged path uses it as-is (the head bone
+ * sits at that origin); the static path multiplies everything by K.
+ */
+const HAIR_FIT_OV = 1.06;        // overshoot so no scalp shows through
+/* Safety net only — deliberately loose. The current wigs need up to 2.33:1
+ * (hair_f1 is 0.45x1.09, i.e. 2.36x the skull height, so an exact fit squashes
+ * it hard). Tightening this below ~2.4 does NOT reduce distortion, it forces
+ * the wig to keep its own proportions instead, which makes hair_f1 hang to
+ * y=0.46 on a 2.6-tall character — knee-length. Measured 2026-09-09. The real
+ * fix is re-authoring the wigs to skull proportions; until then an exact fit
+ * is the only head-sized result available. */
+const HAIR_DISTORTION_CAP = 2.5; // max ratio between the largest and smallest axis scale
+window._fitHairToSkull = function(M, HM){
+  /* exact per-axis scales that would cover the skull */
+  const ideal = [M.headW*HAIR_FIT_OV/HM.w, M.headH*HAIR_FIT_OV/HM.h, M.headD*HAIR_FIT_OV/HM.d];
+  /* never scale below the exact fit (that would expose scalp); raise the
+   * smaller axes until the spread is within the cap */
+  const hi = Math.max.apply(null, ideal);
+  const floor = hi/HAIR_DISTORTION_CAP;
+  const s = ideal.map((v) => Math.max(v, floor));
+  const lo = HM.minY||0, up = (HM.maxY!==undefined?HM.maxY:HM.h);
+  const hcy = (lo+up)/2;
+  const hairH = HM.h*s[1];
+  /* if the wig is taller than the skull after fitting, pin its TOP to the
+   * crown and let the rest fall; otherwise centre it */
+  const py = (hairH > M.headH) ? (M.headH - up*s[1]) : (M.headH/2 - hcy*s[1]);
+  return {
+    sx:s[0], sy:s[1], sz:s[2],
+    px: -HM.centerX*s[0],          // skull-local x centre is 0
+    py: py,
+    pz: -HM.centerZ*s[2],
+    _ideal:ideal, _capped:s.some((v,i)=>Math.abs(v-ideal[i])>1e-9),
+  };
+};
+
 /* ================================================================
    🧍 CUSTOM FILIPINO CHIBI HEROES (integration phase)
    User-generated Hunyuan bodies + outfits + hair, composited at
    runtime into ONE hero group:
      body (skin-tinted) + outfit (worn layer) + hair (style+color)
    · metrics from data/models/custom-heroes.json (baked at build)
-   · hair scaled to head width ×1.06, seated at hairBaseY
+   · hair bbox-fitted to the skull (see _fitHairToSkull) — never a
+     single width ratio, which cannot work when the wig's proportions
+     differ from the skull's
    · skin tint via canvas multiply on the body texture (cached per
      tone) — face detail survives because tint multiplies luminance
    · hair tint likewise per HAIR_COLORS entry
@@ -13769,18 +13823,13 @@ CATALOG.push(
       }
       if(hair){
         const HM=METRICS[hairUrl.split('/').pop().replace('.glb','')];
-        if(HM&&M.headW&&M.headH&&M.headD){
-          /* Fit the wig's bounding box to the skull's. A single width ratio
-           * cannot work: hair_m1 is 0.99x0.77 but the head is 0.44x0.46, so the
-           * proportions differ and a uniform scale always misses one axis. */
-          const OV=1.06;                            // slight overshoot so no scalp shows
-          const sx=(M.headW*OV/HM.w)*K, sy=(M.headH*OV/HM.h)*K, sz=(M.headD*OV/HM.d)*K;
-          hair.scale.set(sx,sy,sz);
-          const hcy=((HM.minY||0)+(HM.maxY||HM.h))/2;
-          /* centre the wig on the head box rather than seating it at a guessed Y */
-          hair.position.set((M.centerX||0)*K - sx*(HM.centerX||0),
-                            M.headCY*K - sy*hcy,
-                            (M.centerZ||0)*K - sz*(HM.centerZ||0));
+        if(HM&&M.headW&&M.headH&&M.headD&&window._fitHairToSkull){
+          const f=window._fitHairToSkull(M,HM);
+          hair.scale.set(f.sx*K,f.sy*K,f.sz*K);
+          /* skull-local -> body space (the skull origin is the head base) */
+          hair.position.set(((M.centerX||0)+f.px)*K,
+                            ((M.hairBaseY||0)+f.py)*K,
+                            ((M.centerZ||0)+f.pz)*K);
         }else{
           /* legacy metrics (pre-2026-09-09) — uniform scale off headW */
           const hs=((M.headW||0.44)*1.06/(HM&&HM.w||1))*K;
@@ -14052,16 +14101,13 @@ CATALOG.push(
         hm.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false;
           if(window._tintHairMat) window._tintHairMat(o,hairUrl,hairHex); } });
         const HM=MET[hairUrl.split('/').pop().replace('.glb','')];
-        if(HM&&M.headW&&M.headH&&M.headD){
-          /* Fit the wig's bbox to the skull's, in head-bone local space. The
-           * bone sits at the base of the skull, so the skull occupies
-           * y 0..headH and is centred on x/z. Scales stay in rig units here —
-           * the bone already inherits the body's K. */
-          const OV=1.06;
-          const sx=M.headW*OV/HM.w, sy=M.headH*OV/HM.h, sz=M.headD*OV/HM.d;
-          hm.scale.set(sx,sy,sz);
-          const hcy=((HM.minY||0)+(HM.maxY||HM.h))/2;
-          hm.position.set(-sx*(HM.centerX||0), M.headH/2 - sy*hcy, -sz*(HM.centerZ||0));
+        if(HM&&M.headW&&M.headH&&M.headD&&window._fitHairToSkull){
+          /* Same fit as the static compositor. The head bone already sits at
+           * the skull origin, so the skull-local offsets apply directly and
+           * the scales stay in rig units (the bone inherits the body's K). */
+          const f=window._fitHairToSkull(M,HM);
+          hm.scale.set(f.sx,f.sy,f.sz);
+          hm.position.set(f.px,f.py,f.pz);
         }else{
           /* legacy metrics — uniform scale, seated just under the bone */
           hm.scale.setScalar(0.62/((HM&&HM.w)||1));
