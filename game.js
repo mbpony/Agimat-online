@@ -9553,7 +9553,10 @@ css.textContent=`
 .inv2-top .i2-cur{margin-left:auto;display:flex;gap:10px;font:800 13px system-ui;color:#ffd94a}
 .inv2-top .i2-x{width:34px;height:34px;border-radius:9px;border:1px solid #5a4a7a;background:rgba(40,30,60,.8);color:#efe8ff;font-size:17px;cursor:pointer}
 .inv2-main{flex:1;display:flex;gap:10px;padding:10px 14px;min-height:0}
-.i2-doll{flex:1.15;position:relative;border-radius:16px;background:radial-gradient(ellipse at 50% 42%,rgba(255,235,190,.13),rgba(0,0,0,0) 62%);min-width:0}
+/* Doll column widened (owner: model area too small/cramped). flex-grow 1.5 and a
+   floor so the 3D hero gets real room on desktop; mobile media query below
+   stacks it and sets its own height. */
+.i2-doll{flex:1.5 1 300px;position:relative;border-radius:16px;background:radial-gradient(ellipse at 50% 42%,rgba(255,235,190,.13),rgba(0,0,0,0) 62%);min-width:240px}
 .i2-doll svg{position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);height:86%;opacity:.9;filter:drop-shadow(0 0 26px rgba(255,224,160,.35))}
 .i2-slot{position:absolute;width:64px;text-align:center;cursor:pointer}
 .i2-slot .sq{width:56px;height:56px;margin:0 auto;border-radius:12px;border:2px solid #4a3f66;background:linear-gradient(180deg,rgba(60,48,88,.9),rgba(30,24,48,.9));display:flex;align-items:center;justify-content:center;font-size:26px;position:relative;transition:border-color .15s, box-shadow .15s}
@@ -9601,7 +9604,7 @@ css.textContent=`
 #i2-profwrap.open{display:block}
 @media (max-width:820px){
   .inv2-main{flex-direction:column;overflow-y:auto}
-  .i2-doll{min-height:340px;flex:0 0 340px}
+  .i2-doll{min-height:420px;flex:0 0 420px;min-width:0}
   .i2-mid{max-width:none}
 }`;
 document.head.appendChild(css);
@@ -9932,19 +9935,30 @@ function i2Nav(which){
   if(which==='profile') i2Profile();
   if(which==='skills'){
     const C=CLASSES[S.cls]||{skills:[]};
+    const pts=(window.skFree?window.skFree():0);
     $('i2-profwrap').classList.add('open');
-    $('i2-profwrap').innerHTML=`<div class="i2-card" style="max-width:520px;margin:0 auto">
+    $('i2-profwrap').innerHTML=`<div class="i2-card" style="max-width:560px;margin:0 auto">
       <h4>✨ MGA SKILL — ${(S.adv&&ADV_DEFS[S.cls])?ADV_DEFS[S.cls].name:C.name||''}</h4>
+      <div style="display:flex;align-items:center;gap:10px;margin:4px 0 10px">
+        <span style="font:800 14px system-ui;color:#9aff5a">✨ ${pts} skill point${pts===1?'':'s'}</span>
+        <button class="i2-btn" id="i2-opentree" style="margin-left:auto">🌳 Buksan ang SKILL TREE</button>
+      </div>
       ${(C.skills||[]).map((sk,i)=>`
         <div style="display:flex;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid rgba(255,255,255,.06)">
           <span style="font-size:26px">${sk.icon}</span>
           <div style="flex:1"><b style="font:800 13px system-ui;color:#efe8ff">${sk.name}</b>
             <div style="font:600 11px system-ui;color:#8a80a2">${sk.desc} · CD ${sk.cd}s · key ${i+1}</div></div>
         </div>`).join('')}
+      <div style="font:600 11.5px system-ui;color:#cfc6e2;margin-top:10px;text-align:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px">
+        Ang tatlong ito ang iyong <b>base skills</b>. Marami pang skills ang maaaring
+        <b style="color:#9aff5a">i-unlock at i-level up</b> gamit ang skill points sa
+        <b style="color:#ffd27a">SKILL TREE</b> — huwag hayaang matambak ang points!
+      </div>
       <div style="font:600 11px system-ui;color:#8a80a2;margin-top:8px;text-align:center">
         ${S.adv?'🌟 Advanced: '+(ADV_DEFS[S.cls]?ADV_DEFS[S.cls].perk:''):S.level>=20?'🌟 Handa ka na sa Seremonya ng Pag-angat — ☰ menu → 🌟 Pag-angat!':'Mag-advance sa Level 20 para sa dagdag na kapangyarihan.'}
       </div>
     </div>`;
+    const ot=$('i2-opentree'); if(ot) ot.onclick=()=>{ window.openSkillTree(); };
   } else if(which!=='profile') $('i2-profwrap').classList.remove('open');
 }
 root.querySelectorAll('.i2-nav').forEach(b=>b.onclick=()=>i2Nav(b.dataset.nav));
@@ -10551,16 +10565,10 @@ openPets=openPetsV2;
 window.openPets=openPetsV2;
 (function(){ const b=$('btn-pets'); if(b) b.onclick=openPetsV2; })();
 
-/* 🐾 Alaga entry inside the Phase-6 inventory bottom nav */
-(function(){
-  const navRow=document.querySelector('#inv2 .i2-nav');
-  if(!navRow) return;
-  const row=navRow.parentElement;
-  const b=document.createElement('button');
-  b.className='i2-nav'; b.textContent='🐾 Alaga';
-  row.appendChild(b);
-  b.onclick=()=>{ if(window.i2Close) window.i2Close(); openPetsV2(); };
-})();
+/* 🐾 Alaga rail entry: added in exactly ONE place — leftRail() below appends a
+   single data-nav="pets" button. An earlier copy here also appended an Alaga
+   button (without data-nav), so leftRail's dedupe guard didn't see it and the
+   rail showed "Alaga" twice (owner screenshot). Removed the duplicate. */
 
 
 /* ================================================================
@@ -11695,6 +11703,7 @@ CATALOG.push(
     box.querySelectorAll('.skt-eq').forEach(b=>b.onclick=()=>{ equipSkill(d.id,+b.dataset.slot); renderTree(); selId=d.id; renderDetail(); });
   }
   window.openSkillTree=function(){ if(!started||!S.cls){ toast('Simulan muna ang laro.'); return; } el.classList.add('open'); renderTree(); };
+  window.skFree=skFree;   // exposed so the inventory Skills tab can show points
 
   /* ☰ menu tile */
   (function addTile(){

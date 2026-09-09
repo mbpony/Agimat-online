@@ -381,7 +381,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--ff);overflow:hidde
 @keyframes toastOut{to{opacity:0;transform:translateY(-10px)}}
 
 /* ===== MODAL ===== */
-#modal-backdrop{position:fixed;inset:0;background:rgba(5,3,10,.8);z-index:70;display:flex;align-items:center;
+/* z-index: must sit ABOVE #inv2 (z120) or dialogs like Bag Settings open from
+   inside the inventory render hidden behind it (owner bug report). Kept below
+   the exclusive full-screen layers (#map-trans 200, #adv-ritual 210, #sktree 340). */
+#modal-backdrop{position:fixed;inset:0;background:rgba(5,3,10,.8);z-index:150;display:flex;align-items:center;
   justify-content:center;padding:18px;backdrop-filter:blur(3px)}
 #modal-backdrop.hidden{display:none}
 #modal-box{
