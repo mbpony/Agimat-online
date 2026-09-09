@@ -700,6 +700,78 @@ const BRIDGE={x0:24*TILE, x1:26*TILE, z0:(riverY[24]-2)*TILE, z1:(riverY[24]+3)*
 /* ---- THE GRAND TIANGGE: walled safe-zone town ---- */
 const _TC=MAPCFG.town||{x0:58,x1:75,z0:37,z1:50};
 const TOWN={x0:_TC.x0*TILE, x1:_TC.x1*TILE, z0:_TC.z0*TILE, z1:_TC.z1*TILE}; // heart of the mainland (Barangay Liwanag — expanded)
+
+/* ================================================================
+   PHASE 0 — WORLD MAP DATA SYSTEM
+   Map/portal metadata lives here (ids, names, level bands, tiers,
+   resources, spawn points, portals, minimap art). Per-map 3D terrain is
+   a later phase (Layer B); today the instance system swaps state, spawns,
+   portals, transition and ambience on the shared world.
+   ================================================================ */
+const WORLD_MAPS={
+  map_starting:{
+    id:'map_starting', name:'Barangay Liwanag', region:'Banaue Highlands', icon:'🏮',
+    recLevel:[1,10], enemyTier:1, lootTier:1,
+    resources:['rice','bamboo','wood','herbs','stone'],
+    art:'assets/maps/barangay-liwanag.jpg', fog:0xa8c8e8,
+    lore:'“Dito nagsisimula ang iyong alamat.”',
+    spawns:{ town:{x:266,z:174} }, defaultSpawn:'town',
+    portals:[ {id:'p_to_test', to:'map_test', at:{x:250,z:210}, r:5, label:'Mt. Pinatubo (TEST)'} ],
+  },
+  map_test:{
+    id:'map_test', name:'Mt. Pinatubo — Ashen Frontier', region:'TEST Instance', icon:'🌋',
+    recLevel:[30,45], enemyTier:4, lootTier:4,
+    resources:['volcanic stone','ash crystal','fire essence'],
+    art:null, fog:0xd8a070,
+    lore:'“Ang abo ay humihinga pa.”',
+    spawns:{ entrance:{x:448,z:136} }, defaultSpawn:'entrance',
+    portals:[ {id:'p_to_start', to:'map_starting', at:{x:452,z:140}, r:5, label:'Barangay Liwanag'} ],
+  },
+};
+window.WORLD_MAPS=WORLD_MAPS;
+const curMap=()=>WORLD_MAPS[S.currentMap]||WORLD_MAPS.map_starting;
+window.curMap=curMap;
+
+/* ================================================================
+   PHASE 1 — MAP INSTANCE MANAGER
+   changeMap(): loading transition + destination display + spawn-point
+   respawn + current-map state (saved) + ambience/minimap swap.
+   Portal proximity triggers below; return portals round-trip.
+   ================================================================ */
+function applyMapVisuals(){
+  const m=curMap();
+  if(window.scene&&window.scene.fog) window.scene.fog.color.setHex(m.fog);
+  else if(typeof scene!=='undefined'&&scene&&scene.fog) scene.fog.color.setHex(m.fog);
+  if(window._setMapArt) window._setMapArt(m);
+}
+window.changeMap=function(toId,spawnId){
+  const to=WORLD_MAPS[toId]; if(!to||!started) return;
+  const sp=to.spawns[spawnId||to.defaultSpawn]||to.spawns[to.defaultSpawn];
+  const done=()=>{
+    S.currentMap=toId; S.spawnPoint=spawnId||to.defaultSpawn;
+    if(sp){ player.x=sp.x; player.z=sp.z; }
+    applyMapVisuals(); updateHUD(); save();
+  };
+  if(window._mapLore) window._mapLore[toId]=[to.icon,to.name.toUpperCase(),to.lore];
+  if(window._mapTransition) window._mapTransition(toId,done); else done();
+};
+setInterval(()=>{ // portal proximity triggers
+  if(!started) return;
+  const m=curMap();
+  for(const p of (m.portals||[]))
+    if(Math.hypot(player.x-p.at.x,player.z-p.at.z)<=(p.r||5)){ window.changeMap(p.to); return; }
+},300);
+window._dbgMap=()=>({ map:S.currentMap||'map_starting',
+  fog:(typeof scene!=='undefined'&&scene&&scene.fog)?scene.fog.color.getHexString():null,
+  name:curMap().name, px:Math.round(player.x), pz:Math.round(player.z) });
+(function(){ // on login, respawn at the saved map/spawn if not the starting map
+  let done=false;
+  setInterval(()=>{ if(started&&!done){ done=true;
+    const m=curMap(); const sp=m.spawns[S.spawnPoint||m.defaultSpawn];
+    if(S.currentMap&&S.currentMap!=='map_starting'&&sp){ player.x=sp.x; player.z=sp.z; }
+    applyMapVisuals();
+  }},500);
+})();
 const EXCL=MAPCFG.townExclusion||{x0:56,x1:77,z0:35,z1:52};        // no-spawn/no-tree frame around town
 const GATE_CX=66.5*TILE, GATE_CZ=43.5*TILE, GATE_HALF=4, WALL_T=1.3;
 function inTown(x,z){ return x>TOWN.x0&&x<TOWN.x1&&z>TOWN.z0&&z<TOWN.z1; }
@@ -9995,7 +10067,16 @@ root.querySelectorAll('.i2-nav').forEach(b=>b.onclick=()=>i2Nav(b.dataset.nav));
 const regionArt=new Image();
 let regionArtReady=false;
 regionArt.onload=()=>{ regionArtReady=true; if(I2.open&&I2.nav==='map') i2DrawMap(); };
+regionArt.onerror=()=>{ regionArtReady=false; if(I2.open&&I2.nav==='map') i2DrawMap(); };
 regionArt.src='assets/maps/barangay-liwanag.jpg';
+/* Map Instance hook (Phase 1): swap the region art + header for the current map. */
+window._setMapArt=function(m){
+  if(m && m.art){ if(regionArt.src.endsWith(m.art)===false){ regionArtReady=false; regionArt.src=m.art; } }
+  else regionArtReady=false; // maps without authored art fall back to the procedural base
+  const hb=document.querySelector('#i2-maphead b'), hs=document.querySelector('#i2-maphead span');
+  if(m){ if(hb) hb.textContent=(m.icon||'🗺️')+' '+m.name;
+         if(hs) hs.textContent=m.region+' · Lv '+m.recLevel[0]+'–'+m.recLevel[1]; }
+};
 const ART_VIEW={l:0.02,r:0.845,t:0.02,b:0.985};
 function i2DrawMap(){
   const cv=$('i2-map'), ctx=cv.getContext('2d');
@@ -12192,6 +12273,7 @@ CATALOG.push(
     'Tip: Si Aling Rosa ay nagpapagaling nang LIBRE. Dalawin mo siya!',
     'Tip: I-upgrade ang gamit sa Pandayan ni Panday Iko (+1 → +10).',
   ];
+  window._mapLore=LORE; // Phase 1: let the Map Instance Manager add destination lore
   const ov=document.createElement('div');
   ov.id='map-trans';
   ov.innerHTML='<div class="mt-rune">ᜀ</div><div class="mt-logo">⟐ AGIMAT ONLINE ⟐</div>'+

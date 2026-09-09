@@ -143,3 +143,17 @@ game "look like that" is **Layer A (map-screen skin + markers)**, which the exis
 - Verified via `tools/pw-map.js` screenshot (`docs/map-preview.png`).
 - NOTE: a pre-existing, unrelated pageerror exists in `ensurePeriodQuests` (game.js ~7340,
   quest pool indexing). Not caused by this change; tracked as a separate follow-up fix.
+
+## 8. Status — Phase 0 & 1 IMPLEMENTED (2026-09-10)
+
+- **Phase 0 (World Map Data System):** `WORLD_MAPS` registry in game.js defines map ids,
+  names, regions, level bands, enemy/loot tiers, resources, spawn points, portals and
+  minimap art (`map_starting` = Barangay Liwanag; `map_test` = Mt. Pinatubo TEST instance).
+- **Phase 1 (Map Instance Manager):** `window.changeMap(toId,spawnId)` shows the loading
+  transition + destination lore, respawns the player at the destination spawn point,
+  persists `S.currentMap`/`S.spawnPoint`, and swaps the region art/header. Portal proximity
+  triggers round-trip between instances. On login the player respawns at their saved map.
+- Verified (`tools/pw-instance.js`): `map_starting → map_test → map_starting` round-trip with
+  correct spawns and zero console errors.
+- Deferred: per-map 3D terrain (Layer B / Phase 3) and per-map fog/sky tint (the day/night
+  system currently owns fog color).
