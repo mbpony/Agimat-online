@@ -12,6 +12,17 @@ npm install
 npm start        # → http://localhost:8000
 ```
 
+## Checks (run before every deploy)
+```bash
+npm run check:syntax   # server.js + game.js parse
+npm run check:data     # data/ integrity: skills, classes, registry, camps, bosses
+npm start              # in one shell, then in another:
+npm run smoke          # 32 API/security/asset assertions against the live server
+npm run smoke:purge    # deletes the throwaway smokeNNNNNNNNN account (stop server first)
+```
+`check:data` is offline; `smoke` needs the server running. Both exit non-zero on
+failure, so they drop straight into CI. See `tools/` for the sources.
+
 ## Deploy (Render free tier)
 This repo contains `render.yaml` — on https://render.com choose
 **New + → Blueprint**, select this repo, click **Apply**. Done.

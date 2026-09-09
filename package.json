@@ -4,7 +4,11 @@
   "description": "Agimat Online - a 3D action RPG rooted in Philippine mythology",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "smoke": "node tools/smoke.js",
+    "smoke:purge": "node tools/purge-smoke.js",
+    "check:syntax": "node --check server.js && node --check game.js && echo syntax OK",
+    "check:data": "node tools/validate-data.js"
   },
   "engines": {
     "node": ">=18"
