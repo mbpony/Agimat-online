@@ -6,3 +6,6 @@ node_modules/
 data/users.json
 data/guilds.json
 data/market.json
+
+# local pre-change snapshots — git history is the real backup (see "workspace cleanup")
+legacy/

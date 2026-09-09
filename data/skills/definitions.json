@@ -3158,7 +3158,9 @@
    "maxRank": 1,
    "pointCost": 1,
    "free": false,
-   "requires": null,
+   "requires": {
+    "ar_sayaw": 1
+   },
    "description": "ULTIMATE: divine hands — 3 massive hits (200% each) with the last knocking down (1.2s stun), +40% haste 6s.",
    "effects": [
     {
@@ -3444,7 +3446,9 @@
    "maxRank": 1,
    "pointCost": 1,
    "free": false,
-   "requires": null,
+   "requires": {
+    "mm_dakila": 1
+   },
    "description": "ULTIMATE: the omen-bird's wing — 9 radiant arrows in a fan (110% each), each marks (+25%/4s); +25% haste 6s.",
    "effects": [
     {
@@ -3722,7 +3726,9 @@
    "maxRank": 1,
    "pointCost": 1,
    "free": false,
-   "requires": null,
+   "requires": {
+    "ti_bagsik": 1
+   },
    "description": "ULTIMATE: volcanic barrage — 3 explosive zones at aim (dps 60%/tick, 4s) + +30% atk 8s.",
    "effects": [
     {
@@ -4010,7 +4016,9 @@
    "maxRank": 1,
    "pointCost": 1,
    "free": false,
-   "requires": null,
+   "requires": {
+    "al_apat": 1
+   },
    "description": "ULTIMATE: all four elements answer — fire zone, ice slow zone, stone stun slam, wind haste (+20%, 8s).",
    "effects": [
     {
@@ -4290,7 +4298,9 @@
    "maxRank": 1,
    "pointCost": 1,
    "free": false,
-   "requires": null,
+   "requires": {
+    "ba_panawagan": 1
+   },
    "description": "ULTIMATE: the diwata embraces you — heal 30%, shield 30%, spirit ally 10s, +25% atk 8s.",
    "effects": [
     {
@@ -4576,7 +4586,9 @@
    "maxRank": 1,
    "pointCost": 1,
    "free": false,
-   "requires": null,
+   "requires": {
+    "pa_ninuno": 1
+   },
    "description": "ULTIMATE: the war-god's wrath — meteor slam at aim (350%), burn field 5s, +30% atk 8s.",
    "effects": [
     {
@@ -4868,7 +4880,9 @@
    "maxRank": 1,
    "pointCost": 1,
    "free": false,
-   "requires": null,
+   "requires": {
+    "an_sayaw": 1
+   },
    "description": "ULTIMATE: king of night — vanish-step, then a devastating circle of blades (320%), +50% haste and +30% atk for 7s.",
    "effects": [
     {

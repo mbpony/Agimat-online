@@ -8,7 +8,8 @@
     "smoke": "node tools/smoke.js",
     "smoke:purge": "node tools/purge-smoke.js",
     "check:syntax": "node --check server.js && node --check game.js && echo syntax OK",
-    "check:data": "node tools/validate-data.js"
+    "check:data": "node tools/validate-data.js",
+    "balance": "node tools/balance.js"
   },
   "engines": {
     "node": ">=18"
