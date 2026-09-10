@@ -4258,9 +4258,10 @@ const mmBase=document.createElement('canvas');
 mmBase.width=150; mmBase.height=120;
 (function renderMMBase(){
   const g=mmBase.getContext('2d');
-  const sx=150/MAP_W, sy=120/MAP_H;
+  // mainland only (exclude Isla ng Bathala) so the minimap matches the playable region
+  const sx=150/MAIN_W, sy=120/MAP_H;
   const zoneCols=ZCOL.map(p=>['#'+p[0].toString(16).padStart(6,'0'),'#'+p[1].toString(16).padStart(6,'0')]);
-  for(let y=0;y<MAP_H;y++)for(let x=0;x<MAP_W;x++){
+  for(let y=0;y<MAP_H;y++)for(let x=0;x<MAIN_W;x++){
     const t=grid[y*MAP_W+x];
     const zc=zoneCols[zoneGrid[y*MAP_W+x]];
     const zn2=zoneGrid[y*MAP_W+x];
@@ -4282,7 +4283,7 @@ mmBase.width=150; mmBase.height=120;
 function drawMinimap(){
   mmCtx.clearRect(0,0,150,120);
   mmCtx.drawImage(mmBase,0,0);
-  const sx=150/WORLD_W, sy=120/WORLD_H;
+  const sx=150/(MAIN_W*TILE), sy=120/WORLD_H;
   // enemies
   for(const en of enemies){
     if(en.stealth>0.5) continue;
@@ -9829,7 +9830,7 @@ css.textContent=`
 /* Doll column widened (owner: model area too small/cramped). flex-grow 1.5 and a
    floor so the 3D hero gets real room on desktop; mobile media query below
    stacks it and sets its own height. */
-.i2-doll{flex:1.5 1 300px;position:relative;border-radius:16px;background:radial-gradient(ellipse at 50% 42%,rgba(255,235,190,.13),rgba(0,0,0,0) 62%);min-width:240px}
+.i2-doll{flex:0.9 1 220px;max-width:300px;position:relative;border-radius:16px;background:radial-gradient(ellipse at 50% 42%,rgba(255,235,190,.13),rgba(0,0,0,0) 62%);min-width:200px}
 .i2-doll svg{position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);height:86%;opacity:.9;filter:drop-shadow(0 0 26px rgba(255,224,160,.35))}
 .i2-slot{position:absolute;width:64px;text-align:center;cursor:pointer}
 .i2-slot .sq{width:56px;height:56px;margin:0 auto;border-radius:12px;border:2px solid #4a3f66;background:linear-gradient(180deg,rgba(60,48,88,.9),rgba(30,24,48,.9));display:flex;align-items:center;justify-content:center;font-size:26px;position:relative;transition:border-color .15s, box-shadow .15s}
@@ -9855,7 +9856,7 @@ css.textContent=`
 .i2-btn.gray{background:linear-gradient(180deg,#5a5470,#3a3550);border-color:#6a6284;color:#d8d0ea}
 .i2-btn.red{background:linear-gradient(180deg,#c05a4a,#8a3226);border-color:#a05a4a;color:#fff}
 .i2-btn:disabled{opacity:.4;cursor:default}
-.i2-bag{flex:1.3;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(40,32,60,.9),rgba(24,18,38,.94));border:1px solid #5a4a7a;border-radius:14px;padding:8px;min-width:0}
+.i2-bag{flex:1.9;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(40,32,60,.9),rgba(24,18,38,.94));border:1px solid #5a4a7a;border-radius:14px;padding:8px;min-width:0}
 .i2-tabs{display:flex;gap:4px;margin-bottom:8px;flex:0 0 auto}
 .i2-tab{flex:1;padding:7px 2px;border-radius:9px;border:1px solid #4a3f66;background:rgba(30,24,48,.8);color:#bfb6d2;font:700 10px system-ui;cursor:pointer;text-align:center}
 .i2-tab.on{background:linear-gradient(180deg,#6a5a9a,#4a3a70);color:#ffe9b0;border-color:#8a7ac0}
@@ -9886,7 +9887,7 @@ css.textContent=`
 #i2-profwrap.open{display:block}
 @media (max-width:820px){
   .inv2-main{flex-direction:column;overflow-y:auto}
-  .i2-doll{min-height:420px;flex:0 0 420px;min-width:0}
+  .i2-doll{min-height:300px;flex:0 0 300px;min-width:0}
   .i2-mid{max-width:none}
 }`;
 document.head.appendChild(css);
@@ -11929,28 +11930,31 @@ CATALOG.push(
   .skt-head h3{margin:0;font:900 16px system-ui;color:#ffd27a}
   .skt-pts{margin-left:auto;font:800 13px system-ui;color:#9aff5a}
   .skt-close{background:none;border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;font:800 13px system-ui;padding:6px 12px;cursor:pointer}
-  .skt-body{flex:1;overflow:auto;padding:14px;-webkit-overflow-scrolling:touch}
-  .skt-branch{margin-bottom:16px}
-  .skt-branch>b{display:block;font:900 12px system-ui;letter-spacing:1px;margin-bottom:8px}
-  .skt-row{display:flex;gap:10px;flex-wrap:wrap}
-  .skt-node{width:150px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.14);border-radius:12px;padding:9px;cursor:pointer;position:relative}
+  /* compact multi-column layout: branches sit side by side so the whole tree
+     fits in one window (no scrolling) on typical screens */
+  .skt-body{flex:1;overflow:auto;padding:10px;-webkit-overflow-scrolling:touch;display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:10px;align-content:start}
+  .skt-branch{margin:0;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:8px}
+  .skt-branch>b{display:block;font:900 11px system-ui;letter-spacing:1px;margin-bottom:6px}
+  .skt-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:7px}
+  .skt-node{width:auto;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.14);border-radius:10px;padding:7px;cursor:pointer;position:relative}
   .skt-node.locked{opacity:.42;filter:grayscale(.6)}
   .skt-node.avail{border-color:#9aff5a66}
   .skt-node.learned{border-color:#ffd27a;background:rgba(255,210,122,.08)}
   .skt-node.maxed{border-color:#ff8a4a;background:rgba(255,138,74,.1)}
   .skt-node.equipped:after{content:'✔ NAKA-EQUIP';position:absolute;top:-8px;right:-4px;background:#2e7d32;color:#fff;font:800 8px system-ui;padding:2px 6px;border-radius:6px}
-  .skt-node .ic{font-size:22px}
-  .skt-node .nm{font:800 11px system-ui;color:#efe8ff;margin:3px 0 2px}
-  .skt-node .rk{font:700 10px system-ui;color:#ffd27a}
-  .skt-node .rq{font:600 9px system-ui;color:#8a80a2;margin-top:2px}
+  .skt-node .ic{font-size:18px}
+  .skt-node .nm{font:800 10px system-ui;color:#efe8ff;margin:2px 0 2px;line-height:1.2}
+  .skt-node .rk{font:700 9px system-ui;color:#ffd27a}
+  .skt-node .rq{font:600 8px system-ui;color:#8a80a2;margin-top:2px}
   .skt-detail{border-top:1px solid rgba(255,255,255,.1);padding:10px 14px;background:rgba(0,0,0,.35)}
   .skt-detail .d-desc{font:600 12px system-ui;color:#cfc6e2;margin:4px 0}
-  .skt-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .skt-actions{grid-column:1/-1;display:flex;gap:8px;margin-top:2px;flex-wrap:wrap}
   .skt-btn{border:none;border-radius:9px;font:800 12px system-ui;padding:8px 14px;cursor:pointer}
   .skt-learn{background:#2e7d32;color:#fff} .skt-learn:disabled{background:#333;color:#777}
   .skt-eq{background:#4a5aa8;color:#fff}
   .skt-reset{background:#7d2e2e;color:#fff;margin-left:auto}
-  @media(max-width:700px){.skt-node{width:calc(50% - 6px)}}`;
+  @media(max-width:700px){.skt-body{grid-template-columns:1fr}}`;
   document.head.appendChild(css);
   const el=document.createElement('div'); el.id='sktree';
   el.innerHTML=`<div class="skt-head"><h3>✨ SKILL TREE</h3><span id="skt-cls" style="font:700 12px system-ui;color:#cfc6e2"></span>

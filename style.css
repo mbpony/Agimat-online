@@ -654,14 +654,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--ff);overflow:hidde
     box-shadow:0 8px 24px rgba(0,0,0,.6), 0 0 26px rgba(255,90,60,.35),
       inset 0 2px 4px rgba(255,255,255,.3), inset 0 -5px 10px rgba(0,0,0,.35);
   }
-  /* skills arc around the attack button like ML */
-  #btn-skill1{ position:absolute; right:118px; bottom:2px;  width:56px; height:56px; }
-  #btn-skill2{ position:absolute; right:104px; bottom:66px; width:56px; height:56px; }
-  #btn-skill3{ position:absolute; right:52px;  bottom:112px; width:56px; height:56px; }
-  /* dodge tucked above the attack button */
-  #btn-dodge{ position:absolute; right:0px; bottom:110px; width:56px; height:56px; font-size:22px; }
-  /* interact + autoforage float left of the cluster */
-  #btn-interact{ position:absolute; right:186px; bottom:64px; width:62px; height:62px; }
+  /* skills fan around the attack button — spread out, no overlap, no clipping */
+  #btn-interact{ position:absolute; right:106px; bottom:12px; width:56px; height:56px; }
+  #btn-skill1{ position:absolute; right:166px; bottom:34px;  width:56px; height:56px; }
+  #btn-skill2{ position:absolute; right:152px; bottom:100px; width:56px; height:56px; }
+  #btn-skill3{ position:absolute; right:92px;  bottom:134px; width:56px; height:56px; }
+  #btn-dodge{  position:absolute; right:26px;  bottom:118px; width:52px; height:52px; font-size:22px; }
   #btn-autoforage{ position:absolute; right:192px; bottom:8px; }
   /* slightly larger key hints hidden on touch */
   .ctl-btn::after{ display:none; }
@@ -1009,18 +1007,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--ff);overflow:hidde
   /* joystick zone: slightly smaller so it doesn't eat the chat */
   #joy-zone{ width:44%; height:70%; }
 
-  /* combat cluster: pulled in for thumb reach */
+  /* combat cluster: pulled in for thumb reach, generous spacing (no overlap/clip) */
   #action-cluster{
-    right:calc(4px + env(safe-area-inset-right));
+    right:calc(6px + env(safe-area-inset-right));
     bottom:calc(6px + env(safe-area-inset-bottom));
-    width:180px; height:172px;
+    width:236px; height:200px;
   }
-  #btn-attack{ width:92px; height:92px; font-size:38px; right:6px; bottom:6px; }
-  #btn-skill1{ right:108px; bottom:0;   width:56px; height:56px; }
-  #btn-skill2{ right:98px;  bottom:62px; width:56px; height:56px; }
-  #btn-skill3{ right:50px;  bottom:106px; width:56px; height:56px; }
-  #btn-dodge{  right:0;     bottom:106px; width:56px; height:56px; font-size:20px; }
-  #btn-interact{ right:182px; bottom:62px; width:56px; height:56px; }
+  #btn-attack{ width:92px; height:92px; font-size:38px; right:8px; bottom:8px; }
+  #btn-interact{ right:106px; bottom:12px; width:56px; height:56px; }
+  #btn-skill1{ right:166px; bottom:34px;  width:56px; height:56px; }
+  #btn-skill2{ right:152px; bottom:100px; width:56px; height:56px; }
+  #btn-skill3{ right:92px;  bottom:134px; width:56px; height:56px; }
+  #btn-dodge{  right:26px;  bottom:118px; width:52px; height:52px; font-size:20px; }
 
   /* utility row above the cluster */
   #btn-autobattle{ right:6px;  bottom:196px; }
