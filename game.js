@@ -555,28 +555,19 @@ function isRiver(tx,ty){ return grid[ty*MAP_W+tx]===2 && tx<MAIN_W && riverY[tx]
     const dl=Math.hypot(x-LAKE.tx,y-LAKE.ty);
     if(dl<LAKE.r+(mrand()-0.5)) grid[y*MAP_W+x]=2;
   }
-  // --- zones ---
+  // --- zones: Banaue Highlands macro layout (per regional spec) ---
   for(let y=0;y<MAP_H;y++)for(let x=0;x<MAP_W;x++){
     let zn;
-    if(x>=MAIN_W){ zn=9; }                                       // eastern sea + island
-    else {
-      const inOld = x<50 && y<40;                                // the original heartland (unchanged coords)
-      if(inOld){
-        if(y<=riverY[Math.max(2,Math.min(47,x))]-2){
-          if(x>=21&&x<=28) zn=0;
-          else zn = x<21 ? 3 : 2;
-        } else {
-          if(x<10) zn=1;
-          else if(x>=40) zn=4;
-          else zn=0;
-        }
-      } else {
-        if(y>=78) zn=5;                                          // southern coast
-        else if(x>=88 && y>=52) zn=6;                            // SE mangrove swamp
-        else if(x>=96 && y<52) zn=7;                             // east volcano
-        else zn=8;                                               // flower meadow
-      }
+    if(x>=MAIN_W){ zn=9; }                        // eastern sea + endgame isle
+    else if(y>=58){ zn = x>=95 ? 2 : 0; }         // south Maligaya Trail; SE Hungduan Caves
+    else if(y<22){                                // north band
+      if(x>=95) zn=8;                             // NE Balangaw Peak
+      else if(x>=45) zn=6;                        // N-center Hapao Waterfalls
+      else zn = y<10 ? 7 : 5;                     // top Cloudridge Trail; NW Ancient Terraces
     }
+    else if(x>=95) zn=1;                          // east Batad Terraces
+    else if(x<45) zn=4;                           // west Tinun-an River
+    else zn=3;                                    // center Barangay Liwanag
     zoneGrid[y*MAP_W+x]=zn;
   }
   // --- eastern sea: everything past the mainland is water, except the island ---
@@ -618,18 +609,10 @@ function isRiver(tx,ty){ return grid[ty*MAP_W+tx]===2 && tx<MAIN_W && riverY[tx]
       if(Math.hypot(x-cx,y-cy)<=r) grid[y*MAP_W+x]=2;
     }
   }
-  // --- lava: crater core + flank vents ---
+  // --- Balangaw summit lake (crater basin) ---
   for(let y=0;y<MAP_H;y++)for(let x=0;x<MAIN_W;x++){
-    if(zoneGrid[y*MAP_W+x]!==7) continue;
+    if(zoneGrid[y*MAP_W+x]!==8) continue;
     if(Math.hypot(x-VOLCANO.tx,y-VOLCANO.ty)<3) grid[y*MAP_W+x]=2;
-  }
-  for(let i=0;i<6;i++){
-    const a=mrand()*6.28, d=8+mrand()*10;
-    const cx=Math.round(VOLCANO.tx+Math.cos(a)*d), cy=Math.round(VOLCANO.ty+Math.sin(a)*d*0.8);
-    for(let y=cy-1;y<=cy+1;y++)for(let x=cx-1;x<=cx+1;x++){
-      if(x<3||y<3||x>=MAIN_W-1||y>=SEA_Y-3) continue;
-      if(zoneGrid[y*MAP_W+x]===7 && mrand()<0.75) grid[y*MAP_W+x]=2;
-    }
   }
   // --- rice paddies (terraces only) ---
   for(let i=0;i<40;i++){
@@ -638,7 +621,8 @@ function isRiver(tx,ty){ return grid[ty*MAP_W+tx]===2 && tx<MAIN_W && riverY[tx]
     if(x0>18&&x0<32&&y0>22&&y0<34) continue;
     let ok=true;
     for(let y=y0;y<y0+h&&ok;y++)for(let x=x0;x<x0+w&&ok;x++){
-      if(zoneGrid[y*MAP_W+x]!==0||y<=riverY[Math.min(x,47)]+2||grid[y*MAP_W+x]===2) ok=false;
+      const _z=zoneGrid[y*MAP_W+x];
+      if((_z!==1&&_z!==5)||y<=riverY[Math.min(x,47)]+2||grid[y*MAP_W+x]===2) ok=false;
     }
     if(!ok) continue;
     for(let y=y0;y<y0+h;y++)for(let x=x0;x<x0+w;x++) grid[y*MAP_W+x]=2;
@@ -842,24 +826,19 @@ function tileBaseH(tx,ty){
     return h;
   }
   if(t===4) return tileBand(ty)*1.1 + 7;
-  let h=tileBand(ty)*1.1;
-  if(zn===3) h+=2.6+((tx*7+ty*13)%5)*0.35;
-  if(zn===2) h+=0.5;
-  if(zn===4) h-=0.5;
-  if(zn===1) h+=((tx*3+ty*5)%3)*0.18;
-  if(zn===8) h+=0.9*Math.sin(tx*0.19)*Math.cos(ty*0.16)+0.5*Math.sin(tx*0.07+ty*0.11);
-  if(zn===6) h=-0.55+((tx*5+ty*7)%3)*0.12;
-  if(zn===5){ h=Math.max(-1.6,(SEA_Y-3-ty)*0.28)-0.3; if(ty>=SEA_Y-1) h=-2.2; }
-  if(zn===7){
-    const d=Math.hypot(tx-VOLCANO.tx,ty-VOLCANO.ty);
-    h+=Math.max(0,(VOLCANO.r-d))*0.52+((tx*11+ty*17)%5)*0.3;
-    if(d<4.5) h-=(4.5-d)*2.4;
-  }
-  if(tx>=58&&tx<=75&&ty>=37&&ty<=50) h=0.8;                    // plaza plateau in the meadow (expanded)
+  let h=tileBand(ty)*0.6;
+  if(zn===0) h+=0.4+0.5*Math.sin(tx*0.15)*Math.cos(ty*0.13);
+  if(zn===1||zn===5) h+=1.2+((Math.floor(ty/3)+Math.floor(tx/5))%4)*0.5;   // stepped rice terraces
+  if(zn===2) h+=1.0+((tx*7+ty*13)%5)*0.4;
+  if(zn===3) h=0.8;
+  if(zn===4) h-=0.4+0.4*Math.sin(ty*0.2);
+  if(zn===6) h+=2.2+((tx*5+ty*7)%3)*0.3;
+  if(zn===7) h+=3.2+0.8*Math.sin(tx*0.2);
+  if(zn===8){ const d=Math.hypot(tx-VOLCANO.tx,ty-VOLCANO.ty); h+=Math.max(0,(VOLCANO.r-d))*0.55; }
+  if(tx>=58&&tx<=75&&ty>=37&&ty<=50) h=0.8;                    // plaza plateau (Barangay Liwanag)
   if(t===2){
-    if(zn===5||ty>=SEA_Y-2) return -2.4;
-    if(zn===7){ }
-    else { h-=0.45; if(isRiver(tx,ty)) h-=2.6; }
+    if(ty>=SEA_Y-2) return -2.4;
+    h-=0.45; if(isRiver(tx,ty)) h-=2.6;
     if(Math.hypot(tx-LAKE.tx,ty-LAKE.ty)<LAKE.r+2) h=Math.min(h,1.2);
   }
   return h;
@@ -911,10 +890,10 @@ const trees=[];
     if(blockedTile(x,z)) continue;
     if(onBridge(x,z)) continue;
     const zn=zoneGrid[Math.floor(z/TILE)*MAP_W+Math.floor(x/TILE)];
-    if(zn===4||zn===7||zn===5) continue; // no lush trees in scar/volcano/beach
+    if(zn===3||zn===8) continue; // no trees in the barangay / on Balangaw Peak
     if(zn===9&&!inIsle(Math.floor(x/TILE),Math.floor(z/TILE))) continue; // no trees in the sea
-    if(zn===1&&mrand()<0.7) continue; // grove is bamboo country
-    if(zn===6&&mrand()<0.55) continue; // swamp gets mangroves instead
+    if((zn===2||zn===6)&&mrand()<0.6) continue; // caves & waterfall cliffs stay sparse
+    if((zn===1||zn===5)&&mrand()<0.5) continue; // terraces: fewer trees among the paddies
     if(trees.some(t=>d2(t.x,t.z,x,z)<14*14)) continue;
     trees.push({x,z,s:rnd(0.7,1.3)});
   }
@@ -1191,16 +1170,16 @@ const Mcloth=(c,o={})=>PBR(c,Object.assign({map:TEX.fabric,roughness:0.9},o));
     if(cliff>0&&n>0) col.setHex(0x4a3d5a);
     else if(path>=2) col.setHex(0x8a6b42);
     else if(path===1) col.setHex(0x6d7a3e);
-    else if(zn===1) col.setHex(cr()<0.5?0x69a344:0x5f9a3e);   // grove: bright young green
-    else if(zn===2) col.setHex(cr()<0.5?0x2e5a2e:0x28522c);   // forest: deep dark green
-    else if(zn===3) col.setHex(cr()<0.5?0x7d7468:0x6e675e);   // highlands: grey stone
-    else if(zn===4) col.setHex(cr()<0.5?0x5c4638:0x513e30);   // scar: scorched umber
-    else if(zn===5) col.setHex(cr()<0.5?0xe8d5a0:0xdfca92);   // beach: warm sand
-    else if(zn===6) col.setHex(cr()<0.5?0x4a5c38:0x40522f);   // swamp: murky olive
-    else if(zn===7) col.setHex(cr()<0.5?0x3a3038:0x453a40);   // volcano: black basalt
-    else if(zn===8) col.setHex(cr()<0.35?0x6fae4e:(cr()<0.5?0x8ab858:0x60a246)); // meadow: lush
+    else if(zn===1) col.setHex(cr()<0.5?0x69a344:0x5f9a3e);   // Batad: vivid terrace green
+    else if(zn===2) col.setHex(cr()<0.5?0x6a6156:0x5a5148);   // Hungduan: rocky grey-brown
+    else if(zn===3) col.setHex(cr()<0.5?0xc9b183:0xbda678);   // Liwanag: packed-earth tan
+    else if(zn===4) col.setHex(cr()<0.5?0x4f7a52:0x456f4a);   // Tinun-an: riverbank green
+    else if(zn===5) col.setHex(cr()<0.5?0x8a8a4e:0x7d7d45);   // Ancient: worn olive terraces
+    else if(zn===6) col.setHex(cr()<0.5?0x3e6a5e:0x366054);   // Hapao: wet mossy teal
+    else if(zn===7) col.setHex(cr()<0.5?0x5e6e56:0x54644c);   // Cloudridge: misty highland
+    else if(zn===8) col.setHex(cr()<0.5?0x9aa0a6:0x8a9096);   // Balangaw: pale summit rock
     else if(zn===9) col.setHex(cr()<0.5?0x1e6a46:0x1a5e3e);   // isla: deep tropical jungle
-    else col.setHex(cr()<0.5?0x4a7c3a:0x437536);
+    else col.setHex(cr()<0.5?0x7ab556:0x6fae4e);              // Maligaya: fresh starter meadow
     col.offsetHSL(0,(cr()-0.5)*0.04,(cr()-0.5)*0.05);
     colors[i*3]=col.r; colors[i*3+1]=col.g; colors[i*3+2]=col.b;
   }
@@ -1390,24 +1369,15 @@ const lavaMats=[]; // pulsing emissive lava
     if(grid[ty*MAP_W+tx]!==2) continue;
     if(tx>=59&&tx<=74&&ty>=38&&ty<=49) continue;
     const zn=zoneGrid[ty*MAP_W+tx];
-    if(zn===5||ty>=SEA_Y-3) continue;                       // sea handled by the big plane
+    if(ty>=SEA_Y-3) continue;                               // southern sea handled by the big plane
     if(zn===9&&!inIsle(tx,ty)) continue;                    // eastern sea handled by the big plane
-    /* LAVA tiles in the volcano */
-    if(zn===7){
-      const lg=new THREE.PlaneGeometry(TILE,TILE,2,2);
-      lg.rotateX(-Math.PI/2);
-      const lm=new THREE.Mesh(lg, LavaMat());
-      lm.position.set(tx*TILE+TILE/2, tileBaseH(tx,ty)+0.25, ty*TILE+TILE/2);
-      scene.add(lm);
-      continue;
-    }
     const river=isRiver(tx,ty);
-    const inLake=Math.hypot(tx-LAKE.tx,ty-LAKE.ty)<LAKE.r+2 || zn===9;  // island ponds use lake water
-    const inSwamp=zn===6;
+    const inLake=Math.hypot(tx-LAKE.tx,ty-LAKE.ty)<LAKE.r+2 || zn===9 || Math.hypot(tx-VOLCANO.tx,ty-VOLCANO.ty)<4;
+    const inSwamp=zn===6;                                    // Hapao waterfall pools
     const g=new THREE.PlaneGeometry(TILE,TILE,4,4);
     g.rotateX(-Math.PI/2);
-    const m=new THREE.Mesh(g, river?riverMat : inLake?lakeMat : inSwamp?swampMat : paddyMat);
-    const y=river ? tileBaseH(tx,ty)+0.3 : zn===9 ? tileBaseH(tx,ty)+0.35 : inLake ? 1.55 : inSwamp ? -0.35 : tileBand(ty)*1.1 - 0.12;
+    const m=new THREE.Mesh(g, river?riverMat : inLake?lakeMat : inSwamp?lakeMat : paddyMat);
+    const y=river ? tileBaseH(tx,ty)+0.3 : zn===9 ? tileBaseH(tx,ty)+0.35 : inLake ? 1.55 : inSwamp ? tileBaseH(tx,ty)+0.3 : tileBaseH(tx,ty)-0.12;
     m.position.set(tx*TILE+TILE/2, y, ty*TILE+TILE/2);
     m.userData.baseY=y;
     scene.add(m);
@@ -4136,7 +4106,7 @@ mmBase.width=150; mmBase.height=120;
 (function renderMMBase(){
   const g=mmBase.getContext('2d');
   const sx=150/MAP_W, sy=120/MAP_H;
-  const zoneCols=[['#3f6f31','#447736'],['#5d9440','#548a3a'],['#25482a','#2a512e'],['#6e675e','#786f64'],['#513e30','#5a4536'],['#dfca92','#e8d5a0'],['#40522f','#4a5c38'],['#3a3038','#453a40'],['#6fae4e','#7ab556'],['#1e6a46','#1a5e3e']];
+  const zoneCols=[['#7ab556','#6fae4e'],['#548a3a','#5d9440'],['#4a4038','#3a3038'],['#dfca92','#e8d5a0'],['#3f6f6f','#4a7a7a'],['#6e675e','#786f64'],['#40707f','#4a7a8a'],['#5a6a52','#64745c'],['#8a8f96','#9aa0a8'],['#1e6a46','#1a5e3e']];
   for(let y=0;y<MAP_H;y++)for(let x=0;x<MAP_W;x++){
     const t=grid[y*MAP_W+x];
     const zc=zoneCols[zoneGrid[y*MAP_W+x]];

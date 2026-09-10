@@ -1,32 +1,33 @@
 {
  "id": "main",
- "name": "Kapuluan ng Agimat — Mainland + Isla ng Bathala",
+ "name": "Banaue Highlands — The Heart of Luzon",
  "tile": 4,
  "gridW": 192,
  "gridH": 105,
  "seed": 20260905,
  "mainlandWidth": 134,
  "seaY": 87,
- "volcano": { "tx": 112, "ty": 28, "r": 22 },
- "lake": { "tx": 102, "ty": 13, "r": 5 },
+ "volcano": { "tx": 112, "ty": 24, "r": 20 },
+ "lake": { "tx": 66, "ty": 10, "r": 5 },
  "isle": { "x0": 142, "y0": 30, "x1": 192, "y1": 70, "minLevel": 10 },
  "town": { "x0": 58, "x1": 75, "z0": 37, "z1": 50 },
  "townExclusion": { "x0": 56, "x1": 77, "z0": 35, "z1": 52 },
  "portals": {
   "town": { "tx": 71.5, "ty": 43.5 },
+  "sagada": { "tx": 66, "ty": 4 },
   "isle": { "tx": 145.5, "ty": 51 }
  },
  "zones": [
-  { "id": "zn0", "name": "🌾 Payyo Terraces",  "flavor": "home of gentle spirits" },
-  { "id": "zn1", "name": "🎋 Kawayan Grove",   "flavor": "whispering bamboo" },
-  { "id": "zn2", "name": "🌳 Gubat ng Balete", "flavor": "the old dark wood" },
-  { "id": "zn3", "name": "⛰️ Nuno Highlands",  "flavor": "tread with respect… tabi-tabi po" },
-  { "id": "zn4", "name": "🔥 Sunog Scar",      "flavor": "the burnt land — santelmos roam" },
-  { "id": "zn5", "name": "🏖️ Dalampasigan",    "flavor": "salt wind and white sand" },
-  { "id": "zn6", "name": "🌿 Bakawan Swamp",   "flavor": "black water… something watches" },
-  { "id": "zn7", "name": "🌋 Bulkan Apolaki",  "flavor": "the mountain of fire — Apolaki sleeps" },
-  { "id": "zn8", "name": "🌸 Parang ng Tala",  "flavor": "a sea of flowers under the stars" },
+  { "id": "zn0", "name": "🌾 Maligaya Trail",   "flavor": "the first steps of every legend" },
+  { "id": "zn1", "name": "🌾 Batad Terraces",   "flavor": "the iconic stairways of green" },
+  { "id": "zn2", "name": "🕳️ Hungduan Caves",  "flavor": "echoes under the mountain" },
+  { "id": "zn3", "name": "🏡 Barangay Liwanag", "flavor": "the heart of the highlands — neutral ground" },
+  { "id": "zn4", "name": "💧 Tinun-an River",   "flavor": "cold current, hidden crossings" },
+  { "id": "zn5", "name": "🌾 Ancient Terraces", "flavor": "older than memory, worn by wind" },
+  { "id": "zn6", "name": "💦 Hapao Waterfalls", "flavor": "where the mountain sings" },
+  { "id": "zn7", "name": "⛰️ Cloudridge Trail", "flavor": "the misty road to Sagada" },
+  { "id": "zn8", "name": "🌈 Balangaw Peak",    "flavor": "the rainbow summit — see all of Luzon" },
   { "id": "zn9", "name": "🏝️ Isla ng Bathala", "flavor": "the forbidden isle — only the worthy return" }
  ],
- "_comment": "Map config (restructure spec §11/§13/§28). Geometry values are CONTENT CONFIGURATION consumed by the procedural generator — camps in spawns-main.json were validated against this exact geometry, so change with care. Zone list order = zoneGrid index."
+ "_comment": "Banaue Highlands restructure (Region 1 main map). Zone index order = zoneGrid index. zn9 kept as endgame isle. Portals: town(hub), sagada(north exit), isle(endgame)."
 }
