@@ -147,9 +147,18 @@ function generateLandmarks(mapId,o){
 }
 function generateVegetation(mapId,o){
   o=o||{};const seed=o.seed||847291;const out=[];
-  for(let i=0;i<300;i++){const x=4+hash01(i,1,seed)*128,y=4+hash01(i,2,seed)*80;const z=zoneIndex(mapId,x,y,134,seed);
-    const dens=(z===4||z===7)?0.92:(z===1||z===5)?0.42:(z===3)?0.2:0.66;
-    if(hash01(i,3,seed)<dens)out.push({x:Math.round(x),y:Math.round(y),zone:z,family:(z===7?'pine':'broadleaf')});}
+  /* jittered grid (blue-noise-ish): even coverage per zone — no clusters, no bald
+     spots. Each cell gets a tree with the zone's density; position is jittered so
+     it still reads organic, not gridded. */
+  const step=5;
+  for(let gy=3;gy<84;gy+=step)for(let gx=3;gx<131;gx+=step){
+    const x=Math.round(gx+(hash01(gx,gy,seed)-0.5)*step*0.9);
+    const y=Math.round(gy+(hash01(gy,gx,seed^3)-0.5)*step*0.9);
+    if(x<2||y<2||x>=132||y>=84) continue;
+    const z=zoneIndex(mapId,x,y,134,seed);
+    const dens=(z===4||z===7)?0.95:(z===1||z===5)?0.4:(z===3)?0.18:(z===8)?0.12:0.7;
+    if(hash01(x,y,seed^5)<dens) out.push({x,y,zone:z,family:(z===7?'pine':'broadleaf')});
+  }
   return out;
 }
 function getConnections(mapId){

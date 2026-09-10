@@ -1231,11 +1231,11 @@ const Mcloth=(c,o={})=>PBR(c,Object.assign({map:TEX.fabric,roughness:0.9},o));
   // grass tufts scattered on walkable land
   const tuftGeo=new THREE.ConeGeometry(0.07,0.55,3);
   const tuftMat=M(0x5c9a4a);
-  const tufts=new THREE.InstancedMesh(tuftGeo,tuftMat,2600);
+  const tufts=new THREE.InstancedMesh(tuftGeo,tuftMat,4200);
   const mtx=new THREE.Matrix4(), q=new THREE.Quaternion(), sc=new THREE.Vector3(), pv=new THREE.Vector3();
   const tr2=mulberry32(31337);
   let placed=0, guard=0;
-  while(placed<2600&&guard++<26000){
+  while(placed<4200&&guard++<42000){
     const x=4*TILE+tr2()*(MAP_W-8)*TILE, z=4*TILE+tr2()*(MAP_H-8)*TILE;
     const t=tileIdx(x,z);
     if(t!==0&&t!==1) continue;
@@ -1250,6 +1250,31 @@ const Mcloth=(c,o={})=>PBR(c,Object.assign({map:TEX.fabric,roughness:0.9},o));
   }
   tufts.count=placed;
   scene.add(tufts);
+  /* --- ZONE BEAUTIFICATION pass 1 (town ring / start meadow / river banks):
+      wildflower scatter so the lived-in areas read lush, like the concept art.
+      Each zone can get its own pass like this, one at a time. --- */
+  const flGeo=new THREE.ConeGeometry(0.09,0.42,4);
+  const flMat=new THREE.MeshStandardMaterial({roughness:0.9,flatShading:true});
+  const flowers=new THREE.InstancedMesh(flGeo,flMat,900);
+  const fc=new THREE.Color();
+  let fp=0, fg=0;
+  while(fp<900&&fg++<9000){
+    const x=4*TILE+tr2()*(MAIN_W-8)*TILE, z=4*TILE+tr2()*(SEA_Y-8)*TILE;
+    const t=tileIdx(x,z); if(t!==0&&t!==1) continue;
+    const tz=zoneGrid[Math.floor(z/TILE)*MAP_W+Math.floor(x/TILE)];
+    if(!(tz===3||tz===0||tz===4)) continue;
+    pv.set(x, groundY(x,z)+0.18, z);
+    q.setFromAxisAngle(new THREE.Vector3(0,1,0), tr2()*6.28);
+    sc.setScalar(0.6+tr2()*0.8);
+    mtx.compose(pv,q,sc);
+    flowers.setMatrixAt(fp, mtx);
+    fc.setHex([0xff8ac2,0xffd24a,0xffffff,0xc08aff,0xff6a5e][fp%5]);
+    flowers.setColorAt(fp, fc);
+    fp++;
+  }
+  flowers.count=fp;
+  if(flowers.instanceColor) flowers.instanceColor.needsUpdate=true;
+  scene.add(flowers);
 })();
 
 /* ---- water paddies ---- */
@@ -13795,11 +13820,10 @@ CATALOG.push(
     const t=performance.now()/1000, dt=Math.min(0.1,t-lastT); lastT=t;
     for(const st of mixers){
       if(!st._root.parent){ mixers.delete(st); continue; }
-      /* distance-cull: skip skinning + hide far monsters (huge saver — skinned
-         meshes + mixers are the most expensive per-frame objects) */
+      /* distance-cull: skip skinning for far monsters (they stay VISIBLE — hiding
+         them left floating nameplates, the "invisible monster" bug) */
       const _dx=st._root.position.x-player.x, _dz=st._root.position.z-player.z;
-      if(_dx*_dx+_dz*_dz>170*170){ if(st._root.visible) st._root.visible=false; continue; }
-      if(!st._root.visible) st._root.visible=true;
+      if(_dx*_dx+_dz*_dz>170*170){ continue; }
       st.mixer.update(dt);
     }
     if(!started) return;
