@@ -939,8 +939,8 @@ const canvas=$('game');
    and cap resolution — these are the biggest drivers of GPU OOM / context loss. */
 const isMobileGPU=Math.min(window.innerWidth,window.innerHeight)<650 || (navigator.maxTouchPoints>0 && Math.min(window.innerWidth,window.innerHeight)<820);
 const renderer=new THREE.WebGLRenderer({canvas, antialias:!isMobileGPU, powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(isMobileGPU?1.25:1.75, window.devicePixelRatio||1));
-renderer.shadowMap.enabled=true;
+renderer.setPixelRatio(Math.min(isMobileGPU?1.0:1.75, window.devicePixelRatio||1));
+renderer.shadowMap.enabled=!isMobileGPU;   // mobile: shadows off entirely (big GPU saver)
 renderer.shadowMap.type=isMobileGPU?THREE.PCFShadowMap:THREE.PCFSoftShadowMap;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
@@ -967,7 +967,7 @@ if(isMobileGPU){ bloomPass.enabled=false; }
 /* ---- CHUNK STREAMING: the world is built once, but only chunks near the player
    stay visible — distant chunks are set visible=false so the GPU skips them
    entirely (no draw calls, no water shading). This is the main lag fix. ---- */
-const CHUNK_TILES=12, CHUNK_W=CHUNK_TILES*TILE, VIEW_CHUNKS=3;  // ~144-unit view radius
+const CHUNK_TILES=12, CHUNK_W=CHUNK_TILES*TILE, VIEW_CHUNKS=isMobileGPU?2:3;  // smaller view radius on mobile
 const chunkMap=new Map();
 function registerChunk(obj,wx,wz){
   const key=Math.floor(wx/CHUNK_W)+','+Math.floor(wz/CHUNK_W);

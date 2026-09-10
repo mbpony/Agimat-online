@@ -39,9 +39,9 @@ const ZH={
 };
 const ZCOL={
   map_starting:[
-    [0x7ab556,0x6fae4e],[0x5d9440,0x548a3a],[0x6a6156,0x5a5148],[0xc9b183,0xbda678],
-    [0x4f7a52,0x456f4a],[0x8a8a4e,0x7d7d45],[0x3e6a4e,0x366044],[0x5e6e56,0x54644c],
-    [0x9aa0a6,0x8a9096],[0x1e6a46,0x1a5e3e]],
+    [0x7ec850,0x70bd46],[0x66b93e,0x57aa35],[0x6a6156,0x5a5148],[0xc9b183,0xbda678],
+    [0x4f8a56,0x457a4c],[0x9fb24e,0x8fa244],[0x2f8f60,0x278053],[0x3f7048,0x366240],
+    [0xaeb8c0,0x9ea8b0],[0x1e6a46,0x1a5e3e]],
   map_sagada:[
     [0x6f9a5a,0x66914f],[0x4e7d46,0x477540],[0x7a7468,0x716b60],[0xb8a98c,0xafa084],
     [0x4a7a80,0x43727a],[0x6b7d52,0x63754b],[0x52707a,0x4b6872],[0x6a7a72,0x62726a],
@@ -95,9 +95,13 @@ function zoneIndex(mapId,x,y,MAIN_W,seed){
 function plateauHeight(mapId,zn,tx,ty,summit){
   const Z=ZH[mapId]||ZH.map_starting;
   let h=Z[zn];
-  if(zn===1||zn===5) h+=(Math.floor(ty/3)%4)*0.6;      // terrace steps
-  if(zn===2) h+=((tx*7+ty*13)%4)*0.3;                  // rocky bumps
-  if(zn===8&&summit){const d=Math.hypot(tx-summit.tx,ty-summit.ty);h+=Math.max(0,(summit.r-d))*0.5;}
+  const B=mapId==='map_starting';
+  /* per-zone topography (illustration match), Banaue only, moderate so walking holds: */
+  if(B&&(zn===1||zn===5)) h+=(Math.floor(ty/3)%4)*0.7;        // crisp stepped rice terraces
+  if(B&&zn===2) h+=((tx*7+ty*13)%4)*0.35;                    // karst rocky bumps
+  if(B&&zn===4){ const d=Math.abs(tx-26); h-=Math.max(0,3-d)*0.4; }  // river corridor dips to banks
+  if(B&&zn===6) h+=Math.max(0,3-(ty%6))*0.8;                 // waterfall cliffs step down south
+  if(zn===8&&summit){const d=Math.hypot(tx-summit.tx,ty-summit.ty);h+=Math.max(0,(summit.r-d))*0.6;}
   return h;
 }
 
