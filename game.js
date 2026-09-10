@@ -515,12 +515,12 @@ const IS_BANAUE=!SAG; // landmark set (waterfalls/caves/summit) only on the Bana
 const ZH = window.WORLDGEN.heights(ACTIVE_MAP);   // per-map plateau bases (worldgen.js)
 const ZCOL = window.WORLDGEN.palette(ACTIVE_MAP); // per-map crisp palettes (worldgen.js)
 const TERRAIN_THEME=(_SAG_URL||(typeof S!=='undefined'&&S&&S.currentMap==='map_sagada'))?{
-  heightScale:2.2, northRise:7, fog:0xb8ccd8, fogNear:60, fogFar:200,
+  heightScale:2.2, northRise:7, fog:0xb8ccd8, fogNear:50, fogFar:150,
   zoneNames:['🏡 Sagada Village','🌫️ Misty Arrival Trail','🌲 Pine Forest','⛰️ Cliffside Trail','🕳️ Limestone Caves',
              '🌫️ Misty Arrival Trail','🌿 Echo Valley','⛩️ Ancient Mountain Shrine','🌿 Echo Valley','⛩️ Ancient Mountain Shrine'],
   zoneFlavors:['the mountain hub','where the mist greets you','whispering pines','mind the drop','the deep caves',
              'where the mist greets you','the echoing valley','the sacred summit','the echoing valley','the sacred summit'],
-}:{ heightScale:1.5, northRise:0, fog:0xa8c8e8, fogNear:90, fogFar:430, zoneNames:null, zoneFlavors:null };
+}:{ heightScale:1.5, northRise:0, fog:0xa8c8e8, fogNear:70, fogFar:150, zoneNames:null, zoneFlavors:null };
 const TILE=MAPCFG.tile||4, MAP_W=MAPCFG.gridW||192, MAP_H=MAPCFG.gridH||105, WORLD_W=MAP_W*TILE, WORLD_H=MAP_H*TILE; // mainland 134×105 (~30% smaller) + eastern isle 50×40
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
 const mrand = mulberry32(MAPCFG.seed||20260905);
@@ -964,6 +964,27 @@ composer.addPass(new OutputPass());
 /* mobile: skip the expensive bloom pass entirely (it is the biggest per-frame cost) */
 if(isMobileGPU){ bloomPass.enabled=false; }
 
+/* ---- CHUNK STREAMING: the world is built once, but only chunks near the player
+   stay visible — distant chunks are set visible=false so the GPU skips them
+   entirely (no draw calls, no water shading). This is the main lag fix. ---- */
+const CHUNK_TILES=12, CHUNK_W=CHUNK_TILES*TILE, VIEW_CHUNKS=3;  // ~144-unit view radius
+const chunkMap=new Map();
+function registerChunk(obj,wx,wz){
+  const key=Math.floor(wx/CHUNK_W)+','+Math.floor(wz/CHUNK_W);
+  let a=chunkMap.get(key); if(!a){ a=[]; chunkMap.set(key,a); } a.push(obj);
+}
+let _pcx=1e9,_pcy=1e9;
+function updateChunkVisibility(force){
+  const pcx=Math.floor(player.x/CHUNK_W), pcy=Math.floor(player.z/CHUNK_W);
+  if(!force&&pcx===_pcx&&pcy===_pcy) return;
+  _pcx=pcx; _pcy=pcy;
+  for(const [key,arr] of chunkMap){
+    const i=key.indexOf(','), cx=+key.slice(0,i), cy=+key.slice(i+1);
+    const vis=Math.abs(cx-pcx)<=VIEW_CHUNKS&&Math.abs(cy-pcy)<=VIEW_CHUNKS;
+    for(let k=0;k<arr.length;k++) arr[k].visible=vis;
+  }
+}
+
 function onResize(){
   const w=window.innerWidth,h=window.innerHeight;
   renderer.setSize(w,h,false);
@@ -1392,6 +1413,7 @@ const lavaMats=[]; // pulsing emissive lava
     m.position.set(tx*TILE+TILE/2, y, ty*TILE+TILE/2);
     m.userData.baseY=y;
     scene.add(m);
+    registerChunk(m, m.position.x, m.position.z);
     if(river){
       /* mossy river rocks breaking the surface */
       if(Math.random()<0.22){
@@ -1485,25 +1507,48 @@ const lavaMats=[]; // pulsing emissive lava
     pool.rotation.x=-Math.PI/2; pool.position.set(x,below+0.25,zf+TILE*0.5);
     scene.add(pool);
   }
-  /* caves: dark arch mouths in the Hungduan karst */
-  let caves=0;
-  for(let ty=60;ty<84&&caves<5;ty+=5)for(let tx=98;tx<130&&caves<5;tx+=5){
-    if(zoneGrid[ty*MAP_W+tx]!==2) continue;
-    const x=tx*TILE, z=ty*TILE, yb=tileBaseH(tx,ty);
-    const arch=new THREE.Mesh(new THREE.TorusGeometry(1.7,0.55,6,10,Math.PI), Mstone(0x5a5148));
-    arch.position.set(x,yb+0.2,z); scene.add(arch);
-    const dark=new THREE.Mesh(new THREE.CircleGeometry(1.5,10), new THREE.MeshBasicMaterial({color:0x08080f,fog:false}));
-    dark.rotation.x=-Math.PI/2; dark.position.set(x,yb+0.3,z); scene.add(dark);
-    caves++;
+  /* landmarks (V2 design layer): caves, summit shrine and POI signposts placed at
+     the worldgen landmark coordinates instead of hardcoded scans. */
+  const LMS=window.WORLDGEN.generateLandmarks(ACTIVE_MAP);
+  const lmById=id=>LMS.find(l=>l.id===id)||null;
+  /* Hungduan caves: dark arch mouths clustered around the worldgen cave landmark */
+  {
+    const cl=lmById('hungduan_cave')||{x:110,y:70};
+    let caves=0;
+    for(let ty=cl.y-12;ty<=cl.y+12&&caves<5;ty+=5)for(let tx=cl.x-12;tx<=cl.x+12&&caves<5;tx+=5){
+      if(tx<1||ty<1||tx>=MAIN_W-1||ty>=MAP_H-1) continue;
+      if(zoneGrid[ty*MAP_W+tx]!==2) continue;
+      const x=tx*TILE, z=ty*TILE, yb=tileBaseH(tx,ty);
+      const arch=new THREE.Mesh(new THREE.TorusGeometry(1.7,0.55,6,10,Math.PI), Mstone(0x5a5148));
+      arch.position.set(x,yb+0.2,z); scene.add(arch);
+      const dark=new THREE.Mesh(new THREE.CircleGeometry(1.5,10), new THREE.MeshBasicMaterial({color:0x08080f,fog:false}));
+      dark.rotation.x=-Math.PI/2; dark.position.set(x,yb+0.3,z); scene.add(dark);
+      caves++;
+    }
   }
-  /* Balangaw summit: snow disc hugging the peak + grounded shrine */
-  const sx=VOLCANO.tx*TILE, sz=VOLCANO.ty*TILE, sy=tileBaseH(VOLCANO.tx,VOLCANO.ty);
-  const snow=new THREE.Mesh(new THREE.CircleGeometry(7,14), PBR(0xf2f5f8,{roughness:0.55}));
-  snow.rotation.x=-Math.PI/2; snow.position.set(sx,sy+0.25,sz); scene.add(snow);
-  const shrine=new THREE.Group();
-  const post=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.16,2.2,6), Mwood(0x6a4a2a)); post.position.y=1.1; shrine.add(post);
-  const roof=new THREE.Mesh(new THREE.ConeGeometry(1.1,0.8,4), Mwood(0x8a4a2a)); roof.position.y=2.4; shrine.add(roof);
-  shrine.position.set(sx,sy+0.2,sz); scene.add(shrine);
+  /* Balangaw summit: snow disc + grounded shrine at the worldgen peak landmark */
+  {
+    const bl=lmById('balangaw')||{x:VOLCANO.tx,y:VOLCANO.ty};
+    const sx=bl.x*TILE, sz=bl.y*TILE, sy=tileBaseH(bl.x,bl.y);
+    const snow=new THREE.Mesh(new THREE.CircleGeometry(7,14), PBR(0xf2f5f8,{roughness:0.55}));
+    snow.rotation.x=-Math.PI/2; snow.position.set(sx,sy+0.25,sz); scene.add(snow);
+    const shrine=new THREE.Group();
+    const post=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.16,2.2,6), Mwood(0x6a4a2a)); post.position.y=1.1; shrine.add(post);
+    const roof=new THREE.Mesh(new THREE.ConeGeometry(1.1,0.8,4), Mwood(0x8a4a2a)); roof.position.y=2.4; shrine.add(roof);
+    shrine.position.set(sx,sy+0.2,sz); scene.add(shrine);
+  }
+  /* POI signposts for the other worldgen landmarks (chunk-culled like everything else) */
+  for(const lm of LMS){
+    if(lm.zone===3||lm.hidden) continue;                                  // town buildings are built in buildTown
+    if(lm.id==='hapao_falls'||lm.id==='hungduan_cave'||lm.id==='balangaw') continue; // already built above
+    if(lm.x<1||lm.y<1||lm.x>=MAIN_W-1||lm.y>=MAP_H-1) continue;
+    const gt=grid[lm.y*MAP_W+lm.x]; if(gt===2||gt===4) continue;
+    const x=lm.x*TILE, z=lm.y*TILE, y=groundY(x,z);
+    const sign=new THREE.Group();
+    const sp=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.1,1.6,5), Mwood(0x7a5a34)); sp.position.y=0.8; sign.add(sp);
+    const board=new THREE.Mesh(new THREE.BoxGeometry(1.3,0.5,0.08), Mwood(0xb08858)); board.position.y=1.5; sign.add(board);
+    sign.position.set(x,y,z); scene.add(sign); registerChunk(sign,x,z);
+  }
 })();
 
 /* ---- trees: species-based generator with organic canopies + wind sway ---- */
@@ -1666,6 +1711,7 @@ for(const t of trees){
      still receive light; only the trunk-less canopies stop projecting shadows. */
   g.traverse(o=>{ if(o.isMesh) o.castShadow=false; });
   scene.add(g);
+  registerChunk(g,t.x,t.z);
 }
 
 /* ---- per-map props: terrace retaining walls (Banaue) / standing stones (Sagada) ---- */
@@ -1679,11 +1725,11 @@ for(const t of trees){
     const x=tx*TILE+TILE/2, z=ty*TILE+TILE/2, y=groundY(x,z);
     if(IS_BANAUE&&(zn===1||zn===5)){
       const w=new THREE.Mesh(new THREE.BoxGeometry(TILE*0.9,0.5,0.42), Mstone(0x8a8378));
-      w.position.set(x,y+0.25,z); w.castShadow=true; scene.add(w); placed++;
+      w.position.set(x,y+0.25,z); w.castShadow=true; scene.add(w); registerChunk(w,x,z); placed++;
     } else if(SAG&&(zn===2||zn===7)){
       const h=1.2+jr()*1.5;
       const st=new THREE.Mesh(new THREE.BoxGeometry(0.5,h,0.4), Mstone(0x9aa0a6));
-      st.position.set(x,y+h/2,z); st.rotation.y=jr()*3; st.castShadow=true; scene.add(st); placed++;
+      st.position.set(x,y+h/2,z); st.rotation.y=jr()*3; st.castShadow=true; scene.add(st); registerChunk(st,x,z); placed++;
     }
   }
 })();
@@ -4298,6 +4344,7 @@ function animate(now){
   // hit-stop: brief time freeze on big impacts
   if(hitStop>0){ hitStop-=dt; dt*=0.12; }
   if(started) update(dt,t);
+  updateChunkVisibility();  // chunk streaming: only render chunks near the player
   // water shimmer
   for(const wm of waterMats) wm.uniforms.uTime.value=t;              // shader waves+ripples
   for(let i=0;i<lavaMats.length;i++) lavaMats[i].emissiveIntensity=1.35+0.55*Math.sin(t*1.7+i*2.1); // lava breathing
@@ -13742,12 +13789,21 @@ CATALOG.push(
   (function tick(){
     requestAnimationFrame(tick);
     const t=performance.now()/1000, dt=Math.min(0.1,t-lastT); lastT=t;
-    for(const st of mixers){ if(!st._root.parent){ mixers.delete(st); continue; } st.mixer.update(dt); }
+    for(const st of mixers){
+      if(!st._root.parent){ mixers.delete(st); continue; }
+      /* distance-cull: skip skinning + hide far monsters (huge saver — skinned
+         meshes + mixers are the most expensive per-frame objects) */
+      const _dx=st._root.position.x-player.x, _dz=st._root.position.z-player.z;
+      if(_dx*_dx+_dz*_dz>170*170){ if(st._root.visible) st._root.visible=false; continue; }
+      if(!st._root.visible) st._root.visible=true;
+      st.mixer.update(dt);
+    }
     if(!started) return;
     const ts=nowS();
     for(const en of enemies){
       const st=en.mesh&&en.mesh.userData&&en.mesh.userData.glbAnim2;
       if(!st) continue;
+      { const _ex=en.x-player.x,_ez=en.z-player.z; if(_ex*_ex+_ez*_ez>200*200) continue; }  // skip far-enemy anim
       if(ts<st.oneUntil) continue;
       if(en.windup>0){ st.playOnce('attack',Math.max(0.3,en.windup+0.25)); continue; }
       if(en.flash>0.08&&st.acts.hit){ st.playOnce('hit',0.3); continue; }
