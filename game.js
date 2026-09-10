@@ -940,6 +940,7 @@ const canvas=$('game');
 const isMobileGPU=Math.min(window.innerWidth,window.innerHeight)<650 || (navigator.maxTouchPoints>0 && Math.min(window.innerWidth,window.innerHeight)<820);
 const renderer=new THREE.WebGLRenderer({canvas, antialias:!isMobileGPU, powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(isMobileGPU?1.0:1.75, window.devicePixelRatio||1));
+window.__renderer=renderer;   // exposed for perf probes
 renderer.shadowMap.enabled=!isMobileGPU;   // mobile: shadows off entirely (big GPU saver)
 renderer.shadowMap.type=isMobileGPU?THREE.PCFShadowMap:THREE.PCFSoftShadowMap;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -962,7 +963,7 @@ const bloomPass=new UnrealBloomPass(new THREE.Vector2(window.innerWidth,window.i
 composer.addPass(bloomPass);
 composer.addPass(new OutputPass());
 /* mobile: skip the expensive bloom pass entirely (it is the biggest per-frame cost) */
-if(isMobileGPU){ bloomPass.enabled=false; }
+bloomPass.enabled=false;   // perf: bloom is a big per-frame cost — off on all devices
 
 /* ---- CHUNK STREAMING: the world is built once, but only chunks near the player
    stay visible — distant chunks are set visible=false so the GPU skips them
@@ -1078,7 +1079,7 @@ const sun=new THREE.DirectionalLight(0xffe9c0, 2.2);
 }
 sun.position.set(50,80,20);
 sun.castShadow=true;
-sun.shadow.mapSize.set(isMobileGPU?1024:2048,isMobileGPU?1024:2048);
+sun.shadow.mapSize.set(isMobileGPU?1024:1024,isMobileGPU?1024:1024);
 sun.shadow.camera.near=10; sun.shadow.camera.far=220;
 sun.shadow.camera.left=-55; sun.shadow.camera.right=55;
 sun.shadow.camera.top=55; sun.shadow.camera.bottom=-55;
@@ -1431,7 +1432,7 @@ const lavaMats=[]; // pulsing emissive lava
     const river=isRiver(tx,ty);
     const inLake=Math.hypot(tx-LAKE.tx,ty-LAKE.ty)<LAKE.r+2 || zn===9 || Math.hypot(tx-VOLCANO.tx,ty-VOLCANO.ty)<4;
     const inSwamp=zn===6;                                    // Hapao waterfall pools
-    const g=new THREE.PlaneGeometry(TILE,TILE,4,4);
+    const g=new THREE.PlaneGeometry(TILE,TILE,2,2);
     g.rotateX(-Math.PI/2);
     const m=new THREE.Mesh(g, river?riverMat : inLake?lakeMat : inSwamp?lakeMat : paddyMat);
     const y=river ? tileBaseH(tx,ty)+0.3 : zn===9 ? tileBaseH(tx,ty)+0.35 : inLake ? 1.55 : inSwamp ? tileBaseH(tx,ty)+0.3 : tileBaseH(tx,ty)-0.12;
@@ -1596,108 +1597,29 @@ function buildBalete(t){
   const g=new THREE.Group();
   const s=t.s, seed=Math.floor(t.x*7+t.z*13);
   const jr=mulberry32(seed);
-  // tapered trunk with a slight lean
-  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.22*s,0.52*s,3.0*s,7), Mbark(0xb08858));
-  trunk.position.y=1.5*s; trunk.rotation.z=(jr()-0.5)*0.14; trunk.castShadow=true; g.add(trunk);
-  // buttress roots
-  for(let i=0;i<5;i++){
-    const a=i/5*Math.PI*2+(jr()-0.5)*0.5;
-    const root=new THREE.Mesh(new THREE.CylinderGeometry(0.07*s,0.22*s,1.2*s,5), Mbark(0x96714a));
-    root.position.set(Math.cos(a)*0.48*s, 0.42*s, Math.sin(a)*0.48*s);
-    root.rotation.z=Math.cos(a)*0.6; root.rotation.x=-Math.sin(a)*0.6;
-    root.castShadow=true; g.add(root);
-  }
-  // branches reaching into the canopy
-  const branchTops=[];
-  for(let i=0;i<3;i++){
-    const a=i/3*Math.PI*2+jr();
-    const br=new THREE.Mesh(new THREE.CylinderGeometry(0.07*s,0.14*s,1.5*s,5), Mbark(0xa07c50));
-    const bx=Math.cos(a)*0.8*s, bz=Math.sin(a)*0.8*s;
-    br.position.set(bx*0.6, (2.9+jr()*0.4)*s, bz*0.6);
-    br.rotation.z=-Math.cos(a)*0.75; br.rotation.x=Math.sin(a)*0.75;
-    br.castShadow=true; g.add(br);
-    branchTops.push([bx*1.2, (3.4+jr()*0.5)*s, bz*1.2]);
-  }
-  // canopy: cluster of 8–11 jittered blobs, dark→bright gradient, on a sway pivot
-  const canopy=new THREE.Group(); canopy.position.y=3.6*s; g.add(canopy);
-  const cols=[0x2e5c26,0x3a7030,0x468239,0x549644,0x63aa50];
-  const nBlobs=8+Math.floor(jr()*4);
-  for(let i=0;i<nBlobs;i++){
-    const ring=i/nBlobs*Math.PI*2*2.4;
-    const rr=jr()*1.1*s, hh=(jr()*1.4-0.2)*s;
-    const blob=leafBlob((0.55+jr()*0.7)*s, cols[Math.min(4,Math.floor((hh/s+0.4)*2.4))], seed+i*17);
-    blob.position.set(Math.cos(ring)*rr, hh, Math.sin(ring)*rr);
-    canopy.add(blob);
-  }
-  // crown highlight blob on top
-  const crown=leafBlob(0.7*s, 0x74bc5c, seed+999);
-  crown.position.y=1.5*s; canopy.add(crown);
-  // blobs at branch tips
-  for(const [bx,by,bz] of branchTops){
-    const tip=leafBlob(0.5*s, cols[2+Math.floor(jr()*3)], seed+Math.floor(bx*31));
-    tip.position.set(bx,by-3.6*s,bz); canopy.add(tip);
-  }
-  // hanging vines from the canopy rim
-  for(let i=0;i<4;i++){
-    const a=jr()*6.28;
-    const vine=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.035,(1.1+jr())*s,3), M(0x4d8f3e));
-    vine.position.set(Math.cos(a)*1.2*s, -0.7*s, Math.sin(a)*1.2*s);
-    vine.rotation.z=(jr()-0.5)*0.2;
-    canopy.add(vine);
-  }
-  windCanopies.push({obj:canopy, phase:jr()*6.28, amp:0.018});
+  // lean build: trunk + 2 canopy blobs (was ~30 meshes — the #1 draw-call killer)
+  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.22*s,0.5*s,3.0*s,6), Mbark(0xb08858));
+  trunk.position.y=1.5*s; trunk.rotation.z=(jr()-0.5)*0.14; g.add(trunk);
+  const canopy=leafBlob((1.5+jr()*0.6)*s, [0x3a7030,0x468239,0x549644][Math.floor(jr()*3)], seed);
+  canopy.position.y=(3.3+jr()*0.4)*s; g.add(canopy);
+  const c2=leafBlob((0.9+jr()*0.4)*s, 0x63aa50, seed+1);
+  c2.position.set((jr()-0.5)*s, (4.0+jr()*0.3)*s, (jr()-0.5)*s); g.add(c2);
   return g;
 }
 function buildNiyog(t){ // coconut palm
   const g=new THREE.Group();
   const s=t.s, seed=Math.floor(t.x*11+t.z*3);
   const jr=mulberry32(seed);
-  // curved trunk from stacked leaning segments
-  const lean=(jr()-0.5)*0.5, leanDir=jr()*6.28;
-  const segs=6; let px=0,py=0,pz=0;
-  for(let i=0;i<segs;i++){
-    const f=i/segs;
-    const seg=new THREE.Mesh(new THREE.CylinderGeometry((0.16-0.07*f)*s,(0.19-0.07*f)*s,0.95*s,6), Mbark(0xc8a072));
-    const tilt=lean*f;
-    px+=Math.cos(leanDir)*tilt*0.5*s; pz+=Math.sin(leanDir)*tilt*0.5*s;
-    seg.position.set(px, py+0.45*s, pz);
-    seg.rotation.z=Math.cos(leanDir)*tilt; seg.rotation.x=-Math.sin(leanDir)*tilt;
-    seg.castShadow=true; g.add(seg);
-    py+=0.88*s;
-    // trunk ring scars
-    if(i%2===0){
-      const ring=new THREE.Mesh(new THREE.TorusGeometry(0.17*s,0.02*s,4,8), M(0x9a7850));
-      ring.position.copy(seg.position); ring.rotation.x=Math.PI/2;
-      g.add(ring);
-    }
-  }
-  // crown pivot for sway
-  const crown=new THREE.Group(); crown.position.set(px,py,pz); g.add(crown);
-  // coconuts
-  for(let i=0;i<3;i++){
-    const nut=new THREE.Mesh(new THREE.SphereGeometry(0.14*s,6,5), M(0x7a5a30));
-    const a=i/3*6.28;
-    nut.position.set(Math.cos(a)*0.16*s,-0.05*s,Math.sin(a)*0.16*s);
-    nut.castShadow=true; crown.add(nut);
-  }
-  // fronds: tapered arched blades
-  const nFronds=7+Math.floor(jr()*3);
-  for(let i=0;i<nFronds;i++){
-    const a=i/nFronds*Math.PI*2+jr()*0.3;
-    const droop=0.55+jr()*0.5;
-    const frond=new THREE.Group();
-    const fl=(1.7+jr()*0.7)*s;
-    // blade from 3 tapering boxes forming an arc
-    for(let k2=0;k2<3;k2++){
-      const bw=(0.34-k2*0.09)*s;
-      const piece=new THREE.Mesh(new THREE.BoxGeometry(bw,0.035*s,fl/3), PBR(0x4f9440,{roughness:0.85,flatShading:true}));
-      piece.position.z=fl/6+k2*fl/3;
-      piece.rotation.x=-droop*0.35*(k2+1);
-      piece.position.y=-(k2*k2*0.09)*droop*s;
-      piece.castShadow=true; frond.add(piece);
-    }
-    frond.rotation.y=a;
-    frond.rotation.x=-0.25;
+  // lean palm: 1 leaning trunk + 4 drooping fronds (was ~39 meshes)
+  const lean=(jr()-0.5)*0.3;
+  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.14*s,0.2*s,3.2*s,5), Mbark(0xc8a072));
+  trunk.position.y=1.6*s; trunk.rotation.z=lean; g.add(trunk);
+  const crown=new THREE.Group(); crown.position.set(lean*1.6*s,3.2*s,0); g.add(crown);
+  for(let i=0;i<4;i++){
+    const a=i/4*Math.PI*2+jr()*0.4;
+    const frond=new THREE.Mesh(new THREE.BoxGeometry(0.32*s,0.04*s,1.9*s), PBR(0x4f9440,{roughness:0.85,flatShading:true}));
+    frond.position.set(Math.cos(a)*0.8*s,0,Math.sin(a)*0.8*s);
+    frond.rotation.y=-a; frond.rotation.x=0.5;
     crown.add(frond);
   }
   windCanopies.push({obj:crown, phase:jr()*6.28, amp:0.045});
@@ -1707,17 +1629,13 @@ function buildPine(t){ // highland pine (Sagada): tall slim trunk + stacked coni
   const g=new THREE.Group();
   const s=t.s, seed=Math.floor(t.x*13+t.z*7);
   const jr=mulberry32(seed);
-  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.12*s,0.26*s,3.4*s,6), Mbark(0x6f5136));
-  trunk.position.y=1.7*s; trunk.castShadow=true; g.add(trunk);
-  const tiers=4+Math.floor(jr()*2);
-  const cols=[0x274d33,0x2e5a3c,0x356845,0x3d754e];
-  for(let i=0;i<tiers;i++){
-    const f=i/tiers;
-    const cone=new THREE.Mesh(new THREE.ConeGeometry((1.5-1.1*f)*s,1.1*s,7), PBR(cols[Math.min(3,i)],{roughness:0.9,flatShading:true}));
-    cone.position.y=(2.2+i*0.85)*s; cone.rotation.y=jr()*3; cone.castShadow=true; g.add(cone);
-  }
-  const tipc=new THREE.Mesh(new THREE.ConeGeometry(0.3*s,0.7*s,6), PBR(0x45825a,{roughness:0.9,flatShading:true}));
-  tipc.position.y=(2.2+tiers*0.85)*s; g.add(tipc);
+  // lean pine: trunk + 2 cones (was 6-7)
+  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.12*s,0.26*s,3.0*s,5), Mbark(0x6f5136));
+  trunk.position.y=1.5*s; g.add(trunk);
+  const c1=new THREE.Mesh(new THREE.ConeGeometry(1.4*s,2.2*s,6), PBR(0x2e5a3c,{roughness:0.9,flatShading:true}));
+  c1.position.y=3.0*s; g.add(c1);
+  const c2=new THREE.Mesh(new THREE.ConeGeometry(0.9*s,1.6*s,6), PBR(0x3d754e,{roughness:0.9,flatShading:true}));
+  c2.position.y=4.3*s; g.add(c2);
   windCanopies.push({obj:g, phase:jr()*6.28, amp:0.02});
   return g;
 }
