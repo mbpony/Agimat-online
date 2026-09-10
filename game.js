@@ -782,9 +782,10 @@ window.changeMap=function(toId,spawnId){
   const sp=to.spawns[spawnId||to.defaultSpawn]||to.spawns[to.defaultSpawn];
   const fromSag=(S.currentMap==='map_sagada'), toSag=(toId==='map_sagada');
   const done=()=>{
-    S.currentMap=toId; S.spawnPoint=spawnId||to.defaultSpawn; save();
-    if(fromSag!==toSag){ location.reload(); return; } // terrain theme changed → rebuild world on boot
-    if(sp){ player.x=sp.x; player.z=sp.z; }
+    S.currentMap=toId; S.spawnPoint=spawnId||to.defaultSpawn;
+    if(sp){ player.x=sp.x; player.z=sp.z; }          // set destination pos BEFORE save so reload resumes here
+    save();
+    if(fromSag!==toSag){ location.href=location.pathname+'?map='+encodeURIComponent(toId); return; } // theme differs → reload to rebuild terrain
     applyMapVisuals(); updateHUD();
   };
   if(window._mapLore) window._mapLore[toId]=[to.icon,to.name.toUpperCase(),to.lore];
