@@ -973,6 +973,24 @@ function onResize(){
 }
 window.addEventListener('resize',onResize); onResize();
 
+/* AUTO-IMMERSIVE: fullscreen + landscape as soon as the browser permits. Browsers
+   require a user gesture for these, so we fire on the first pointer/key input — the
+   start/login tap the player makes anyway — making it feel automatic. */
+function enterImmersive(){
+  try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{}); }catch(e){}
+  const el=document.documentElement;
+  try{
+    if(!document.fullscreenElement){
+      if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+      else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    }
+  }catch(e){}
+}
+let _immersiveArmed=false;
+function armImmersive(){ if(_immersiveArmed) return; _immersiveArmed=true; enterImmersive(); }
+for(const _ev of ['pointerdown','keydown','touchend']) window.addEventListener(_ev,armImmersive,{once:true});
+window.enterImmersive=enterImmersive; // exposed for testing
+
 /* sky dome (gradient) */
 const clouds=[];
 (function buildSky(){
@@ -5364,6 +5382,7 @@ function showWelcome(){
   langEl.onchange=()=>{ lang=langEl.value; localStorage.setItem('agimat_lang',lang); applyLang(); };
   /* ---- start (new character) ---- */
   $('btn-start').onclick=()=>{
+    enterImmersive();
     if(ACCT.token && _wsHasCloudChar){
       if(!confirm(lang==='en'
         ?'Your account already has a hero. Creating a new one will REPLACE it. Continue?'
