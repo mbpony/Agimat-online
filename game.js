@@ -1622,15 +1622,56 @@ function buildNiyog(t){ // coconut palm
   windCanopies.push({obj:crown, phase:jr()*6.28, amp:0.045});
   return g;
 }
+function buildPine(t){ // highland pine (Sagada): tall slim trunk + stacked conifer tiers
+  const g=new THREE.Group();
+  const s=t.s, seed=Math.floor(t.x*13+t.z*7);
+  const jr=mulberry32(seed);
+  const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.12*s,0.26*s,3.4*s,6), Mbark(0x6f5136));
+  trunk.position.y=1.7*s; trunk.castShadow=true; g.add(trunk);
+  const tiers=4+Math.floor(jr()*2);
+  const cols=[0x274d33,0x2e5a3c,0x356845,0x3d754e];
+  for(let i=0;i<tiers;i++){
+    const f=i/tiers;
+    const cone=new THREE.Mesh(new THREE.ConeGeometry((1.5-1.1*f)*s,1.1*s,7), PBR(cols[Math.min(3,i)],{roughness:0.9,flatShading:true}));
+    cone.position.y=(2.2+i*0.85)*s; cone.rotation.y=jr()*3; cone.castShadow=true; g.add(cone);
+  }
+  const tipc=new THREE.Mesh(new THREE.ConeGeometry(0.3*s,0.7*s,6), PBR(0x45825a,{roughness:0.9,flatShading:true}));
+  tipc.position.y=(2.2+tiers*0.85)*s; g.add(tipc);
+  windCanopies.push({obj:g, phase:jr()*6.28, amp:0.02});
+  return g;
+}
 for(const t of trees){
-  // species by zone: palms line the terraces & grove edges, baletes elsewhere
   const zn=zoneGrid[clamp(Math.floor(t.z/TILE),0,MAP_H-1)*MAP_W+clamp(Math.floor(t.x/TILE),0,MAP_W-1)];
-  const palmy=(zn===0||zn===1) && (Math.floor(t.x*7+t.z)%3!==0);
-  const g=palmy?buildNiyog(t):buildBalete(t);
+  let g;
+  if(SAG){ g=buildPine(t); }                       // Sagada = pine country
+  else {
+    const palmy=(zn===0||zn===1) && (Math.floor(t.x*7+t.z)%3!==0);
+    g=palmy?buildNiyog(t):buildBalete(t);           // Banaue = palms + balete
+  }
   g.position.set(t.x, groundY(t.x,t.z), t.z);
   g.rotation.y=rnd(0,6.28);
   scene.add(g);
 }
+
+/* ---- per-map props: terrace retaining walls (Banaue) / standing stones (Sagada) ---- */
+(function buildProps(){
+  const jr=mulberry32(777);
+  let placed=0;
+  for(let i=0;i<240&&placed<30;i++){
+    const tx=3+Math.floor(jr()*(MAIN_W-6)), ty=3+Math.floor(jr()*(SEA_Y-6));
+    const gt=grid[ty*MAP_W+tx]; if(gt===2||gt===4) continue;
+    const zn=zoneGrid[ty*MAP_W+tx];
+    const x=tx*TILE+TILE/2, z=ty*TILE+TILE/2, y=groundY(x,z);
+    if(IS_BANAUE&&(zn===1||zn===5)){
+      const w=new THREE.Mesh(new THREE.BoxGeometry(TILE*0.9,0.5,0.42), Mstone(0x8a8378));
+      w.position.set(x,y+0.25,z); w.castShadow=true; scene.add(w); placed++;
+    } else if(SAG&&(zn===2||zn===7)){
+      const h=1.2+jr()*1.5;
+      const st=new THREE.Mesh(new THREE.BoxGeometry(0.5,h,0.4), Mstone(0x9aa0a6));
+      st.position.set(x,y+h/2,z); st.rotation.y=jr()*3; st.castShadow=true; scene.add(st); placed++;
+    }
+  }
+})();
 
 /* ---- Tiangge tent (market stall, lanterns, banderitas) ---- */
 let lanternMats=[];
@@ -4890,7 +4931,6 @@ function openPanel(name){
 }
 function closeAllPanels(){ for(const p of Object.values(panels)) p.classList.remove('open'); }
 document.querySelectorAll('.close-panel').forEach(b=>b.onclick=closeAllPanels);
-$('btn-open-gear').onclick=()=>openPanel('gear');
 $('btn-open-tiangge').onclick=()=>openPanel('tiangge');
 $('btn-open-inventory').onclick=()=>openPanel('inventory');
 $('btn-open-bestiary').onclick=()=>openPanel('bestiary');
