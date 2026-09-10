@@ -623,6 +623,23 @@ function isRiver(tx,ty){ return grid[ty*MAP_W+tx]===2 && tx<MAIN_W && riverY[tx]
     if(!ok) continue;
     for(let y=y0;y<y0+h;y++)for(let x=x0;x<x0+w;x++) grid[y*MAP_W+x]=2;
   }
+  // --- V2 stepped terraces (worldgen design layer): Batad (z1) + Ancient (z5) ---
+  if(IS_BANAUE){
+    for(const zone of [1,5]){
+      const terr=window.WORLDGEN.generateTerraces(ACTIVE_MAP,zone);
+      for(const t of terr){
+        for(let ay=t.cy-t.w;ay<=t.cy+t.w;ay++){
+          for(let ax=t.cx-t.w;ax<=t.cx+t.w;ax++){
+            if(ax<2||ay<2||ax>=MAIN_W-2||ay>=SEA_Y-2) continue;
+            if(zoneGrid[ay*MAP_W+ax]!==zone) continue;
+            const gt=grid[ay*MAP_W+ax]; if(gt===2||gt===4) continue;
+            // alternate flooded paddy / grass step rows => readable stepped terraces
+            if((ay-(t.cy-t.w))%2===0) grid[ay*MAP_W+ax]=2;
+          }
+        }
+      }
+    }
+  }
   // --- roads ---
   for(let y=77;y>=3;y--){                                        // N-S: town → beach
     if(Math.abs(y-riverY[24])<=1) continue;
@@ -871,19 +888,20 @@ function groundY(wx,wz){
 const TENT = {x:66.5*TILE, z:41.6*TILE};
 const trees=[];
 (function placeTrees(){
-  let tries=0;
-  while(trees.length<170 && tries++<6000){
-    const x=rnd(4*TILE,(MAP_W-4)*TILE), z=rnd(4*TILE,(MAP_H-4)*TILE);
+  /* V2 design layer (worldgen.js): deterministic vegetation points + per-zone
+     family. Replaces the old Math.random scatter, so the forest is identical
+     every load and follows the spec's per-zone density (pine on Cloudridge,
+     broadleaf palms/balete elsewhere). Same collision/exclusion rules. */
+  const veg=window.WORLDGEN.generateVegetation(ACTIVE_MAP);
+  for(const v of veg){
+    const x=v.x*TILE+TILE/2, z=v.y*TILE+TILE/2;
     if(x>EXCL.x0*TILE&&x<EXCL.x1*TILE&&z>EXCL.z0*TILE&&z<EXCL.z1*TILE) continue;
-    if(blockedTile(x,z)) continue;
-    if(onBridge(x,z)) continue;
+    if(blockedTile(x,z)||onBridge(x,z)) continue;
     const zn=zoneGrid[Math.floor(z/TILE)*MAP_W+Math.floor(x/TILE)];
     if(zn===3||zn===8) continue; // no trees in the barangay / on Balangaw Peak
     if(zn===9&&!inIsle(Math.floor(x/TILE),Math.floor(z/TILE))) continue; // no trees in the sea
-    if((zn===2||zn===6)&&mrand()<0.6) continue; // caves & waterfall cliffs stay sparse
-    if((zn===1||zn===5)&&mrand()<0.5) continue; // terraces: fewer trees among the paddies
     if(trees.some(t=>d2(t.x,t.z,x,z)<14*14)) continue;
-    trees.push({x,z,s:rnd(0.7,1.3)});
+    trees.push({x,z,s:0.7+((v.x*31+v.y*17)%60)/100, family:v.family}); // deterministic size
   }
 })();
 function blockedByObjects(x,z,r){
@@ -1428,20 +1446,28 @@ const lavaMats=[]; // pulsing emissive lava
   const wfMat=new THREE.MeshBasicMaterial({color:0xbfe4ff,transparent:true,opacity:0.85,fog:false,side:THREE.DoubleSide});
   const streakMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.6,fog:false,side:THREE.DoubleSide});
   const poolMat=new THREE.MeshBasicMaterial({color:0x3f92b8,transparent:true,opacity:0.8,fog:false});
-  /* waterfalls: a wide cascade pinned to the cliff face + a plunge pool below */
-  for(let ty=1;ty<MAP_H-2;ty++)for(let tx=1;tx<MAIN_W-1;tx++){
-    if(zoneGrid[ty*MAP_W+tx]!==6) continue;
-    const here=tileBaseH(tx,ty), below=tileBaseH(tx,ty+1);
-    if(here-below<2.6) continue;
-    const x=tx*TILE+TILE/2, zf=(ty+1)*TILE;               // cliff face at the lower edge
-    const drop=here-below;
-    const cas=new THREE.Mesh(new THREE.PlaneGeometry(TILE*0.85, drop+0.6, 1, 4), wfMat);
+  /* waterfalls (V2 design layer): signature + secondary cascades placed at the
+     worldgen Hapao coordinates, pinned to the nearest cliff drop in zone 6. */
+  const _wfs=window.WORLDGEN.generateWaterfalls(ACTIVE_MAP,6);
+  for(const wf of _wfs){
+    let bTx=-1,bTy=-1,bDrop=0;
+    for(let dy=-5;dy<=5;dy++)for(let dx=-5;dx<=5;dx++){
+      const tx=wf.x+dx, ty=wf.y+dy;
+      if(tx<1||ty<1||tx>=MAIN_W-1||ty>=MAP_H-2) continue;
+      if(zoneGrid[ty*MAP_W+tx]!==6) continue;
+      const drop=tileBaseH(tx,ty)-tileBaseH(tx,ty+1);
+      if(drop>2.6&&drop>bDrop){bDrop=drop;bTx=tx;bTy=ty;}
+    }
+    if(bTx<0) continue;
+    const here=tileBaseH(bTx,bTy), below=tileBaseH(bTx,bTy+1), drop=here-below;
+    const x=bTx*TILE+TILE/2, zf=(bTy+1)*TILE, sc=wf.major?1.5:1.0;   // signature fall is wider
+    const cas=new THREE.Mesh(new THREE.PlaneGeometry(TILE*0.85*sc, drop+0.6, 1, 4), wfMat);
     cas.position.set(x,(here+below)/2+0.15,zf);
     scene.add(cas);
-    const streak=new THREE.Mesh(new THREE.PlaneGeometry(TILE*0.3, drop+0.4), streakMat);
+    const streak=new THREE.Mesh(new THREE.PlaneGeometry(TILE*0.3*sc, drop+0.4), streakMat);
     streak.position.set(x-TILE*0.15,(here+below)/2+0.2,zf+0.05);
     scene.add(streak);
-    const pool=new THREE.Mesh(new THREE.CircleGeometry(TILE*0.7,12), poolMat);
+    const pool=new THREE.Mesh(new THREE.CircleGeometry(TILE*0.7*sc,12), poolMat);
     pool.rotation.x=-Math.PI/2; pool.position.set(x,below+0.25,zf+TILE*0.5);
     scene.add(pool);
   }
@@ -1614,13 +1640,13 @@ function buildPine(t){ // highland pine (Sagada): tall slim trunk + stacked coni
 for(const t of trees){
   const zn=zoneGrid[clamp(Math.floor(t.z/TILE),0,MAP_H-1)*MAP_W+clamp(Math.floor(t.x/TILE),0,MAP_W-1)];
   let g;
-  if(SAG){ g=buildPine(t); }                       // Sagada = pine country
+  if(SAG || t.family==='pine'){ g=buildPine(t); }   // pine country (Sagada) / Cloudridge highland (V2 family)
   else {
     const palmy=(zn===0||zn===1) && (Math.floor(t.x*7+t.z)%3!==0);
-    g=palmy?buildNiyog(t):buildBalete(t);           // Banaue = palms + balete
+    g=palmy?buildNiyog(t):buildBalete(t);           // Banaue lowland = palms + balete
   }
   g.position.set(t.x, groundY(t.x,t.z), t.z);
-  g.rotation.y=rnd(0,6.28);
+  g.rotation.y=(t.x*0.7+t.z*1.3)%6.283;             // deterministic rotation
   scene.add(g);
 }
 

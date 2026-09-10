@@ -147,8 +147,8 @@ function generateLandmarks(mapId,o){
 }
 function generateVegetation(mapId,o){
   o=o||{};const seed=o.seed||847291;const out=[];
-  for(let i=0;i<120;i++){const x=4+hash01(i,1,seed)*128,y=4+hash01(i,2,seed)*80;const z=zoneIndex(mapId,x,y,134,seed);
-    const dens=(z===4||z===7)?0.9:(z===1||z===5)?0.4:(z===3)?0.2:0.6;
+  for(let i=0;i<300;i++){const x=4+hash01(i,1,seed)*128,y=4+hash01(i,2,seed)*80;const z=zoneIndex(mapId,x,y,134,seed);
+    const dens=(z===4||z===7)?0.92:(z===1||z===5)?0.42:(z===3)?0.2:0.66;
     if(hash01(i,3,seed)<dens)out.push({x:Math.round(x),y:Math.round(y),zone:z,family:(z===7?'pine':'broadleaf')});}
   return out;
 }
