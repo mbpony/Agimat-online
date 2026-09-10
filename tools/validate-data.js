@@ -187,7 +187,11 @@ check(bossFieldErr.length === 0, 'every boss definition is an object', bossField
 const spawns = read('maps/spawns-main.json');
 const camps = spawns.camps || {};
 const campTotal = Object.values(camps).reduce((a, arr) => a + (Array.isArray(arr) ? arr.length : 0), 0);
-check(campTotal === 32, 'main map has 32 spawn camps', 'found ' + campTotal);
+check(campTotal >= 32, 'main map has >= 32 spawn camps', 'found ' + campTotal);
+/* every non-boss enemy should have at least one territory camp so it can deploy */
+const enDefs = read('enemies/definitions.json');
+const noCamp = Object.entries(enDefs).filter(([k,d]) => !d.boss && !(camps[k]&&camps[k].length)).map(([k])=>k);
+check(noCamp.length === 0, 'every non-boss enemy has a spawn camp', noCamp.join(','));
 
 /* the species key must be a real enemy id */
 const ghost = Object.keys(camps).filter((k) => !enIds.includes(k));

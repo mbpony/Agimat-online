@@ -3140,13 +3140,14 @@ function spawnEnemy(force, forceKey){
       const ox=x+rnd(-4,4), oz=z+rnd(-4,4);
       const ex=walkable(ox,oz,def.r)?ox:x, ez=walkable(ox,oz,def.r)?oz:z;
       const hp=Math.round(def.hp*Math.pow(HP_LEVEL_SCALING,S.level-1));
+      const lvl=Math.max(def.minLevel||1, S.level+Math.floor(rnd(-1,2))); // shown on the nameplate
       const mesh=buildEnemyMesh(key);
       mesh.position.set(ex,groundY(ex,ez),ez);
       scene.add(mesh);
       const bar=document.createElement('div');
       bar.className='ebar'+(def.tier==='Elite'?' elite':''); bar.innerHTML='<i></i>'; bar.style.display='none';
       labelsEl.appendChild(bar);
-      enemies.push({key,x:ex,z:ez,homeX:c.x,homeZ:c.z,hp,maxHp:hp,state:'idle',cd:rnd(0,1),flash:0,wt:0,wx:ex,wz:ez,windup:0,
+      enemies.push({key,x:ex,z:ez,homeX:c.x,homeZ:c.z,hp,maxHp:hp,lvl,state:'idle',cd:rnd(0,1),flash:0,wt:0,wx:ex,wz:ez,windup:0,
         stealth:0,stunUntil:0,rootUntil:0,chargeT:0,chargeAng:0,retreatT:0,mesh,bar,animT:rnd(0,9)});
       attachNameplate(enemies[enemies.length-1]);
       if(window._netSpawned) window._netSpawned(enemies[enemies.length-1]);
@@ -3155,6 +3156,7 @@ function spawnEnemy(force, forceKey){
   }
 }
 setInterval(()=>{ if(started && enemies.length<MAX_ENEMIES) spawnEnemy(); }, SPAWN_INTERVAL_MS);
+window._spawnEnemy=(k)=>spawnEnemy(true,k); // debug/test: force-spawn a species in its territory
 
 /* ---- 🦇 MANANANGGAL: world boss of the volcano crater ---- */
 let bossNextAt=nowS()+90;   // first flight ~90s in
@@ -3167,7 +3169,7 @@ function spawnBoss(){
   const bar=document.createElement('div');
   bar.className='ebar elite boss'; bar.innerHTML='<i></i>'; bar.style.display='none';
   labelsEl.appendChild(bar);
-  const en={key:'manananggal',x,z,hp,maxHp:hp,state:'idle',cd:2,flash:0,wt:0,wx:x,wz:z,windup:0,
+  const en={key:'manananggal',x,z,hp,maxHp:hp,lvl:Math.max(def.minLevel||1,S.level),state:'idle',cd:2,flash:0,wt:0,wx:x,wz:z,windup:0,
     stealth:0,stunUntil:0,rootUntil:0,chargeT:0,chargeAng:0,retreatT:0,swoopT:0,mesh,bar,animT:0};
   enemies.push(en);
   attachNameplate(en);
@@ -3201,7 +3203,8 @@ function attachNameplate(en){
   const def=ENEMY_DEFS[en.key];
   const nm=document.createElement('div');
   nm.className='ename'+(def.tier==='Elite'?' elite':'')+(def.boss?' boss':'');
-  nm.textContent=(def.boss?'🦇 ':'')+def.name+(def.tier==='Elite'?' ★':'');
+  // "Name • Lv N" — level shown per owner request; tier ★/🦇 and colors unchanged.
+  nm.textContent=(def.boss?'🦇 ':'')+def.name+' • Lv '+(en.lvl||def.minLevel||1)+(def.tier==='Elite'?' ★':'');
   nm.style.display='none';
   labelsEl.appendChild(nm);
   en.nameEl=nm;
