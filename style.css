@@ -1015,12 +1015,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--ff);overflow:hidde
     bottom:calc(6px + env(safe-area-inset-bottom));
     width:180px; height:172px;
   }
-  #btn-attack{ width:80px; height:80px; font-size:32px; right:6px; bottom:6px; }
-  #btn-skill1{ right:100px; bottom:0;   width:48px; height:48px; }
-  #btn-skill2{ right:88px;  bottom:56px; width:48px; height:48px; }
-  #btn-skill3{ right:44px;  bottom:96px; width:48px; height:48px; }
-  #btn-dodge{  right:0;     bottom:96px; width:48px; height:48px; font-size:18px; }
-  #btn-interact{ right:170px; bottom:56px; width:50px; height:50px; }
+  #btn-attack{ width:92px; height:92px; font-size:38px; right:6px; bottom:6px; }
+  #btn-skill1{ right:108px; bottom:0;   width:56px; height:56px; }
+  #btn-skill2{ right:98px;  bottom:62px; width:56px; height:56px; }
+  #btn-skill3{ right:50px;  bottom:106px; width:56px; height:56px; }
+  #btn-dodge{  right:0;     bottom:106px; width:56px; height:56px; font-size:20px; }
+  #btn-interact{ right:182px; bottom:62px; width:56px; height:56px; }
 
   /* utility row above the cluster */
   #btn-autobattle{ right:6px;  bottom:196px; }
@@ -1093,6 +1093,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--ff);overflow:hidde
 .ws-remember input{ accent-color:#f2b134; }
 #ws-forgot{ font:500 11px system-ui; color:#8ab8ff; text-decoration:none; }
 #ws-forgot:hover{ text-decoration:underline; }
+
+/* LANDSCAPE PHONE loading/welcome: fit the whole screen, no scroll */
+@media (orientation:landscape) and (max-height:540px){
+  .ws-layout{ padding:2vh 4vw; gap:16px; }
+  .ws-left{ max-width:44vw; }
+  .ws-left .ws-logo img{ max-height:84px; }
+  .ws-left .ws-sub{ margin:8px 0 10px; font-size:12px; }
+  .ws-words{ display:none; }
+  .ws-panel{ width:min(330px,46vw); padding:12px 14px 10px; max-height:94vh; overflow:auto; }
+  .ws-field input{ padding:8px 34px 8px 30px; font-size:13px; }
+  .ws-start{ padding:10px 16px; font-size:15px; }
+}
 .acct-btn.big{ padding:13px; font-size:15px; letter-spacing:2px; border-radius:10px;
   background:linear-gradient(180deg,#ffd97a,#f2b134 55%,#c8901a); color:#241a06; border:1.5px solid #ffe9b4;
   box-shadow:0 0 18px rgba(242,177,52,.35), 0 4px 0 #a87816; cursor:pointer; font-weight:900; }
