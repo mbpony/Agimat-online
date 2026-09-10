@@ -507,7 +507,16 @@ const MAPCFG=GAME_DATA.mapMain||{};
    misty fog and its 7 zone names; Banaue stays the identity baseline. The world
    is rebuilt for the saved map on boot; changeMap() reloads to apply it. */
 const _SAG_URL=/[?&]map=map_sagada/.test(location.search); // preview override for testing
-const IS_BANAUE=!_SAG_URL; // landmark set (waterfalls/caves/summit) only on the Banaue boot
+const ACTIVE_MAP=_SAG_URL?'map_sagada':((typeof S!=='undefined'&&S&&S.currentMap)||'map_starting');
+const SAG=ACTIVE_MAP==='map_sagada';
+const IS_BANAUE=!SAG; // landmark set (waterfalls/caves/summit) only on the Banaue boot
+/* Per-map plateau heights + crisp palettes (MS2-style diorama). Each region gets its
+   OWN silhouette and colors so no two maps read the same. */
+const ZH = SAG ? [2.0,4.5,5.5,1.5,1.0,4.0,6.5,8.5,12.0,1.0]
+               : [1.2,3.0,3.5,1.0,0.8,3.0,5.0,7.0,10.0,1.0];
+const ZCOL = SAG
+ ? [[0x6f9a5a,0x66914f],[0x4e7d46,0x477540],[0x7a7468,0x716b60],[0xb8a98c,0xafa084],[0x4a7a80,0x43727a],[0x6b7d52,0x63754b],[0x52707a,0x4b6872],[0x6a7a72,0x62726a],[0xdfe6ea,0xd6dde2],[0x1e6a46,0x1a5e3e]]
+ : [[0x7ab556,0x6fae4e],[0x5d9440,0x548a3a],[0x6a6156,0x5a5148],[0xc9b183,0xbda678],[0x4f7a52,0x456f4a],[0x8a8a4e,0x7d7d45],[0x3e6a4e,0x366044],[0x5e6e56,0x54644c],[0x9aa0a6,0x8a9096],[0x1e6a46,0x1a5e3e]];
 const TERRAIN_THEME=(_SAG_URL||(typeof S!=='undefined'&&S&&S.currentMap==='map_sagada'))?{
   heightScale:2.2, northRise:7, fog:0xb8ccd8, fogNear:60, fogFar:200,
   zoneNames:['🏡 Sagada Village','🌫️ Misty Arrival Trail','🌲 Pine Forest','⛰️ Cliffside Trail','🕳️ Limestone Caves',
@@ -556,19 +565,31 @@ function isRiver(tx,ty){ return grid[ty*MAP_W+tx]===2 && tx<MAIN_W && riverY[tx]
     const dl=Math.hypot(x-LAKE.tx,y-LAKE.ty);
     if(dl<LAKE.r+(mrand()-0.5)) grid[y*MAP_W+x]=2;
   }
-  // --- zones: Banaue Highlands macro layout (per regional spec) ---
+  // --- zones: per-map macro layout (each region its own silhouette) ---
   for(let y=0;y<MAP_H;y++)for(let x=0;x<MAP_W;x++){
     let zn;
     if(x>=MAIN_W){ zn=9; }                        // eastern sea + endgame isle
-    else if(y>=58){ zn = x>=95 ? 2 : 0; }         // south Maligaya Trail; SE Hungduan Caves
-    else if(y<22){                                // north band
-      if(x>=95) zn=8;                             // NE Balangaw Peak
-      else if(x>=45) zn=6;                        // N-center Hapao Waterfalls
-      else zn = y<10 ? 7 : 5;                     // top Cloudridge Trail; NW Ancient Terraces
+    else if(SAG){
+      // SAGADA: misty ridge + snow summit N, pine forest W, limestone caves E,
+      // village center, echo valley S — a genuinely different silhouette.
+      if(y<18) zn = x>=90?8:7;
+      else if(y<40) zn = x<50?1:(x<90?3:2);
+      else if(y<62) zn = x<50?4:(x<90?0:2);
+      else zn = x<70?0:5;
     }
-    else if(x>=95) zn=1;                          // east Batad Terraces
-    else if(x<45) zn=4;                           // west Tinun-an River
-    else zn=3;                                    // center Barangay Liwanag
+    else {
+      // BANAUE: S start, E Batad terraces, SE caves, center town, W river,
+      // NW ancient terraces, N waterfalls, N-top cloudridge, NE peak.
+      if(y>=58){ zn = x>=95 ? 2 : 0; }
+      else if(y<22){
+        if(x>=95) zn=8;
+        else if(x>=45) zn=6;
+        else zn = y<10 ? 7 : 5;
+      }
+      else if(x>=95) zn=1;
+      else if(x<45) zn=4;
+      else zn=3;
+    }
     zoneGrid[y*MAP_W+x]=zn;
   }
   // --- eastern sea: everything past the mainland is water, except the island ---
@@ -826,17 +847,12 @@ function tileBaseH(tx,ty){
     if(t===2) h-=0.5;
     return h;
   }
-  if(t===4) return tileBand(ty)*1.2 + 9;
-  let h=tileBand(ty)*0.5;
-  if(zn===0) h+=0.6+0.8*Math.sin(tx*0.15)*Math.cos(ty*0.13);            // Maligaya: gentle start valley
-  if(zn===1||zn===5){ const step=Math.floor(ty/3)+Math.floor(tx/6); h+=1.4+(step%5)*0.7; }  // stepped rice terraces (climbable)
-  if(zn===2) h+=1.6+((tx*7+ty*13)%5)*0.5;                               // Hungduan: rocky karst
-  if(zn===3) h=1.0;                                                     // Liwanag plateau
-  if(zn===4) h+=0.2;                                                    // Tinun-an: low river valley
-  if(zn===6) h+=3.4+((tx*5+ty*7)%3)*0.4;                                // Hapao: waterfall cliffs
-  if(zn===7) h+=5.2+1.2*Math.sin(tx*0.2);                               // Cloudridge: high misty trail
-  if(zn===8){ const d=Math.hypot(tx-VOLCANO.tx,ty-VOLCANO.ty); h+=Math.max(0,(VOLCANO.r-d))*0.8; } // Balangaw: tall peak
-  if(tx>=58&&tx<=75&&ty>=37&&ty<=50) h=1.0;                    // plaza plateau (Barangay Liwanag)
+  if(t===4) return ZH[zn]+3.5;
+  let h=ZH[zn];
+  if(zn===1||zn===5) h+=(Math.floor(ty/3)%4)*0.6;                 // crisp terrace steps
+  if(zn===2) h+=((tx*7+ty*13)%4)*0.3;                             // rocky bumps
+  if(zn===8){ const d=Math.hypot(tx-VOLCANO.tx,ty-VOLCANO.ty); h+=Math.max(0,(VOLCANO.r-d))*0.5; } // summit dome
+  if(tx>=58&&tx<=75&&ty>=37&&ty<=50) h=ZH[3];                     // town plaza flat
   if(t===2){
     if(ty>=SEA_Y-2) return -2.4;
     h-=0.45; if(isRiver(tx,ty)) h-=2.6;
@@ -1172,17 +1188,7 @@ const Mcloth=(c,o={})=>PBR(c,Object.assign({map:TEX.fabric,roughness:0.9},o));
     if(cliff>0&&n>0) col.setHex(0x6b6258);
     else if(path>=2) col.setHex(0xb08a58);
     else if(path===1) col.setHex(0x94804a);
-    else if(zn===1) col.setHex(cr()<0.5?0x69a344:0x5f9a3e);   // Batad: vivid terrace green
-    else if(zn===2) col.setHex(cr()<0.5?0x6a6156:0x5a5148);   // Hungduan: rocky grey-brown
-    else if(zn===3) col.setHex(cr()<0.5?0xc9b183:0xbda678);   // Liwanag: packed-earth tan
-    else if(zn===4) col.setHex(cr()<0.5?0x4f7a52:0x456f4a);   // Tinun-an: riverbank green
-    else if(zn===5) col.setHex(cr()<0.5?0x8a8a4e:0x7d7d45);   // Ancient: worn olive terraces
-    else if(zn===6) col.setHex(cr()<0.5?0x3e6a4e:0x366044);   // Hapao: mossy green
-    else if(zn===7) col.setHex(cr()<0.5?0x5e6e56:0x54644c);   // Cloudridge: misty highland
-    else if(zn===8) col.setHex(cr()<0.5?0x9aa0a6:0x8a9096);   // Balangaw: pale summit rock
-    else if(zn===9) col.setHex(cr()<0.5?0x1e6a46:0x1a5e3e);   // isla: deep tropical jungle
-    else col.setHex(cr()<0.5?0x7ab556:0x6fae4e);              // Maligaya: fresh starter meadow
-    col.offsetHSL(0,(cr()-0.5)*0.02,(cr()-0.5)*0.03);
+    else { const _zc=ZCOL[zn]||ZCOL[0]; col.setHex(_zc[(vx+vz)&1]); }  // crisp per-map zone palette (MS2 diorama)
     colors[i*3]=col.r; colors[i*3+1]=col.g; colors[i*3+2]=col.b;
   }
   geo.setAttribute('color', new THREE.BufferAttribute(colors,3));
@@ -4152,7 +4158,7 @@ mmBase.width=150; mmBase.height=120;
 (function renderMMBase(){
   const g=mmBase.getContext('2d');
   const sx=150/MAP_W, sy=120/MAP_H;
-  const zoneCols=[['#7ab556','#6fae4e'],['#548a3a','#5d9440'],['#4a4038','#3a3038'],['#dfca92','#e8d5a0'],['#3f6f6f','#4a7a7a'],['#6e675e','#786f64'],['#40707f','#4a7a8a'],['#5a6a52','#64745c'],['#8a8f96','#9aa0a8'],['#1e6a46','#1a5e3e']];
+  const zoneCols=ZCOL.map(p=>['#'+p[0].toString(16).padStart(6,'0'),'#'+p[1].toString(16).padStart(6,'0')]);
   for(let y=0;y<MAP_H;y++)for(let x=0;x<MAP_W;x++){
     const t=grid[y*MAP_W+x];
     const zc=zoneCols[zoneGrid[y*MAP_W+x]];
