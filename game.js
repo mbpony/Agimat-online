@@ -662,11 +662,11 @@ function isRiver(tx,ty){ return grid[ty*MAP_W+tx]===2 && tx<MAIN_W && riverY[tx]
   }
   /* ---- GRAND TIANGGE v2: the town now sits at the HEART of the mainland ---- */
   for(let y=37;y<=50;y++)for(let x=58;x<=75;x++) grid[y*MAP_W+x]=3;  // central plaza (expanded)
-  /* grand crossroads: four paved roads radiate from the plaza to the old routes */
-  for(let y=17;y<=36;y++){ for(const x of [66,67]){ if(grid[y*MAP_W+x]!==2&&grid[y*MAP_W+x]!==4) grid[y*MAP_W+x]=3; } }   // north: to the river fords
-  for(let y=51;y<=76;y++){ for(const x of [66,67]){ if(grid[y*MAP_W+x]!==2&&grid[y*MAP_W+x]!==4) grid[y*MAP_W+x]=3; } }   // south: to the coastal road
-  for(let x=26;x<=57;x++){ for(const y of [43,44]){ if(grid[y*MAP_W+x]!==2&&grid[y*MAP_W+x]!==4) grid[y*MAP_W+x]=3; } }   // west: to the old N-S highway
-  for(let x=76;x<=112;x++){ for(const y of [43,44]){ if(grid[y*MAP_W+x]!==2&&grid[y*MAP_W+x]!==4) grid[y*MAP_W+x]=3; } }  // east: to the volcano foothills
+  /* grand crossroads: four clear paved roads run from the plaza to the four world gates */
+  for(let y=2;y<=36;y++){ for(const x of [65,66,67,68]){ if(grid[y*MAP_W+x]!==2&&grid[y*MAP_W+x]!==4) grid[y*MAP_W+x]=3; } }  // NORTH gate (→ Sagada)
+  for(let y=51;y<=SEA_Y-2;y++){ for(const x of [65,66,67,68]){ if(grid[y*MAP_W+x]!==2&&grid[y*MAP_W+x]!==4) grid[y*MAP_W+x]=3; } } // SOUTH gate (→ Pinatubo)
+  for(let x=2;x<=57;x++){ for(const y of [42,43,44,45]){ if(grid[y*MAP_W+x]!==2&&grid[y*MAP_W+x]!==4) grid[y*MAP_W+x]=3; } }  // WEST gate (→ La Union)
+  for(let x=76;x<=MAIN_W-2;x++){ for(const y of [42,43,44,45]){ if(grid[y*MAP_W+x]!==2&&grid[y*MAP_W+x]!==4) grid[y*MAP_W+x]=3; } } // EAST gate (→ Isabela)
 })();
 
 /* ---- ENEMY CAMPS: every species holds its own territory, like a proper RPG ---- */
@@ -714,7 +714,7 @@ const WORLD_MAPS={
     art:'assets/maps/barangay-liwanag.jpg', fog:0xa8c8e8,
     lore:'“Dito nagsisimula ang iyong alamat.”',
     spawns:{ town:{x:266,z:174} }, defaultSpawn:'town',
-    portals:[ {id:'p_to_sagada', to:'map_sagada', at:{x:250,z:210}, r:5, label:'Sagada Highlands'} ],
+    portals:[ {id:'p_to_sagada', to:'map_sagada', at:{x:266,z:24}, r:6, label:'Sagada Highlands (North Gate)'} ],
   },
   map_test:{
     id:'map_test', name:'Mt. Pinatubo — Ashen Frontier', region:'TEST Instance', icon:'🌋',
@@ -829,13 +829,13 @@ function tileBaseH(tx,ty){
   if(t===4) return tileBand(ty)*1.2 + 9;
   let h=tileBand(ty)*0.5;
   if(zn===0) h+=0.6+0.8*Math.sin(tx*0.15)*Math.cos(ty*0.13);            // Maligaya: gentle start valley
-  if(zn===1||zn===5){ const step=Math.floor(ty/3)+Math.floor(tx/6); h+=2.0+(step%5)*1.1; }  // tall stepped rice terraces
-  if(zn===2) h+=2.2+((tx*7+ty*13)%5)*0.8;                               // Hungduan: rocky karst
+  if(zn===1||zn===5){ const step=Math.floor(ty/3)+Math.floor(tx/6); h+=1.4+(step%5)*0.7; }  // stepped rice terraces (climbable)
+  if(zn===2) h+=1.6+((tx*7+ty*13)%5)*0.5;                               // Hungduan: rocky karst
   if(zn===3) h=1.0;                                                     // Liwanag plateau
   if(zn===4) h+=0.2;                                                    // Tinun-an: low river valley
-  if(zn===6) h+=5.0+((tx*5+ty*7)%3)*0.6;                                // Hapao: waterfall cliffs
-  if(zn===7) h+=8.0+1.5*Math.sin(tx*0.2);                               // Cloudridge: high misty trail
-  if(zn===8){ const d=Math.hypot(tx-VOLCANO.tx,ty-VOLCANO.ty); h+=Math.max(0,(VOLCANO.r-d))*1.15; } // Balangaw: tall peak
+  if(zn===6) h+=3.4+((tx*5+ty*7)%3)*0.4;                                // Hapao: waterfall cliffs
+  if(zn===7) h+=5.2+1.2*Math.sin(tx*0.2);                               // Cloudridge: high misty trail
+  if(zn===8){ const d=Math.hypot(tx-VOLCANO.tx,ty-VOLCANO.ty); h+=Math.max(0,(VOLCANO.r-d))*0.8; } // Balangaw: tall peak
   if(tx>=58&&tx<=75&&ty>=37&&ty<=50) h=1.0;                    // plaza plateau (Barangay Liwanag)
   if(t===2){
     if(ty>=SEA_Y-2) return -2.4;
@@ -991,6 +991,7 @@ const clouds=[];
       }`,
   });
   const sky=new THREE.Mesh(skyGeo,skyMat);
+  sky.frustumCulled=false; window._sky=sky;
   scene.add(sky);
   // drifting clouds
   const cloudMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.85,fog:false});
@@ -1168,20 +1169,20 @@ const Mcloth=(c,o={})=>PBR(c,Object.assign({map:TEX.fabric,roughness:0.9},o));
         zn=zoneGrid[ty*MAP_W+tx];
       }
     }
-    if(cliff>0&&n>0) col.setHex(0x4a3d5a);
-    else if(path>=2) col.setHex(0x8a6b42);
-    else if(path===1) col.setHex(0x6d7a3e);
+    if(cliff>0&&n>0) col.setHex(0x6b6258);
+    else if(path>=2) col.setHex(0xb08a58);
+    else if(path===1) col.setHex(0x94804a);
     else if(zn===1) col.setHex(cr()<0.5?0x69a344:0x5f9a3e);   // Batad: vivid terrace green
     else if(zn===2) col.setHex(cr()<0.5?0x6a6156:0x5a5148);   // Hungduan: rocky grey-brown
     else if(zn===3) col.setHex(cr()<0.5?0xc9b183:0xbda678);   // Liwanag: packed-earth tan
     else if(zn===4) col.setHex(cr()<0.5?0x4f7a52:0x456f4a);   // Tinun-an: riverbank green
     else if(zn===5) col.setHex(cr()<0.5?0x8a8a4e:0x7d7d45);   // Ancient: worn olive terraces
-    else if(zn===6) col.setHex(cr()<0.5?0x3e6a5e:0x366054);   // Hapao: wet mossy teal
+    else if(zn===6) col.setHex(cr()<0.5?0x3e6a4e:0x366044);   // Hapao: mossy green
     else if(zn===7) col.setHex(cr()<0.5?0x5e6e56:0x54644c);   // Cloudridge: misty highland
     else if(zn===8) col.setHex(cr()<0.5?0x9aa0a6:0x8a9096);   // Balangaw: pale summit rock
     else if(zn===9) col.setHex(cr()<0.5?0x1e6a46:0x1a5e3e);   // isla: deep tropical jungle
     else col.setHex(cr()<0.5?0x7ab556:0x6fae4e);              // Maligaya: fresh starter meadow
-    col.offsetHSL(0,(cr()-0.5)*0.04,(cr()-0.5)*0.05);
+    col.offsetHSL(0,(cr()-0.5)*0.02,(cr()-0.5)*0.03);
     colors[i*3]=col.r; colors[i*3+1]=col.g; colors[i*3+2]=col.b;
   }
   geo.setAttribute('color', new THREE.BufferAttribute(colors,3));
@@ -1447,21 +1448,25 @@ const lavaMats=[]; // pulsing emissive lava
 /* ============ BANAUE LANDMARKS: waterfalls, caves, summit shrine ============ */
 (function buildLandmarks(){
   if(!IS_BANAUE) return;
-  const wfMat=new THREE.MeshBasicMaterial({color:0xcfeaff,transparent:true,opacity:0.75,fog:false,side:THREE.DoubleSide});
-  const foamMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.5,fog:false});
-  /* waterfalls: wherever a Hapao cliff drops sharply to a lower tile */
+  const wfMat=new THREE.MeshBasicMaterial({color:0xbfe4ff,transparent:true,opacity:0.85,fog:false,side:THREE.DoubleSide});
+  const streakMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.6,fog:false,side:THREE.DoubleSide});
+  const poolMat=new THREE.MeshBasicMaterial({color:0x3f92b8,transparent:true,opacity:0.8,fog:false});
+  /* waterfalls: a wide cascade pinned to the cliff face + a plunge pool below */
   for(let ty=1;ty<MAP_H-2;ty++)for(let tx=1;tx<MAIN_W-1;tx++){
     if(zoneGrid[ty*MAP_W+tx]!==6) continue;
     const here=tileBaseH(tx,ty), below=tileBaseH(tx,ty+1);
-    if(here-below<3.0) continue;
-    const x=tx*TILE+TILE/2, z=ty*TILE+TILE;
-    const g=new THREE.PlaneGeometry(1.6, here-below+0.8, 1, 4);
-    const msh=new THREE.Mesh(g,wfMat);
-    msh.position.set(x,(here+below)/2+0.2,z);
-    scene.add(msh);
-    const foam=new THREE.Mesh(new THREE.SphereGeometry(0.6,6,5),foamMat);
-    foam.position.set(x,below+0.35,z+0.4); foam.scale.y=0.5;
-    scene.add(foam);
+    if(here-below<2.6) continue;
+    const x=tx*TILE+TILE/2, zf=(ty+1)*TILE;               // cliff face at the lower edge
+    const drop=here-below;
+    const cas=new THREE.Mesh(new THREE.PlaneGeometry(TILE*0.85, drop+0.6, 1, 4), wfMat);
+    cas.position.set(x,(here+below)/2+0.15,zf);
+    scene.add(cas);
+    const streak=new THREE.Mesh(new THREE.PlaneGeometry(TILE*0.3, drop+0.4), streakMat);
+    streak.position.set(x-TILE*0.15,(here+below)/2+0.2,zf+0.05);
+    scene.add(streak);
+    const pool=new THREE.Mesh(new THREE.CircleGeometry(TILE*0.7,12), poolMat);
+    pool.rotation.x=-Math.PI/2; pool.position.set(x,below+0.25,zf+TILE*0.5);
+    scene.add(pool);
   }
   /* caves: dark arch mouths in the Hungduan karst */
   let caves=0;
@@ -1474,14 +1479,14 @@ const lavaMats=[]; // pulsing emissive lava
     dark.rotation.x=-Math.PI/2; dark.position.set(x,yb+0.3,z); scene.add(dark);
     caves++;
   }
-  /* Balangaw summit: snow cap + shrine */
-  const sx=VOLCANO.tx*TILE, sz=VOLCANO.ty*TILE, sy=tileBaseH(VOLCANO.tx,VOLCANO.ty)+1.0;
-  const snow=new THREE.Mesh(new THREE.ConeGeometry(7,3.4,8), PBR(0xf2f5f8,{roughness:0.55}));
-  snow.position.set(sx,sy,sz); scene.add(snow);
+  /* Balangaw summit: snow disc hugging the peak + grounded shrine */
+  const sx=VOLCANO.tx*TILE, sz=VOLCANO.ty*TILE, sy=tileBaseH(VOLCANO.tx,VOLCANO.ty);
+  const snow=new THREE.Mesh(new THREE.CircleGeometry(7,14), PBR(0xf2f5f8,{roughness:0.55}));
+  snow.rotation.x=-Math.PI/2; snow.position.set(sx,sy+0.25,sz); scene.add(snow);
   const shrine=new THREE.Group();
   const post=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.16,2.2,6), Mwood(0x6a4a2a)); post.position.y=1.1; shrine.add(post);
   const roof=new THREE.Mesh(new THREE.ConeGeometry(1.1,0.8,4), Mwood(0x8a4a2a)); roof.position.y=2.4; shrine.add(roof);
-  shrine.position.set(sx,sy+1.4,sz); scene.add(shrine);
+  shrine.position.set(sx,sy+0.2,sz); scene.add(shrine);
 })();
 
 /* ---- trees: species-based generator with organic canopies + wind sway ---- */
@@ -4283,6 +4288,7 @@ function animate(now){
       camera.position.z+=rnd(-1,1)*shakeAmp*f;
     } else { shakeDur=0; shakeAmp=0; }
   }
+  if(window._sky) window._sky.position.copy(camera.position); // keep the dome centered on the camera (no black void at altitude)
   composer.render();
   updateLabels(dt);
   if(started && (mmFrame++%10===0)){ drawMinimap(); checkZone(); }
