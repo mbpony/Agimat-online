@@ -929,13 +929,22 @@ const nodes=[];
 
 /* ---------------- THREE SETUP ---------------- */
 const canvas=$('game');
-const renderer=new THREE.WebGLRenderer({canvas, antialias:true});
-renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+/* Detect a low-power/mobile GPU BEFORE the renderer is built so we can skip MSAA
+   and cap resolution — these are the biggest drivers of GPU OOM / context loss. */
+const isMobileGPU=Math.min(window.innerWidth,window.innerHeight)<650 || (navigator.maxTouchPoints>0 && Math.min(window.innerWidth,window.innerHeight)<820);
+const renderer=new THREE.WebGLRenderer({canvas, antialias:!isMobileGPU, powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(isMobileGPU?1.25:1.75, window.devicePixelRatio||1));
 renderer.shadowMap.enabled=true;
-renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.shadowMap.type=isMobileGPU?THREE.PCFShadowMap:THREE.PCFSoftShadowMap;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.18;
+/* WebGL context-loss recovery: instead of staying black/white when the GPU drops
+   the context, prevent the default and reload once cleanly (session-guarded). */
+canvas.addEventListener('webglcontextlost',(e)=>{ e.preventDefault();
+  if(!sessionStorage.getItem('agimat_ctx_reload')){ sessionStorage.setItem('agimat_ctx_reload','1'); setTimeout(()=>location.reload(),700); }
+},false);
+canvas.addEventListener('webglcontextrestored',()=>{ sessionStorage.removeItem('agimat_ctx_reload'); },false);
 const scene=new THREE.Scene();
 scene.fog=new THREE.Fog(TERRAIN_THEME.fog, TERRAIN_THEME.fogNear??70, TERRAIN_THEME.fogFar??185);
 const camera=new THREE.PerspectiveCamera(55, 1, 0.1, 1400);
@@ -946,9 +955,8 @@ composer.addPass(new RenderPass(scene,camera));
 const bloomPass=new UnrealBloomPass(new THREE.Vector2(window.innerWidth,window.innerHeight), 0.62, 0.55, 0.8);
 composer.addPass(bloomPass);
 composer.addPass(new OutputPass());
-/* mobile fallback: lighter bloom on small screens */
-const isMobileGPU=Math.min(window.innerWidth,window.innerHeight)<650;
-if(isMobileGPU){ bloomPass.strength=0.4; renderer.setPixelRatio(Math.min(1.5,window.devicePixelRatio||1)); }
+/* mobile: skip the expensive bloom pass entirely (it is the biggest per-frame cost) */
+if(isMobileGPU){ bloomPass.enabled=false; }
 
 function onResize(){
   const w=window.innerWidth,h=window.innerHeight;
@@ -1043,7 +1051,7 @@ const sun=new THREE.DirectionalLight(0xffe9c0, 2.2);
 }
 sun.position.set(50,80,20);
 sun.castShadow=true;
-sun.shadow.mapSize.set(isMobileGPU?2048:4096,isMobileGPU?2048:4096);
+sun.shadow.mapSize.set(isMobileGPU?1024:2048,isMobileGPU?1024:2048);
 sun.shadow.camera.near=10; sun.shadow.camera.far=220;
 sun.shadow.camera.left=-55; sun.shadow.camera.right=55;
 sun.shadow.camera.top=55; sun.shadow.camera.bottom=-55;
@@ -1647,6 +1655,10 @@ for(const t of trees){
   }
   g.position.set(t.x, groundY(t.x,t.z), t.z);
   g.rotation.y=(t.x*0.7+t.z*1.3)%6.283;             // deterministic rotation
+  /* perf: trees no longer cast individual shadows — ~100 trees × ~15 meshes was the
+     single biggest per-frame cost (the shadow pass re-rendered all of them). They
+     still receive light; only the trunk-less canopies stop projecting shadows. */
+  g.traverse(o=>{ if(o.isMesh) o.castShadow=false; });
   scene.add(g);
 }
 
