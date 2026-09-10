@@ -507,13 +507,14 @@ const MAPCFG=GAME_DATA.mapMain||{};
    misty fog and its 7 zone names; Banaue stays the identity baseline. The world
    is rebuilt for the saved map on boot; changeMap() reloads to apply it. */
 const _SAG_URL=/[?&]map=map_sagada/.test(location.search); // preview override for testing
+const IS_BANAUE=!_SAG_URL; // landmark set (waterfalls/caves/summit) only on the Banaue boot
 const TERRAIN_THEME=(_SAG_URL||(typeof S!=='undefined'&&S&&S.currentMap==='map_sagada'))?{
-  heightScale:2.2, northRise:7, fog:0xb8ccd8,
+  heightScale:2.2, northRise:7, fog:0xb8ccd8, fogNear:60, fogFar:200,
   zoneNames:['🏡 Sagada Village','🌫️ Misty Arrival Trail','🌲 Pine Forest','⛰️ Cliffside Trail','🕳️ Limestone Caves',
              '🌫️ Misty Arrival Trail','🌿 Echo Valley','⛩️ Ancient Mountain Shrine','🌿 Echo Valley','⛩️ Ancient Mountain Shrine'],
   zoneFlavors:['the mountain hub','where the mist greets you','whispering pines','mind the drop','the deep caves',
              'where the mist greets you','the echoing valley','the sacred summit','the echoing valley','the sacred summit'],
-}:{ heightScale:1, northRise:0, fog:0xa8c8e8, zoneNames:null, zoneFlavors:null };
+}:{ heightScale:1.5, northRise:0, fog:0xa8c8e8, fogNear:90, fogFar:430, zoneNames:null, zoneFlavors:null };
 const TILE=MAPCFG.tile||4, MAP_W=MAPCFG.gridW||192, MAP_H=MAPCFG.gridH||105, WORLD_W=MAP_W*TILE, WORLD_H=MAP_H*TILE; // mainland 134×105 (~30% smaller) + eastern isle 50×40
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
 const mrand = mulberry32(MAPCFG.seed||20260905);
@@ -825,17 +826,17 @@ function tileBaseH(tx,ty){
     if(t===2) h-=0.5;
     return h;
   }
-  if(t===4) return tileBand(ty)*1.1 + 7;
-  let h=tileBand(ty)*0.6;
-  if(zn===0) h+=0.4+0.5*Math.sin(tx*0.15)*Math.cos(ty*0.13);
-  if(zn===1||zn===5) h+=1.2+((Math.floor(ty/3)+Math.floor(tx/5))%4)*0.5;   // stepped rice terraces
-  if(zn===2) h+=1.0+((tx*7+ty*13)%5)*0.4;
-  if(zn===3) h=0.8;
-  if(zn===4) h-=0.4+0.4*Math.sin(ty*0.2);
-  if(zn===6) h+=2.2+((tx*5+ty*7)%3)*0.3;
-  if(zn===7) h+=3.2+0.8*Math.sin(tx*0.2);
-  if(zn===8){ const d=Math.hypot(tx-VOLCANO.tx,ty-VOLCANO.ty); h+=Math.max(0,(VOLCANO.r-d))*0.55; }
-  if(tx>=58&&tx<=75&&ty>=37&&ty<=50) h=0.8;                    // plaza plateau (Barangay Liwanag)
+  if(t===4) return tileBand(ty)*1.2 + 9;
+  let h=tileBand(ty)*0.5;
+  if(zn===0) h+=0.6+0.8*Math.sin(tx*0.15)*Math.cos(ty*0.13);            // Maligaya: gentle start valley
+  if(zn===1||zn===5){ const step=Math.floor(ty/3)+Math.floor(tx/6); h+=2.0+(step%5)*1.1; }  // tall stepped rice terraces
+  if(zn===2) h+=2.2+((tx*7+ty*13)%5)*0.8;                               // Hungduan: rocky karst
+  if(zn===3) h=1.0;                                                     // Liwanag plateau
+  if(zn===4) h+=0.2;                                                    // Tinun-an: low river valley
+  if(zn===6) h+=5.0+((tx*5+ty*7)%3)*0.6;                                // Hapao: waterfall cliffs
+  if(zn===7) h+=8.0+1.5*Math.sin(tx*0.2);                               // Cloudridge: high misty trail
+  if(zn===8){ const d=Math.hypot(tx-VOLCANO.tx,ty-VOLCANO.ty); h+=Math.max(0,(VOLCANO.r-d))*1.15; } // Balangaw: tall peak
+  if(tx>=58&&tx<=75&&ty>=37&&ty<=50) h=1.0;                    // plaza plateau (Barangay Liwanag)
   if(t===2){
     if(ty>=SEA_Y-2) return -2.4;
     h-=0.45; if(isRiver(tx,ty)) h-=2.6;
@@ -931,7 +932,7 @@ renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.18;
 const scene=new THREE.Scene();
-scene.fog=new THREE.Fog(TERRAIN_THEME.fog, 70, 185);
+scene.fog=new THREE.Fog(TERRAIN_THEME.fog, TERRAIN_THEME.fogNear??70, TERRAIN_THEME.fogFar??185);
 const camera=new THREE.PerspectiveCamera(55, 1, 0.1, 1400);
 
 /* ---- POST-PROCESSING: bloom + tonemapped output ---- */
@@ -1441,6 +1442,46 @@ const lavaMats=[]; // pulsing emissive lava
       }
     }
   }
+})();
+
+/* ============ BANAUE LANDMARKS: waterfalls, caves, summit shrine ============ */
+(function buildLandmarks(){
+  if(!IS_BANAUE) return;
+  const wfMat=new THREE.MeshBasicMaterial({color:0xcfeaff,transparent:true,opacity:0.75,fog:false,side:THREE.DoubleSide});
+  const foamMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.5,fog:false});
+  /* waterfalls: wherever a Hapao cliff drops sharply to a lower tile */
+  for(let ty=1;ty<MAP_H-2;ty++)for(let tx=1;tx<MAIN_W-1;tx++){
+    if(zoneGrid[ty*MAP_W+tx]!==6) continue;
+    const here=tileBaseH(tx,ty), below=tileBaseH(tx,ty+1);
+    if(here-below<3.0) continue;
+    const x=tx*TILE+TILE/2, z=ty*TILE+TILE;
+    const g=new THREE.PlaneGeometry(1.6, here-below+0.8, 1, 4);
+    const msh=new THREE.Mesh(g,wfMat);
+    msh.position.set(x,(here+below)/2+0.2,z);
+    scene.add(msh);
+    const foam=new THREE.Mesh(new THREE.SphereGeometry(0.6,6,5),foamMat);
+    foam.position.set(x,below+0.35,z+0.4); foam.scale.y=0.5;
+    scene.add(foam);
+  }
+  /* caves: dark arch mouths in the Hungduan karst */
+  let caves=0;
+  for(let ty=60;ty<84&&caves<5;ty+=5)for(let tx=98;tx<130&&caves<5;tx+=5){
+    if(zoneGrid[ty*MAP_W+tx]!==2) continue;
+    const x=tx*TILE, z=ty*TILE, yb=tileBaseH(tx,ty);
+    const arch=new THREE.Mesh(new THREE.TorusGeometry(1.7,0.55,6,10,Math.PI), Mstone(0x5a5148));
+    arch.position.set(x,yb+0.2,z); scene.add(arch);
+    const dark=new THREE.Mesh(new THREE.CircleGeometry(1.5,10), new THREE.MeshBasicMaterial({color:0x08080f,fog:false}));
+    dark.rotation.x=-Math.PI/2; dark.position.set(x,yb+0.3,z); scene.add(dark);
+    caves++;
+  }
+  /* Balangaw summit: snow cap + shrine */
+  const sx=VOLCANO.tx*TILE, sz=VOLCANO.ty*TILE, sy=tileBaseH(VOLCANO.tx,VOLCANO.ty)+1.0;
+  const snow=new THREE.Mesh(new THREE.ConeGeometry(7,3.4,8), PBR(0xf2f5f8,{roughness:0.55}));
+  snow.position.set(sx,sy,sz); scene.add(snow);
+  const shrine=new THREE.Group();
+  const post=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.16,2.2,6), Mwood(0x6a4a2a)); post.position.y=1.1; shrine.add(post);
+  const roof=new THREE.Mesh(new THREE.ConeGeometry(1.1,0.8,4), Mwood(0x8a4a2a)); roof.position.y=2.4; shrine.add(roof);
+  shrine.position.set(sx,sy+1.4,sz); scene.add(shrine);
 })();
 
 /* ---- trees: species-based generator with organic canopies + wind sway ---- */
@@ -4113,6 +4154,11 @@ mmBase.width=150; mmBase.height=120;
     const zn2=zoneGrid[y*MAP_W+x];
     g.fillStyle = t===2?(zn2===7?'#ff5a14':((y>=SEA_Y-2||(zn2===9&&!inIsle(x,y)))?'#1c5a94':isRiver(x,y)?'#2e6db4':'#3f6f9e')) : t===3?'#8a6b42' : t===4?'#241a34' : zc[(x+y)%2];
     g.fillRect(x*sx,y*sy,sx+0.5,sy+0.5);
+    if(t!==2&&t!==3){ // hillshade: peaks glow, valleys sink — topography reads at a glance
+      const hgt=tileBaseH(x,y), sh=clamp(hgt/16,-0.6,0.7);
+      if(sh>0.04){ g.fillStyle='rgba(255,255,255,'+(sh*0.55)+')'; g.fillRect(x*sx,y*sy,sx+0.5,sy+0.5); }
+      else if(sh<-0.04){ g.fillStyle='rgba(4,8,30,'+(-sh*0.5)+')'; g.fillRect(x*sx,y*sy,sx+0.5,sy+0.5); }
+    }
   }
   // town walls
   g.strokeStyle='#d8c8a0'; g.lineWidth=1.5;
