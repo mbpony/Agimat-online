@@ -533,7 +533,8 @@ let ZONE_NAMES=['🌾 Payyo Terraces','🎋 Kawayan Grove','🌳 Gubat ng Balete
 let ZONE_FLAVORS=['home of gentle spirits','whispering bamboo','the old dark wood','tread with respect… tabi-tabi po','the burnt land — santelmos roam','salt wind and white sand','black water… something watches','the mountain of fire — Apolaki sleeps','a sea of flowers under the stars','the forbidden isle — only the worthy return'];
 if(Array.isArray(MAPCFG.zones)&&MAPCFG.zones.length===10){ ZONE_NAMES=MAPCFG.zones.map(z=>z.name); ZONE_FLAVORS=MAPCFG.zones.map(z=>z.flavor); }
 if(TERRAIN_THEME.zoneNames){ ZONE_NAMES=TERRAIN_THEME.zoneNames; ZONE_FLAVORS=TERRAIN_THEME.zoneFlavors||ZONE_FLAVORS; }
-const riverY = new Int16Array(MAP_W);
+const riverY = new Int16Array(MAP_W).fill(-99);   // legacy W→E course (unused by V2 river)
+const riverMask = new Uint8Array(MAP_W*MAP_H);     // 1 = main-river tile (V2 Tinun-an)
 const MAIN_W=MAPCFG.mainlandWidth||134;           // mainland ends here; beyond is the eastern sea
 const SEA_Y=MAPCFG.seaY||87;                      // ty>=SEA_Y: open sea (south edge)
 const VOLCANO=MAPCFG.volcano||{tx:112,ty:28,r:22};// crater center, east of the mainland
@@ -541,23 +542,28 @@ const LAKE=MAPCFG.lake||{tx:102,ty:13,r:5};       // mountain lake where the riv
 const ISLE=MAPCFG.isle||{x0:142,y0:30,x1:192,y1:70}; // 50×40 — the level-10 island
 const ISLE_MIN_LEVEL=(MAPCFG.isle&&MAPCFG.isle.minLevel)||10;
 function inIsle(tx,ty){ return tx>=ISLE.x0&&tx<ISLE.x1&&ty>=ISLE.y0&&ty<ISLE.y1; }
-function isRiver(tx,ty){ return grid[ty*MAP_W+tx]===2 && tx<MAIN_W && riverY[tx]>-50 && Math.abs(ty-riverY[tx])<=1; }
+function isRiver(tx,ty){ return tx>=0&&ty>=0&&tx<MAIN_W&&ty<MAP_H&&riverMask[ty*MAP_W+tx]===1; }
 (function genMap(){
   for(let y=0;y<MAP_H;y++)for(let x=0;x<MAP_W;x++) grid[y*MAP_W+x]=mrand()<0.5?0:1;
-  // --- river course (west→east, ends in a mountain lake) ---
-  for(let x=0;x<MAP_W;x++){
-    let c=13+Math.round(2.2*Math.sin(x*0.33)+1.4*Math.sin(x*0.15+2)+(x>50?3.2*Math.sin(x*0.055+1):0));
-    if(x>=22&&x<=28) c=13;           // straight under the hanging bridge
-    if(x>=38&&x<=43) c=13;           // straight at the stone ford
-    if(x>=66&&x<=75) c=15;           // straight at the meadow ford
-    if(x>=92&&x<=99) c=12;           // straight at the east ford
-    riverY[x]=x>=103?-99:clamp(c,8,22);
+  // --- V2 Tinun-an River (worldgen design layer): west-side corridor, flows N→S ---
+  {
+    const riv=window.WORLDGEN.generateRivers(ACTIVE_MAP)[0];
+    const hw=Math.max(1,Math.floor((riv.width||2)/2));
+    const carve=(x,y)=>{ for(let dy=-1;dy<=1;dy++)for(let dx=-hw;dx<=hw;dx++){
+        const xx=x+dx, yy=y+dy;
+        if(xx<1||yy<1||xx>=MAIN_W-1||yy>=MAP_H-1) continue;
+        grid[yy*MAP_W+xx]=2; riverMask[yy*MAP_W+xx]=1;
+      } };
+    const pts=riv.points;
+    for(let i=0;i<pts.length;i++){
+      carve(pts[i].x,pts[i].y);
+      if(i<pts.length-1){ // interpolate between sparse spline samples => continuous channel
+        const a=pts[i], b=pts[i+1], steps=Math.max(Math.abs(b.x-a.x),Math.abs(b.y-a.y));
+        for(let s=1;s<steps;s++) carve(Math.round(a.x+(b.x-a.x)*s/steps), Math.round(a.y+(b.y-a.y)*s/steps));
+      }
+    }
   }
-  for(let x=2;x<103;x++){
-    const c=riverY[x];
-    for(let dy=-1;dy<=1;dy++) grid[(c+dy)*MAP_W+x]=2;
-  }
-  // river-mouth lake
+  // mountain lake (kept as a separate highland feature, NE)
   for(let y=0;y<MAP_H;y++)for(let x=0;x<MAIN_W;x++){
     const dl=Math.hypot(x-LAKE.tx,y-LAKE.ty);
     if(dl<LAKE.r+(mrand()-0.5)) grid[y*MAP_W+x]=2;
@@ -618,7 +624,7 @@ function isRiver(tx,ty){ return grid[ty*MAP_W+tx]===2 && tx<MAIN_W && riverY[tx]
     let ok=true;
     for(let y=y0;y<y0+h&&ok;y++)for(let x=x0;x<x0+w&&ok;x++){
       const _z=zoneGrid[y*MAP_W+x];
-      if((_z!==1&&_z!==5)||y<=riverY[Math.min(x,47)]+2||grid[y*MAP_W+x]===2) ok=false;
+      if((_z!==1&&_z!==5)||grid[y*MAP_W+x]===2) ok=false;
     }
     if(!ok) continue;
     for(let y=y0;y<y0+h;y++)for(let x=x0;x<x0+w;x++) grid[y*MAP_W+x]=2;
@@ -641,11 +647,6 @@ function isRiver(tx,ty){ return grid[ty*MAP_W+tx]===2 && tx<MAIN_W && riverY[tx]
     }
   }
   // --- roads ---
-  for(let y=77;y>=3;y--){                                        // N-S: town → beach
-    if(Math.abs(y-riverY[24])<=1) continue;
-    if(grid[y*MAP_W+24]!==2) grid[y*MAP_W+24]=3;
-    if(grid[y*MAP_W+25]!==2) grid[y*MAP_W+25]=3;
-  }
   let py=27;
   for(let x=4;x<108;x++){                                        // E-W: grove → volcano foothills
     if(grid[py*MAP_W+x]!==2) grid[py*MAP_W+x]=3;
@@ -658,14 +659,15 @@ function isRiver(tx,ty){ return grid[ty*MAP_W+tx]===2 && tx<MAIN_W && riverY[tx]
     if(mrand()<0.3)by=clamp(by+(mrand()<0.5?-1:1),70,77);
   }
   let ny=6;
-  for(let x=4;x<100;x++){                                        // northern trail
+  for(let x=4;x<100;x++){                                        // northern trail (north of the river source)
     if(grid[ny*MAP_W+x]!==2) grid[ny*MAP_W+x]=3;
-    if(mrand()<0.3)ny=clamp(ny+(mrand()<0.5?-1:1),3,Math.min(9,(riverY[x]>-50?riverY[x]:14)-3));
+    if(mrand()<0.3)ny=clamp(ny+(mrand()<0.5?-1:1),3,7);
   }
-  for(const fx of [40,70,95]){                                   // stone fords
-    for(let x=fx;x<=fx+1;x++)for(let dy=-1;dy<=1;dy++) grid[(riverY[x]+dy)*MAP_W+x]=3;
-    for(let y=riverY[fx]+2;y<=riverY[fx]+9;y++){ if(grid[y*MAP_W+fx]!==2)grid[y*MAP_W+fx]=3; }
-    for(let y=Math.max(4,riverY[fx]-8);y<riverY[fx]-1;y++){ if(grid[y*MAP_W+fx]!==2)grid[y*MAP_W+fx]=3; }
+  for(const fy of [27,43,74]){                                   // stone fords across the Tinun-an
+    for(let x=2;x<MAIN_W-2;x++){
+      if(!riverMask[fy*MAP_W+x]) continue;
+      for(let dy=-1;dy<=1;dy++){ const yy=fy+dy; if(yy>0&&yy<MAP_H-1) grid[yy*MAP_W+x]=3; }
+    }
   }
   // --- borders: cliffs on mainland N/W edges only; the seas are the other borders ---
   for(let y=0;y<MAP_H;y++)for(let x=0;x<MAIN_W;x++){
@@ -705,7 +707,11 @@ let CAMPS={
 if (GAME_DATA.spawns && GAME_DATA.spawns.camps) { CAMPS = {}; for (const k in GAME_DATA.spawns.camps) CAMPS[k] = GAME_DATA.spawns.camps[k].map(c => ({ x: c.tx * TILE, z: c.ty * TILE })); }
 const CAMP_R=((GAME_DATA.spawns&&GAME_DATA.spawns.campRadius)||13)*1.0;                                  // camp radius (world units)
 /* hanging bridge over the gorge (walkable deck) */
-const BRIDGE={x0:24*TILE, x1:26*TILE, z0:(riverY[24]-2)*TILE, z1:(riverY[24]+3)*TILE, deck:6.35};
+/* hanging bridge crosses the Tinun-an at the west-gate road (y≈43); its span is
+   auto-fitted to the river width there and the deck runs east↔west. */
+let _bx0=MAIN_W,_bx1=0; for(let x=0;x<MAIN_W;x++){ if(riverMask[43*MAP_W+x]){ if(x<_bx0)_bx0=x; if(x>_bx1)_bx1=x; } }
+if(_bx1<=_bx0){ _bx0=24;_bx1=30; }
+const BRIDGE={x0:(_bx0-2)*TILE, x1:(_bx1+2)*TILE, z0:42*TILE, z1:45*TILE, deck:6.35};
 
 /* ---- THE GRAND TIANGGE: walled safe-zone town ---- */
 const _TC=MAPCFG.town||{x0:58,x1:75,z0:37,z1:50};
@@ -871,9 +877,9 @@ const vHeights=new Float32Array(VW_*VH_);
 })();
 function groundY(wx,wz){
   if(onBridge(wx,wz)&&tileIdx(wx,wz)===2){
-    // sag in the middle of the hanging bridge
-    const mid=(BRIDGE.z0+BRIDGE.z1)/2, half=(BRIDGE.z1-BRIDGE.z0)/2;
-    const s=1-Math.pow((wz-mid)/half,2);
+    // sag in the middle of the hanging bridge (deck runs east↔west)
+    const mid=(BRIDGE.x0+BRIDGE.x1)/2, half=(BRIDGE.x1-BRIDGE.x0)/2;
+    const s=1-Math.pow((wx-mid)/half,2);
     return BRIDGE.deck-0.55*s;
   }
   const fx=clamp(wx/TILE,0,MAP_W-0.001), fz=clamp(wz/TILE,0,MAP_H-0.001);
@@ -1775,56 +1781,55 @@ let lanternMats=[];
 /* ---- hanging bamboo bridge over the river gorge ---- */
 (function buildBridge(){
   const g=new THREE.Group();
-  const cx=(BRIDGE.x0+BRIDGE.x1)/2, mid=(BRIDGE.z0+BRIDGE.z1)/2, half=(BRIDGE.z1-BRIDGE.z0)/2;
+  const cz=(BRIDGE.z0+BRIDGE.z1)/2, mid=(BRIDGE.x0+BRIDGE.x1)/2, half=(BRIDGE.x1-BRIDGE.x0)/2;
   const bamboo=Mwood(0xe8c890), rope=Mwood(0xa8845a), dark=Mwood(0xc09c68);
-  // deck planks (follow the sag)
-  const planks=Math.ceil((BRIDGE.z1-BRIDGE.z0)/0.9);
+  // deck planks (follow the sag, running east↔west)
+  const planks=Math.ceil((BRIDGE.x1-BRIDGE.x0)/0.9);
   for(let i=0;i<planks;i++){
-    const z=BRIDGE.z0+i*0.9+0.45;
-    const s=1-Math.pow((z-mid)/half,2);
+    const x=BRIDGE.x0+i*0.9+0.45;
+    const s=1-Math.pow((x-mid)/half,2);
     const y=BRIDGE.deck-0.55*s;
-    const p=new THREE.Mesh(new THREE.BoxGeometry(BRIDGE.x1-BRIDGE.x0+1.6,0.14,0.7), i%2?bamboo:dark);
-    p.position.set(cx,y-0.08,z);
-    p.rotation.x=(mid-z)/half*0.16;
+    const p=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.14,BRIDGE.z1-BRIDGE.z0+1.6), i%2?bamboo:dark);
+    p.position.set(x,y-0.08,cz);
+    p.rotation.z=(mid-x)/half*0.16;
     p.castShadow=true; g.add(p);
   }
-  // side ropes + posts + hand-lines
-  for(const sx of [-1,1]){
-    const px=cx+sx*((BRIDGE.x1-BRIDGE.x0)/2+0.8);
-    for(const pz of [BRIDGE.z0-0.6,BRIDGE.z1+0.6]){
+  // side ropes + posts + hand-lines (on the two Z sides, spanning X)
+  for(const sz of [-1,1]){
+    const pz=cz+sz*((BRIDGE.z1-BRIDGE.z0)/2+0.8);
+    for(const px of [BRIDGE.x0-0.6,BRIDGE.x1+0.6]){
       const post=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.17,2.4,6), rope);
-      post.position.set(px,groundY(px,pz<mid?BRIDGE.z0-2:BRIDGE.z1+2)+1.2,pz);
+      post.position.set(px,groundY(px,pz)+1.2,pz);
       post.castShadow=true; g.add(post);
     }
-    // sagging hand rope (segments)
+    // sagging hand rope (segments along X)
     const segs=10;
     for(let i=0;i<segs;i++){
-      const z0=BRIDGE.z0-0.6+ (BRIDGE.z1-BRIDGE.z0+1.2)*(i/segs);
-      const z1=BRIDGE.z0-0.6+ (BRIDGE.z1-BRIDGE.z0+1.2)*((i+1)/segs);
-      const sag=zz=>BRIDGE.deck+1.0-0.7*(1-Math.pow((zz-mid)/half,2));
-      const y0=sag(z0), y1=sag(z1);
-      const len=Math.hypot(z1-z0,y1-y0);
+      const x0=BRIDGE.x0-0.6+ (BRIDGE.x1-BRIDGE.x0+1.2)*(i/segs);
+      const x1=BRIDGE.x0-0.6+ (BRIDGE.x1-BRIDGE.x0+1.2)*((i+1)/segs);
+      const sag=xx=>BRIDGE.deck+1.0-0.7*(1-Math.pow((xx-mid)/half,2));
+      const y0=sag(x0), y1=sag(x1);
+      const len=Math.hypot(x1-x0,y1-y0);
       const seg=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,len,4), rope);
-      seg.position.set(px,(y0+y1)/2,(z0+z1)/2);
-      seg.rotation.x=Math.PI/2-Math.atan2(y1-y0,z1-z0);
+      seg.position.set((x0+x1)/2,(y0+y1)/2,pz);
+      seg.rotation.z=Math.PI/2-Math.atan2(y1-y0,x1-x0);
       g.add(seg);
-      // vertical rope stays down to the deck
       if(i%2===0){
-        const dy=(y0+y1)/2-(BRIDGE.deck-0.55*(1-Math.pow(((z0+z1)/2-mid)/half,2)));
+        const dy=(y0+y1)/2-(BRIDGE.deck-0.55*(1-Math.pow(((x0+x1)/2-mid)/half,2)));
         const stay=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,Math.max(0.2,dy),4), rope);
-        stay.position.set(px,(y0+y1)/2-dy/2,(z0+z1)/2);
+        stay.position.set((x0+x1)/2,(y0+y1)/2-dy/2,pz);
         g.add(stay);
       }
     }
   }
   scene.add(g);
-  // white-water foam strips under the bridge
+  // white-water foam strips under the bridge (along the N→S channel)
   for(let i=0;i<5;i++){
-    const foam=new THREE.Mesh(new THREE.PlaneGeometry(2.4,0.6),
+    const foam=new THREE.Mesh(new THREE.PlaneGeometry(0.6,2.4),
       new THREE.MeshBasicMaterial({color:0xdff2ff,transparent:true,opacity:0.5,depthWrite:false}));
     foam.material._isFx=true;
     foam.rotation.x=-Math.PI/2;
-    const fx2=BRIDGE.x0-6+i*4, fz2=(riverY[Math.floor(fx2/TILE)]+0.5)*TILE;
+    const fx2=mid, fz2=BRIDGE.z0-6+i*4;
     foam.position.set(fx2, tileBaseH(Math.floor(fx2/TILE),Math.floor(fz2/TILE))+0.42, fz2);
     scene.add(foam); waterMeshes.push(Object.assign(foam,{userData:{baseY:foam.position.y}}));
   }
