@@ -502,6 +502,18 @@ function computeStats(){
 /* MAP CONFIG (restructure spec §11/§13): data/maps/main.json is authoritative;
    literals remain as fallback. Geometry = content configuration, not architecture. */
 const MAPCFG=GAME_DATA.mapMain||{};
+/* LAYER B (terrain): per-map terrain theme chosen at load. Sagada gets real
+   verticality (scaled heights + north rise toward the shrine summit), a cool
+   misty fog and its 7 zone names; Banaue stays the identity baseline. The world
+   is rebuilt for the saved map on boot; changeMap() reloads to apply it. */
+const _SAG_URL=/[?&]map=map_sagada/.test(location.search); // preview override for testing
+const TERRAIN_THEME=(_SAG_URL||(typeof S!=='undefined'&&S&&S.currentMap==='map_sagada'))?{
+  heightScale:2.2, northRise:7, fog:0xb8ccd8,
+  zoneNames:['🏡 Sagada Village','🌫️ Misty Arrival Trail','🌲 Pine Forest','⛰️ Cliffside Trail','🕳️ Limestone Caves',
+             '🌫️ Misty Arrival Trail','🌿 Echo Valley','⛩️ Ancient Mountain Shrine','🌿 Echo Valley','⛩️ Ancient Mountain Shrine'],
+  zoneFlavors:['the mountain hub','where the mist greets you','whispering pines','mind the drop','the deep caves',
+             'where the mist greets you','the echoing valley','the sacred summit','the echoing valley','the sacred summit'],
+}:{ heightScale:1, northRise:0, fog:0xa8c8e8, zoneNames:null, zoneFlavors:null };
 const TILE=MAPCFG.tile||4, MAP_W=MAPCFG.gridW||192, MAP_H=MAPCFG.gridH||105, WORLD_W=MAP_W*TILE, WORLD_H=MAP_H*TILE; // mainland 134×105 (~30% smaller) + eastern isle 50×40
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
 const mrand = mulberry32(MAPCFG.seed||20260905);
@@ -513,6 +525,7 @@ let ZONE_NAMES=['🌾 Payyo Terraces','🎋 Kawayan Grove','🌳 Gubat ng Balete
                   '🏖️ Dalampasigan','🌿 Bakawan Swamp','🌋 Bulkan Apolaki','🌸 Parang ng Tala','🏝️ Isla ng Bathala'];
 let ZONE_FLAVORS=['home of gentle spirits','whispering bamboo','the old dark wood','tread with respect… tabi-tabi po','the burnt land — santelmos roam','salt wind and white sand','black water… something watches','the mountain of fire — Apolaki sleeps','a sea of flowers under the stars','the forbidden isle — only the worthy return'];
 if(Array.isArray(MAPCFG.zones)&&MAPCFG.zones.length===10){ ZONE_NAMES=MAPCFG.zones.map(z=>z.name); ZONE_FLAVORS=MAPCFG.zones.map(z=>z.flavor); }
+if(TERRAIN_THEME.zoneNames){ ZONE_NAMES=TERRAIN_THEME.zoneNames; ZONE_FLAVORS=TERRAIN_THEME.zoneFlavors||ZONE_FLAVORS; }
 const riverY = new Int16Array(MAP_W);
 const MAIN_W=MAPCFG.mainlandWidth||134;           // mainland ends here; beyond is the eastern sea
 const SEA_Y=MAPCFG.seaY||87;                      // ty>=SEA_Y: open sea (south edge)
@@ -767,10 +780,12 @@ function applyMapVisuals(){
 window.changeMap=function(toId,spawnId){
   const to=WORLD_MAPS[toId]; if(!to||!started) return;
   const sp=to.spawns[spawnId||to.defaultSpawn]||to.spawns[to.defaultSpawn];
+  const fromSag=(S.currentMap==='map_sagada'), toSag=(toId==='map_sagada');
   const done=()=>{
-    S.currentMap=toId; S.spawnPoint=spawnId||to.defaultSpawn;
+    S.currentMap=toId; S.spawnPoint=spawnId||to.defaultSpawn; save();
+    if(fromSag!==toSag){ location.reload(); return; } // terrain theme changed → rebuild world on boot
     if(sp){ player.x=sp.x; player.z=sp.z; }
-    applyMapVisuals(); updateHUD(); save();
+    applyMapVisuals(); updateHUD();
   };
   if(window._mapLore) window._mapLore[toId]=[to.icon,to.name.toUpperCase(),to.lore];
   if(window._mapTransition) window._mapTransition(toId,done); else done();
@@ -781,9 +796,10 @@ setInterval(()=>{ // portal proximity triggers
   for(const p of (m.portals||[]))
     if(Math.hypot(player.x-p.at.x,player.z-p.at.z)<=(p.r||5)){ window.changeMap(p.to); return; }
 },300);
-window._dbgMap=()=>({ map:S.currentMap||'map_starting',
+window._dbgMap=()=>{ let mx=-99; for(let i=0;i<vHeights.length;i++) if(vHeights[i]>mx)mx=vHeights[i];
+  return { map:S.currentMap||'map_starting',
   fog:(typeof scene!=='undefined'&&scene&&scene.fog)?scene.fog.color.getHexString():null,
-  name:curMap().name, px:Math.round(player.x), pz:Math.round(player.z) });
+  name:curMap().name, px:Math.round(player.x), pz:Math.round(player.z), maxH:Math.round(mx*10)/10 }; };
 (function(){ // on login, respawn at the saved map/spawn if not the starting map
   let done=false;
   setInterval(()=>{ if(started&&!done){ done=true;
@@ -858,7 +874,14 @@ const vHeights=new Float32Array(VW_*VH_);
       const tx=vx+dx, ty=vy+dy;
       sum+=tileBaseH(tx,ty); n++;   // tileBaseH handles out-of-bounds (sea edge stays low)
     }
-    vHeights[vy*VW_+vx]=sum/n + (vr()-0.5)*0.12;
+    let h=sum/n + (vr()-0.5)*0.12;
+    /* Layer B: per-map verticality. Sagada scales heights and rises toward the
+       north (shrine summit); sea/eastern isle stay low so coastlines hold. */
+    if(TERRAIN_THEME.heightScale!==1 || TERRAIN_THEME.northRise){
+      const mainland = vx<MAIN_W && vy<SEA_Y;
+      h = h*TERRAIN_THEME.heightScale + (mainland? TERRAIN_THEME.northRise*(1-vy/SEA_Y):0);
+    }
+    vHeights[vy*VW_+vx]=h;
   }
 })();
 function groundY(wx,wz){
@@ -928,7 +951,7 @@ renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.18;
 const scene=new THREE.Scene();
-scene.fog=new THREE.Fog(0xa8c8e8, 70, 185);
+scene.fog=new THREE.Fog(TERRAIN_THEME.fog, 70, 185);
 const camera=new THREE.PerspectiveCamera(55, 1, 0.1, 1400);
 
 /* ---- POST-PROCESSING: bloom + tonemapped output ---- */
