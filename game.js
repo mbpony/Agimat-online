@@ -686,6 +686,18 @@ function isRiver(tx,ty){ return tx>=0&&ty>=0&&tx<MAIN_W&&ty<MAP_H&&riverMask[ty*
   for(let y=51;y<=SEA_Y-2;y++){ for(const x of [65,66,67,68]){ if(grid[y*MAP_W+x]!==2&&grid[y*MAP_W+x]!==4) grid[y*MAP_W+x]=3; } } // SOUTH gate (→ Pinatubo)
   for(let x=2;x<=57;x++){ for(const y of [42,43,44,45]){ if(grid[y*MAP_W+x]!==2&&grid[y*MAP_W+x]!==4) grid[y*MAP_W+x]=3; } }  // WEST gate (→ La Union)
   for(let x=76;x<=MAIN_W-2;x++){ for(const y of [42,43,44,45]){ if(grid[y*MAP_W+x]!==2&&grid[y*MAP_W+x]!==4) grid[y*MAP_W+x]=3; } } // EAST gate (→ Isabela)
+  // --- World-Spec map: water/ground come from the IMPORTED terrain, not worldgen. Overrides the Banaue river/sea/roads/borders above. ---
+  if(WS_MAP){
+    const sea=WS_MAP.seaLevel||0;
+    for(let y=0;y<MAP_H;y++)for(let x=0;x<MAP_W;x++){
+      const i=y*MAP_W+x;
+      const h=(WS_MAP.heights[y]&&WS_MAP.heights[y][x]!=null)?WS_MAP.heights[y][x]:9999;
+      const edge=(x<2||y<2||x>=MAP_W-2||y>=MAP_H-2);
+      if(edge){ grid[i]=4; riverMask[i]=0; }              // boundary wall — can't walk off the map
+      else if(h<sea){ grid[i]=2; riverMask[i]=1; }        // water wherever the imported terrain sits below sea level
+      else { if(grid[i]===2||grid[i]===4){ grid[i]=1; } riverMask[i]=0; }  // clear leftover worldgen water/cliffs -> ground
+    }
+  }
 })();
 
 /* ---- ENEMY CAMPS: every species holds its own territory, like a proper RPG ---- */
@@ -1822,6 +1834,7 @@ let lanternMats=[];
 
 /* ---- hanging bamboo bridge over the river gorge ---- */
 (function buildBridge(){
+  if(WS_MAP) return;   // World-Spec maps have no fixed Banaue bridge (it would float on the imported terrain)
   const g=new THREE.Group();
   const cz=(BRIDGE.z0+BRIDGE.z1)/2, mid=(BRIDGE.x0+BRIDGE.x1)/2, half=(BRIDGE.x1-BRIDGE.x0)/2;
   const bamboo=Mwood(0xe8c890), rope=Mwood(0xa8845a), dark=Mwood(0xc09c68);
