@@ -942,12 +942,12 @@ const canvas=$('game');
 const ULTRA=(function(){ try{ return localStorage.getItem('agimat_ultralight')==='1' || /[?&](low|ultra)=1/.test(location.search); }catch(e){ return /[?&](low|ultra)=1/.test(location.search); } })();
 const isMobileGPU=ULTRA || (navigator.maxTouchPoints>0) || Math.min(window.innerWidth,window.innerHeight)<820 || /Android|iPhone|iPad|iPod|Mobile|UCBrowser|Quetta|Silk/i.test(navigator.userAgent||'');
 const renderer=new THREE.WebGLRenderer({canvas, antialias:!isMobileGPU, powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(ULTRA?0.5:(isMobileGPU?0.85:1.75), window.devicePixelRatio||1));
+renderer.setPixelRatio(Math.min(ULTRA?0.5:(isMobileGPU?0.75:1.0), window.devicePixelRatio||1));
 window.__renderer=renderer;   // exposed for perf probes
 // if the GPU drops the WebGL context (common on weak mobile), reload instead of a dead black screen
 renderer.domElement.addEventListener('webglcontextlost',e=>{ e.preventDefault(); },false);
 renderer.domElement.addEventListener('webglcontextrestored',()=>{ try{location.reload();}catch(_){} },false);
-renderer.shadowMap.enabled=!isMobileGPU;   // mobile: shadows off entirely (big GPU saver)
+renderer.shadowMap.enabled=false;   // shadows OFF everywhere (one of the biggest GPU costs)
 renderer.shadowMap.type=isMobileGPU?THREE.PCFShadowMap:THREE.PCFSoftShadowMap;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
@@ -1255,7 +1255,7 @@ const Mcloth=(c,o={})=>PBR(c,Object.assign({map:TEX.fabric,roughness:0.9},o));
     mtx.compose(pv,q,sc);
     tufts.setMatrixAt(placed++, mtx);
   }
-  tufts.count=ULTRA?0:(isMobileGPU?Math.min(1400,placed):placed);   // ultra: none; mobile: fewer
+  tufts.count=ULTRA?0:Math.min(900,placed);   // capped hard for perf (was 4200)
   scene.add(tufts);
   /* --- ZONE BEAUTIFICATION pass 1 (town ring / start meadow / river banks):
       wildflower scatter so the lived-in areas read lush, like the concept art.
@@ -1279,7 +1279,7 @@ const Mcloth=(c,o={})=>PBR(c,Object.assign({map:TEX.fabric,roughness:0.9},o));
     flowers.setColorAt(fp, fc);
     fp++;
   }
-  flowers.count=ULTRA?0:(isMobileGPU?Math.min(400,fp):fp);   // ultra: none; mobile: fewer
+  flowers.count=ULTRA?0:Math.min(120,fp);   // capped hard for perf (was 900)
   if(flowers.instanceColor) flowers.instanceColor.needsUpdate=true;
   scene.add(flowers);
 })();
@@ -4358,7 +4358,7 @@ function animate(now){
     } else { shakeDur=0; shakeAmp=0; }
   }
   if(window._sky) window._sky.position.copy(camera.position); // keep the dome centered on the camera (no black void at altitude)
-  if(isMobileGPU){ renderer.render(scene,camera); } else { composer.render(); }   // mobile: skip the post-processing composer (big framebuffers = crash)
+  renderer.render(scene,camera);   // skip the post-processing composer everywhere (bloom framebuffers = big cost)
   updateLabels(dt);
   if(started && (mmFrame++%10===0)){ drawMinimap(); checkZone(); }
 }

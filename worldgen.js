@@ -154,7 +154,7 @@ function generateVegetation(mapId,o){
   /* jittered grid (blue-noise-ish): even coverage per zone — no clusters, no bald
      spots. Each cell gets a tree with the zone's density; position is jittered so
      it still reads organic, not gridded. */
-  const step=7;
+  const step=9;
   for(let gy=3;gy<84;gy+=step)for(let gx=3;gx<131;gx+=step){
     const x=Math.round(gx+(hash01(gx,gy,seed)-0.5)*step*0.9);
     const y=Math.round(gy+(hash01(gy,gx,seed^3)-0.5)*step*0.9);
