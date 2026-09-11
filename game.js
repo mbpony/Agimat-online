@@ -959,6 +959,7 @@ canvas.addEventListener('webglcontextlost',(e)=>{ e.preventDefault();
 },false);
 canvas.addEventListener('webglcontextrestored',()=>{ sessionStorage.removeItem('agimat_ctx_reload'); },false);
 const scene=new THREE.Scene();
+window.__scene=scene;   // exposed for perf probes
 scene.fog=new THREE.Fog(TERRAIN_THEME.fog, TERRAIN_THEME.fogNear??70, TERRAIN_THEME.fogFar??185);
 const camera=new THREE.PerspectiveCamera(55, 1, 0.1, 1400);
 
@@ -1478,7 +1479,7 @@ const lavaMats=[]; // pulsing emissive lava
       /* rice seedlings planted in orderly rows, like a real paddy */
       const rows=3, cols=4;
       for(let r=0;r<rows;r++)for(let c2=0;c2<cols;c2++){
-        if(Math.random()<0.18) continue; // gaps
+        if(Math.random()<0.97) continue; // gaps (perf: was 0.18 → ~18k seedling meshes crashed the game; now sparse)
         const sx2=m.position.x-TILE/2+(c2+0.5)*TILE/cols+rnd(-0.12,0.12);
         const sz2=m.position.z-TILE/2+(r+0.5)*TILE/rows+rnd(-0.12,0.12);
         const sp=new THREE.Group();
@@ -1492,8 +1493,8 @@ const lavaMats=[]; // pulsing emissive lava
         sp.position.set(sx2, y-0.05, sz2);
         scene.add(sp);
       }
-      /* paddy edge reeds where water meets a grass tile */
-      if(Math.random()<0.3){
+      /* paddy edge reeds where water meets a grass tile (sparse for perf) */
+      if(Math.random()<0.03){
         const reed=new THREE.Group();
         for(let b=0;b<4;b++){
           const stem=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.03,rnd(0.8,1.3),4), M(0x7a9a4a));
