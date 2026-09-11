@@ -3191,6 +3191,7 @@ const player={
   skillCds:[0,0,0],
   mesh:null, shieldMesh:null,
 };
+if(WS_MAP&&WS_MAP.playerSpawn){ player.x=WS_MAP.playerSpawn.tx*TILE; player.z=WS_MAP.playerSpawn.ty*TILE; }   // World-Spec spawn marker
 let camYaw=0, camPitch=0.85, camDist=15, camFollowY=0;
 
 const enemies=[], drops=[], gearDrops=[], goldDrops=[], pprojs=[], eprojs=[], zones=[], fxMeshes=[];

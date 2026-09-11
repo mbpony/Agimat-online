@@ -62,36 +62,43 @@ function worldSpecToAgimat(spec, opts){
     heights[ty] = hr; zoneGrid[ty] = zr;
   }
 
-  // markers -> spawn / portals / boss
+  // WorldForge world coords -> Agimat tile coords (main.json uses tile tx/ty)
+  const w2tx = wx => Math.max(0,Math.min(gridW-1,Math.round((+wx + size/2)/size*gridW)));
+  const w2ty = wz => Math.max(0,Math.min(gridH-1,Math.round((+wz + size/2)/size*gridH)));
+  // markers -> spawn / portals / boss (tile coords)
   const markers = (spec.gameplay && spec.gameplay.markers) || [];
   const sm = markers.find(m=>m.type==='player_spawn');
-  const playerSpawn = sm ? { x:+sm.position.x, y:+sm.position.y, z:+sm.position.z }
-                         : { x:0, y:heights[Math.floor(gridH/2)]?heights[Math.floor(gridH/2)][Math.floor(gridW/2)]:0, z:0 };
-  const portals = markers.filter(m=>m.type==='portal').map((m,i)=>({
+  const playerSpawn = sm ? { tx:w2tx(sm.position.x), ty:w2ty(sm.position.z) } : { tx:Math.floor(gridW/2), ty:Math.floor(gridH/2) };
+  const wsPortals = markers.filter(m=>m.type==='portal').map((m,i)=>({
     id:'ws_portal_'+i, to:(m.properties && (m.properties.target||m.properties.to)) || 'world',
-    at:{ x:+m.position.x, z:+m.position.z }, r:6, label:(m.properties && m.properties.name) || ('Portal '+(i+1))
+    tx:w2tx(m.position.x), ty:w2ty(m.position.z), r:6, label:(m.properties && m.properties.name) || ('Portal '+(i+1))
   }));
+  // game reads MAPCFG.portals.town / .isle -> map the first two World-Spec portals onto them
+  const portals = {
+    town:{ tx:(wsPortals[0]||playerSpawn).tx, ty:(wsPortals[0]||playerSpawn).ty },
+    isle:{ tx:(wsPortals[1]||playerSpawn).tx, ty:(wsPortals[1]||playerSpawn).ty }
+  };
   const bm = markers.find(m=>m.type==='boss_arena');
-  const boss = bm ? { x:+bm.position.x, y:+bm.position.y, z:+bm.position.z, name:(bm.properties&&bm.properties.name)||'Boss' } : null;
+  const boss = bm ? { tx:w2tx(bm.position.x), ty:w2ty(bm.position.z), name:(bm.properties&&bm.properties.name)||'Boss' } : null;
 
-  // instances -> props
+  // instances -> props (tile coords)
   const props = (spec.instances||[]).map(inst=>{
-    const p = inst.transform && inst.transform.position || {x:0,y:0,z:0};
-    return { type: mapAsset(inst.assetId), assetId: inst.assetId, x:+p.x, y:+p.y, z:+p.z, zoneId: inst.zoneId };
+    const p = inst.transform && inst.transform.position || {x:0,z:0};
+    return { type: mapAsset(inst.assetId), assetId: inst.assetId, tx:w2tx(p.x), ty:w2ty(p.z), zoneId: inst.zoneId };
   });
 
-  // rivers -> polylines (world coords)
-  const rivers = ((spec.water && spec.water.rivers) || []).map(r=>({ name:r.name, width:r.width||10, points:(r.points||[]).map(p=>({x:+p.x,z:+p.z})) }));
+  // rivers -> polylines (tile coords)
+  const rivers = ((spec.water && spec.water.rivers) || []).map(r=>({ name:r.name, width:r.width||10, points:(r.points||[]).map(p=>({tx:w2tx(p.x),ty:w2ty(p.z)})) }));
 
   // main.json-compatible fields so the existing game pipeline can load a World-Spec map safely
-  const stx = Math.round((playerSpawn.x + size/2)/size*gridW), sty = Math.round((playerSpawn.z + size/2)/size*gridH);
+  const stx = playerSpawn.tx, sty = playerSpawn.ty;
   const townRect = { x0:Math.max(0,stx-5), x1:Math.min(gridW-1,stx+5), y0:Math.max(0,sty-5), y1:Math.min(gridH-1,sty+5), z0:Math.max(0,sty-5), z1:Math.min(gridH-1,sty+5) };
 
   return {
     source:'worldspec', name:(spec.world&&spec.world.name)||'WorldSpec Map',
     gridW, gridH, tile, seed:(spec.generator&&spec.generator.seed)||1,
     heights, zoneGrid, zones: zones.map(z=>({name:z.name, biome:z.biome})),
-    playerSpawn, portals, boss, props, rivers, seaLevel,
+    playerSpawn, portals, wsPortals, boss, props, rivers, seaLevel,
     zoneNames: zones.map(z=>z.name),
     // compat defaults (terrain comes from heights[], so these only need to be safe, not meaningful):
     mainlandWidth: gridW, seaY: gridH,
