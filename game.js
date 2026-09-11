@@ -937,10 +937,14 @@ const nodes=[];
 const canvas=$('game');
 /* Detect a low-power/mobile GPU BEFORE the renderer is built so we can skip MSAA
    and cap resolution — these are the biggest drivers of GPU OOM / context loss. */
-const isMobileGPU=Math.min(window.innerWidth,window.innerHeight)<650 || (navigator.maxTouchPoints>0 && Math.min(window.innerWidth,window.innerHeight)<820);
+// broad detection: any touch device, small viewport, or low-spec hardware → light path
+const isMobileGPU=(navigator.maxTouchPoints>0) || Math.min(window.innerWidth,window.innerHeight)<820 || /Android|iPhone|iPad|iPod|Mobile|UCBrowser|Quetta|Silk/i.test(navigator.userAgent||'');
 const renderer=new THREE.WebGLRenderer({canvas, antialias:!isMobileGPU, powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(isMobileGPU?1.0:1.75, window.devicePixelRatio||1));
+renderer.setPixelRatio(Math.min(isMobileGPU?0.6:1.75, window.devicePixelRatio||1));
 window.__renderer=renderer;   // exposed for perf probes
+// if the GPU drops the WebGL context (common on weak mobile), reload instead of a dead black screen
+renderer.domElement.addEventListener('webglcontextlost',e=>{ e.preventDefault(); },false);
+renderer.domElement.addEventListener('webglcontextrestored',()=>{ try{location.reload();}catch(_){} },false);
 renderer.shadowMap.enabled=!isMobileGPU;   // mobile: shadows off entirely (big GPU saver)
 renderer.shadowMap.type=isMobileGPU?THREE.PCFShadowMap:THREE.PCFSoftShadowMap;
 renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -968,7 +972,7 @@ bloomPass.enabled=false;   // perf: bloom is a big per-frame cost — off on all
 /* ---- CHUNK STREAMING: the world is built once, but only chunks near the player
    stay visible — distant chunks are set visible=false so the GPU skips them
    entirely (no draw calls, no water shading). This is the main lag fix. ---- */
-const CHUNK_TILES=12, CHUNK_W=CHUNK_TILES*TILE, VIEW_CHUNKS=isMobileGPU?2:3;  // smaller view radius on mobile
+const CHUNK_TILES=12, CHUNK_W=CHUNK_TILES*TILE, VIEW_CHUNKS=isMobileGPU?1:3;  // small view radius on mobile (fewer objects drawn)
 const chunkMap=new Map();
 function registerChunk(obj,wx,wz){
   const key=Math.floor(wx/CHUNK_W)+','+Math.floor(wz/CHUNK_W);
@@ -1249,7 +1253,7 @@ const Mcloth=(c,o={})=>PBR(c,Object.assign({map:TEX.fabric,roughness:0.9},o));
     mtx.compose(pv,q,sc);
     tufts.setMatrixAt(placed++, mtx);
   }
-  tufts.count=placed;
+  tufts.count=isMobileGPU?0:placed;   // mobile: skip grass tufts (perf/memory)
   scene.add(tufts);
   /* --- ZONE BEAUTIFICATION pass 1 (town ring / start meadow / river banks):
       wildflower scatter so the lived-in areas read lush, like the concept art.
@@ -1273,7 +1277,7 @@ const Mcloth=(c,o={})=>PBR(c,Object.assign({map:TEX.fabric,roughness:0.9},o));
     flowers.setColorAt(fp, fc);
     fp++;
   }
-  flowers.count=fp;
+  flowers.count=isMobileGPU?0:fp;   // mobile: skip flowers (perf/memory)
   if(flowers.instanceColor) flowers.instanceColor.needsUpdate=true;
   scene.add(flowers);
 })();
@@ -1639,7 +1643,7 @@ function buildPine(t){ // highland pine (Sagada): tall slim trunk + stacked coni
   windCanopies.push({obj:g, phase:jr()*6.28, amp:0.02});
   return g;
 }
-for(const t of trees){
+for(let _ti=0;_ti<trees.length;_ti++){ const t=trees[_ti]; if(isMobileGPU&&(_ti&1)) continue;  // mobile: half the trees
   const zn=zoneGrid[clamp(Math.floor(t.z/TILE),0,MAP_H-1)*MAP_W+clamp(Math.floor(t.x/TILE),0,MAP_W-1)];
   let g;
   if(SAG || t.family==='pine'){ g=buildPine(t); }   // pine country (Sagada) / Cloudridge highland (V2 family)
