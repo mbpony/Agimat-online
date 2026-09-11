@@ -1664,23 +1664,33 @@ for(const t of trees){
   registerChunk(g,t.x,t.z);
 }
 
-/* ---- per-map props: terrace retaining walls (Banaue) / standing stones (Sagada) ---- */
+/* ---- per-zone landmark props (each zone reads distinct); chunk-culled; skipped in ultra-light ---- */
 (function buildProps(){
+  if(ULTRA) return;
   const jr=mulberry32(777);
+  const sh=!isMobileGPU;
   let placed=0;
-  for(let i=0;i<240&&placed<30;i++){
+  for(let i=0;i<1400&&placed<90;i++){
     const tx=3+Math.floor(jr()*(MAIN_W-6)), ty=3+Math.floor(jr()*(SEA_Y-6));
     const gt=grid[ty*MAP_W+tx]; if(gt===2||gt===4) continue;
     const zn=zoneGrid[ty*MAP_W+tx];
     const x=tx*TILE+TILE/2, z=ty*TILE+TILE/2, y=groundY(x,z);
-    if(IS_BANAUE&&(zn===1||zn===5)){
-      const w=new THREE.Mesh(new THREE.BoxGeometry(TILE*0.9,0.5,0.42), Mstone(0x8a8378));
-      w.position.set(x,y+0.25,z); w.castShadow=true; scene.add(w); registerChunk(w,x,z); placed++;
-    } else if(SAG&&(zn===2||zn===7)){
-      const h=1.2+jr()*1.5;
-      const st=new THREE.Mesh(new THREE.BoxGeometry(0.5,h,0.4), Mstone(0x9aa0a6));
-      st.position.set(x,y+h/2,z); st.rotation.y=jr()*3; st.castShadow=true; scene.add(st); registerChunk(st,x,z); placed++;
+    let m=null;
+    if(IS_BANAUE){
+      if(zn===1||zn===5){ m=new THREE.Mesh(new THREE.BoxGeometry(TILE*0.9,0.5,0.42), Mstone(0x8a8378)); m.position.set(x,y+0.25,z); }
+      else if(zn===2){ const h=2+jr()*3; m=new THREE.Mesh(new THREE.CylinderGeometry(0.45+jr()*0.4,0.8+jr()*0.5,h,6), Mstone(0xb9b2a4)); m.position.set(x,y+h/2,z); }   // Bontoc limestone pillar
+      else if(zn===6){ m=new THREE.Mesh(new THREE.SphereGeometry(0.5+jr()*0.5,6,5), Mstone(0x8f9a92)); m.scale.y=0.6; m.position.set(x,y+0.2,z); }                        // Hapao river stone
+      else if(zn===7){ m=new THREE.Mesh(new THREE.DodecahedronGeometry(0.5+jr()*0.5), Mstone(0x3a3432)); m.position.set(x,y+0.3,z); }                                    // scar charcoal rock
+      else if(zn===8){ m=new THREE.Group(); for(let k=0;k<3;k++){ const s=new THREE.Mesh(new THREE.DodecahedronGeometry(0.5-k*0.13), Mstone(0xa8a296)); s.position.y=0.3+k*0.48; m.add(s); } m.position.set(x,y,z); }  // Pulag summit cairn
+      else if(zn===3){ m=new THREE.Group(); const st=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.1,0.4,5), M(0xd8cdb0)); st.position.y=0.2; m.add(st); const cp=new THREE.Mesh(new THREE.SphereGeometry(0.3,6,5,0,6.283,0,1.4), M(0xb4472f)); cp.position.y=0.42; m.add(cp); m.position.set(x,y,z); }  // dark-wood mushroom
+      else continue;
+    } else {
+      if(zn===2||zn===7){ const h=1.2+jr()*1.8; m=new THREE.Mesh(new THREE.BoxGeometry(0.5,h,0.4), Mstone(0x9aa0a6)); m.position.set(x,y+h/2,z); m.rotation.y=jr()*3; }  // Sagada standing stone
+      else if(zn===8){ m=new THREE.Mesh(new THREE.ConeGeometry(0.7,1.5,6), Mstone(0xa8a296)); m.position.set(x,y+0.75,z); }                                              // peak cairn
+      else continue;
     }
+    m.traverse(o=>{ if(o.isMesh) o.castShadow=sh; });
+    scene.add(m); registerChunk(m,x,z); placed++;
   }
 })();
 
