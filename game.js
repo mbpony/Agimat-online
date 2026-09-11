@@ -1673,7 +1673,7 @@ for(const t of trees){
 
 /* ---- per-zone landmark props (each zone reads distinct); chunk-culled; skipped in ultra-light ---- */
 (function buildProps(){
-  if(ULTRA) return;
+  if(ULTRA||WS_MAP) return;   // World-Spec maps render their own placed landmarks (buildWSProps below)
   const jr=mulberry32(777);
   const sh=!isMobileGPU;
   let placed=0;
@@ -1698,6 +1698,35 @@ for(const t of trees){
     }
     m.traverse(o=>{ if(o.isMesh) o.castShadow=sh; });
     scene.add(m); registerChunk(m,x,z); placed++;
+  }
+})();
+
+/* ---- World-Spec placed landmarks: render the instances you positioned in WorldForge ---- */
+(function buildWSProps(){
+  if(!WS_MAP||ULTRA||!WS_MAP.props) return;
+  const sh=!isMobileGPU;
+  const grp=(...kids)=>{ const g=new THREE.Group(); for(const k of kids) g.add(k); return g; };
+  for(const pr of WS_MAP.props){
+    const x=pr.tx*TILE+TILE/2, z=pr.ty*TILE+TILE/2, y=groundY(x,z);
+    let m=null;
+    switch(pr.type){
+      case 'hut': m=grp((()=>{const w=new THREE.Mesh(new THREE.BoxGeometry(3,2.2,3),Mwood(0xb08858));w.position.y=1.1;return w;})(),(()=>{const r=new THREE.Mesh(new THREE.ConeGeometry(2.6,1.7,4),M(0x8a5a3a));r.position.y=2.9;r.rotation.y=0.785;return r;})()); break;
+      case 'watchtower': m=grp((()=>{const t=new THREE.Mesh(new THREE.BoxGeometry(2,6,2),Mstone(0xa8a296));t.position.y=3;return t;})(),(()=>{const c=new THREE.Mesh(new THREE.ConeGeometry(1.8,1.4,4),M(0x8a5a3a));c.position.y=6.6;return c;})()); break;
+      case 'shrine': case 'statue': m=grp((()=>{const b=new THREE.Mesh(new THREE.BoxGeometry(1.6,0.4,1.6),Mstone(0xc8c2b6));b.position.y=0.2;return b;})(),(()=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.55,2.6,8),Mstone(0xd8d2c6));c.position.y=1.5;return c;})()); break;
+      case 'stall': m=grp((()=>{const c=new THREE.Mesh(new THREE.BoxGeometry(3,1,2),Mwood(0x9a7a4a));c.position.y=0.5;return c;})(),(()=>{const a=new THREE.Mesh(new THREE.BoxGeometry(3.4,0.2,2.4),M(0xb4472f));a.position.y=2;return a;})()); break;
+      case 'well': m=grp((()=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(1,1.1,0.9,10),Mstone(0xb9b2a4));c.position.y=0.45;return c;})()); break;
+      case 'brazier': m=grp((()=>{const p=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.22,1.4,6),Mstone(0x6a6a6a));p.position.y=0.7;return p;})(),(()=>{const f=new THREE.Mesh(new THREE.ConeGeometry(0.4,0.85,6),M(0xffaa33));f.position.y=1.7;return f;})()); break;
+      case 'portal': m=grp((()=>{const r=new THREE.Mesh(new THREE.TorusGeometry(1.6,0.26,8,18),M(0xbe7aff));r.position.y=2;return r;})()); break;
+      case 'tree_pine': m=grp((()=>{const t=new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.35,1.6,6),Mwood(0x6a4a2a));t.position.y=0.8;return t;})(),(()=>{const c=new THREE.Mesh(new THREE.ConeGeometry(1.4,3.2,7),M(0x2f6b3a));c.position.y=2.8;return c;})()); break;
+      case 'tree_oak': m=grp((()=>{const t=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.4,1.8,6),Mwood(0x6a4a2a));t.position.y=0.9;return t;})(),(()=>{const c=new THREE.Mesh(new THREE.SphereGeometry(1.6,7,6),M(0x3f7d4f));c.position.y=2.6;return c;})()); break;
+      case 'tree_palm': m=grp((()=>{const t=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.3,3,6),Mwood(0x8a6a3a));t.position.y=1.5;return t;})(),(()=>{const c=new THREE.Mesh(new THREE.SphereGeometry(0.9,6,5),M(0x3f8d4f));c.position.y=3.2;c.scale.y=0.5;return c;})()); break;
+      case 'dock': case 'boat': m=grp((()=>{const d=new THREE.Mesh(new THREE.BoxGeometry(3.2,0.3,2),Mwood(0x9a7a4a));d.position.y=0.3;return d;})()); break;
+      default: m=grp((()=>{const r=new THREE.Mesh(new THREE.DodecahedronGeometry(0.8+((pr.tx*7+pr.ty*13)%5)*0.16),Mstone(0xb9b2a4));r.position.y=0.6;return r;})());
+    }
+    if(!m) continue;
+    m.position.set(x,y,z);
+    m.traverse(o=>{ if(o.isMesh) o.castShadow=sh; });
+    scene.add(m); registerChunk(m,x,z);
   }
 })();
 
