@@ -24,7 +24,7 @@ const GAME_DATA = await (async () => {
     dungeons: 'data/dungeons/dungeons.json',
     quests:   'data/quests/quests.json',
     models:   'data/models/registry.json',
-    mapMain:  (/[?&]ws=([\w-]+)/.test(location.search) ? 'data/maps/ws-'+location.search.match(/[?&]ws=([\w-]+)/)[1]+'.json' : 'data/maps/main.json'),
+    mapMain:  (/[?&]ws=([\w-]+)/.test(location.search) ? 'data/maps/ws-'+location.search.match(/[?&]ws=([\w-]+)/)[1]+'.json' : (/[?&]classic=1/.test(location.search) ? 'data/maps/main.json' : 'data/maps/ws-banaue.json')),
     spawnRules:'data/enemies/spawn-rules.json',
     bosses:   'data/bosses/world-bosses.json',
     skills:   'data/skills/definitions.json',
