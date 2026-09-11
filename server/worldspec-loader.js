@@ -83,12 +83,22 @@ function worldSpecToAgimat(spec, opts){
   // rivers -> polylines (world coords)
   const rivers = ((spec.water && spec.water.rivers) || []).map(r=>({ name:r.name, width:r.width||10, points:(r.points||[]).map(p=>({x:+p.x,z:+p.z})) }));
 
+  // main.json-compatible fields so the existing game pipeline can load a World-Spec map safely
+  const stx = Math.round((playerSpawn.x + size/2)/size*gridW), sty = Math.round((playerSpawn.z + size/2)/size*gridH);
+  const townRect = { x0:Math.max(0,stx-5), x1:Math.min(gridW-1,stx+5), y0:Math.max(0,sty-5), y1:Math.min(gridH-1,sty+5), z0:Math.max(0,sty-5), z1:Math.min(gridH-1,sty+5) };
+
   return {
     source:'worldspec', name:(spec.world&&spec.world.name)||'WorldSpec Map',
     gridW, gridH, tile, seed:(spec.generator&&spec.generator.seed)||1,
     heights, zoneGrid, zones: zones.map(z=>({name:z.name, biome:z.biome})),
     playerSpawn, portals, boss, props, rivers, seaLevel,
     zoneNames: zones.map(z=>z.name),
+    // compat defaults (terrain comes from heights[], so these only need to be safe, not meaningful):
+    mainlandWidth: gridW, seaY: gridH,
+    volcano: { tx: Math.round(gridW*0.58), ty: Math.round(gridH*0.23), r: 0 },
+    lake: { tx: -99, ty: -99, r: 0 },
+    town: townRect, townExclusion: townRect,
+    isle: { x0: gridW+10, y0: 0, x1: gridW+20, y1: 10 },
   };
 }
 

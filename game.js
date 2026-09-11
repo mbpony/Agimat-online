@@ -24,7 +24,7 @@ const GAME_DATA = await (async () => {
     dungeons: 'data/dungeons/dungeons.json',
     quests:   'data/quests/quests.json',
     models:   'data/models/registry.json',
-    mapMain:  'data/maps/main.json',
+    mapMain:  (/[?&]ws=([\w-]+)/.test(location.search) ? 'data/maps/ws-'+location.search.match(/[?&]ws=([\w-]+)/)[1]+'.json' : 'data/maps/main.json'),
     spawnRules:'data/enemies/spawn-rules.json',
     bosses:   'data/bosses/world-bosses.json',
     skills:   'data/skills/definitions.json',
@@ -502,6 +502,11 @@ function computeStats(){
 /* MAP CONFIG (restructure spec §11/§13): data/maps/main.json is authoritative;
    literals remain as fallback. Geometry = content configuration, not architecture. */
 const MAPCFG=GAME_DATA.mapMain||{};
+// World-Spec imported map (WorldForge). When present, terrain heights + zones come from it instead of worldgen.
+const WS_MAP=(MAPCFG&&MAPCFG.source==='worldspec')?MAPCFG:null;
+let WS_SEA=0,WS_K=1;
+if(WS_MAP&&WS_MAP.heights){ let mx=-1e9; for(const r of WS_MAP.heights)for(const v of r)if(v>mx)mx=v; WS_SEA=WS_MAP.seaLevel||0; WS_K=26/Math.max(1,(mx-WS_SEA)); }
+const wsH=(tx,ty)=>{ if(!WS_MAP)return 0; const gy=ty<0?0:(ty>=WS_MAP.gridH?WS_MAP.gridH-1:ty); const gx=tx<0?0:(tx>=WS_MAP.gridW?WS_MAP.gridW-1:tx); const r=WS_MAP.heights[gy]; const h=r?(r[gx]||0):0; return (h-WS_SEA)*WS_K; };
 /* LAYER B (terrain): per-map terrain theme chosen at load. Sagada gets real
    verticality (scaled heights + north rise toward the shrine summit), a cool
    misty fog and its 7 zone names; Banaue stays the identity baseline. The world
@@ -570,7 +575,7 @@ function isRiver(tx,ty){ return tx>=0&&ty>=0&&tx<MAIN_W&&ty<MAP_H&&riverMask[ty*
   }
   // --- zones: per-map macro layout from worldgen.js (each region its own silhouette) ---
   for(let y=0;y<MAP_H;y++)for(let x=0;x<MAP_W;x++){
-    zoneGrid[y*MAP_W+x]=window.WORLDGEN.zoneIndex(ACTIVE_MAP,x,y,MAIN_W);
+    zoneGrid[y*MAP_W+x]=WS_MAP?((WS_MAP.zoneGrid&&WS_MAP.zoneGrid[y]&&WS_MAP.zoneGrid[y][x])||0):window.WORLDGEN.zoneIndex(ACTIVE_MAP,x,y,MAIN_W);
   }
   // --- eastern sea: everything past the mainland is water, except the island ---
   for(let y=0;y<MAP_H;y++)for(let x=MAIN_W;x<MAP_W;x++){
@@ -684,8 +689,8 @@ function isRiver(tx,ty){ return tx>=0&&ty>=0&&tx<MAIN_W&&ty<MAP_H&&riverMask[ty*
 })();
 
 /* ---- ENEMY CAMPS: every species holds its own territory, like a proper RPG ---- */
-const PORTAL_TOWN=MAPCFG.portals?{x:MAPCFG.portals.town.tx*TILE, z:MAPCFG.portals.town.ty*TILE}:{x:71.5*TILE, z:43.5*TILE}; // portal pad inside town, east plaza
-const PORTAL_ISLE=MAPCFG.portals?{x:MAPCFG.portals.isle.tx*TILE, z:MAPCFG.portals.isle.ty*TILE}:{x:(ISLE.x0+3.5)*TILE, z:51*TILE}; // island landing pad
+const PORTAL_TOWN=(MAPCFG.portals&&MAPCFG.portals.town)?{x:MAPCFG.portals.town.tx*TILE, z:MAPCFG.portals.town.ty*TILE}:{x:71.5*TILE, z:43.5*TILE}; // portal pad inside town, east plaza
+const PORTAL_ISLE=(MAPCFG.portals&&MAPCFG.portals.isle)?{x:MAPCFG.portals.isle.tx*TILE, z:MAPCFG.portals.isle.ty*TILE}:{x:(ISLE.x0+3.5)*TILE, z:51*TILE}; // island landing pad
 let CAMPS={
   /* mainland */
   /* TIER 1 — Pest & Trickster: the OUTSKIRTS ring around Barangay Liwanag */
@@ -860,6 +865,7 @@ const vHeights=new Float32Array(VW_*VH_);
 (function buildVerts(){
   const vr=mulberry32(4242);
   for(let vy=0;vy<VH_;vy++)for(let vx=0;vx<VW_;vx++){
+    if(WS_MAP){ vHeights[vy*VW_+vx]=wsH(vx,vy); continue; }   // World-Spec imported terrain
     let sum=0,n=0;
     for(let dy=-1;dy<=0;dy++)for(let dx=-1;dx<=0;dx++){
       const tx=vx+dx, ty=vy+dy;
@@ -942,7 +948,7 @@ const canvas=$('game');
 const ULTRA=(function(){ try{ return localStorage.getItem('agimat_ultralight')==='1' || /[?&](low|ultra)=1/.test(location.search); }catch(e){ return /[?&](low|ultra)=1/.test(location.search); } })();
 const isMobileGPU=ULTRA || (navigator.maxTouchPoints>0) || Math.min(window.innerWidth,window.innerHeight)<820 || /Android|iPhone|iPad|iPod|Mobile|UCBrowser|Quetta|Silk/i.test(navigator.userAgent||'');
 const renderer=new THREE.WebGLRenderer({canvas, antialias:!isMobileGPU, powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(ULTRA?0.5:(isMobileGPU?0.75:1.0), window.devicePixelRatio||1));
+renderer.setPixelRatio(Math.min(ULTRA?0.5:(isMobileGPU?0.85:1.75), window.devicePixelRatio||1)); // restored original high-res (was dropped to 1.0/0.75); 1.75 = crisp, not ultra
 window.__renderer=renderer;   // exposed for perf probes
 // if the GPU drops the WebGL context (common on weak mobile), reload instead of a dead black screen
 renderer.domElement.addEventListener('webglcontextlost',e=>{ e.preventDefault(); },false);
