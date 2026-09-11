@@ -946,9 +946,9 @@ const canvas=$('game');
 // broad detection: any touch device, small viewport, or low-spec hardware → light path
 // ULTRA-LIGHT mode: opt-in via ?low=1 / ?ultra=1 or the title-screen toggle (localStorage). Bare-minimum graphics so it runs on the weakest devices.
 const ULTRA=(function(){ try{ return localStorage.getItem('agimat_ultralight')==='1' || /[?&](low|ultra)=1/.test(location.search); }catch(e){ return /[?&](low|ultra)=1/.test(location.search); } })();
-const isMobileGPU=ULTRA || (navigator.maxTouchPoints>0) || Math.min(window.innerWidth,window.innerHeight)<820 || /Android|iPhone|iPad|iPod|Mobile|UCBrowser|Quetta|Silk/i.test(navigator.userAgent||'');
+const isMobileGPU=ULTRA || /Android|iPhone|iPad|iPod|Mobile|UCBrowser|Quetta|Silk/i.test(navigator.userAgent||'') || (navigator.maxTouchPoints>0 && Math.min(window.innerWidth,window.innerHeight)<700); // real phones/tablets only — small desktop windows & touch laptops are NOT mobile
 const renderer=new THREE.WebGLRenderer({canvas, antialias:!isMobileGPU, powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(ULTRA?0.5:(isMobileGPU?0.85:1.75), window.devicePixelRatio||1)); // restored original high-res (was dropped to 1.0/0.75); 1.75 = crisp, not ultra
+renderer.setPixelRatio(Math.min(ULTRA?0.6:(isMobileGPU?1.15:2.0), window.devicePixelRatio||1)); // crisp high-res: desktop up to 2.0 (retina), mobile 1.15, capped (not ultra)
 window.__renderer=renderer;   // exposed for perf probes
 // if the GPU drops the WebGL context (common on weak mobile), reload instead of a dead black screen
 renderer.domElement.addEventListener('webglcontextlost',e=>{ e.preventDefault(); },false);
