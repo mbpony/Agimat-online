@@ -938,9 +938,11 @@ const canvas=$('game');
 /* Detect a low-power/mobile GPU BEFORE the renderer is built so we can skip MSAA
    and cap resolution — these are the biggest drivers of GPU OOM / context loss. */
 // broad detection: any touch device, small viewport, or low-spec hardware → light path
-const isMobileGPU=(navigator.maxTouchPoints>0) || Math.min(window.innerWidth,window.innerHeight)<820 || /Android|iPhone|iPad|iPod|Mobile|UCBrowser|Quetta|Silk/i.test(navigator.userAgent||'');
+// ULTRA-LIGHT mode: opt-in via ?low=1 / ?ultra=1 or the title-screen toggle (localStorage). Bare-minimum graphics so it runs on the weakest devices.
+const ULTRA=(function(){ try{ return localStorage.getItem('agimat_ultralight')==='1' || /[?&](low|ultra)=1/.test(location.search); }catch(e){ return /[?&](low|ultra)=1/.test(location.search); } })();
+const isMobileGPU=ULTRA || (navigator.maxTouchPoints>0) || Math.min(window.innerWidth,window.innerHeight)<820 || /Android|iPhone|iPad|iPod|Mobile|UCBrowser|Quetta|Silk/i.test(navigator.userAgent||'');
 const renderer=new THREE.WebGLRenderer({canvas, antialias:!isMobileGPU, powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(isMobileGPU?0.85:1.75, window.devicePixelRatio||1));
+renderer.setPixelRatio(Math.min(ULTRA?0.5:(isMobileGPU?0.85:1.75), window.devicePixelRatio||1));
 window.__renderer=renderer;   // exposed for perf probes
 // if the GPU drops the WebGL context (common on weak mobile), reload instead of a dead black screen
 renderer.domElement.addEventListener('webglcontextlost',e=>{ e.preventDefault(); },false);
@@ -1184,7 +1186,7 @@ const TEX={
   },{bump:true,repeat:1.5}),
 };
 /* PBR material helpers — MeshStandardMaterial with map+bump */
-const PBR=(c,opts={})=>{ if(isMobileGPU&&opts){ opts=Object.assign({},opts); delete opts.bumpMap; delete opts.normalMap; delete opts.bumpScale; delete opts.normalScale; } return new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:0.85,metalness:0.02},opts)); };
+const PBR=(c,opts={})=>{ if(isMobileGPU&&opts){ opts=Object.assign({},opts); delete opts.bumpMap; delete opts.normalMap; delete opts.bumpScale; delete opts.normalScale; if(ULTRA){ delete opts.map; } } return new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:0.85,metalness:0.02},opts)); };
 const M=(c,opts={})=>PBR(c,opts); // upgrade every existing M() call site to PBR
 const Mstone=(c=0xffffff,o={})=>PBR(c,Object.assign({map:TEX.stone,bumpMap:TEX.stoneB,bumpScale:0.6,roughness:0.95},o));
 const Mwood =(c=0xffffff,o={})=>PBR(c,Object.assign({map:TEX.wood,bumpMap:TEX.woodB,bumpScale:0.35,roughness:0.8},o));
@@ -1253,7 +1255,7 @@ const Mcloth=(c,o={})=>PBR(c,Object.assign({map:TEX.fabric,roughness:0.9},o));
     mtx.compose(pv,q,sc);
     tufts.setMatrixAt(placed++, mtx);
   }
-  tufts.count=isMobileGPU?Math.min(1400,placed):placed;   // mobile: fewer grass tufts
+  tufts.count=ULTRA?0:(isMobileGPU?Math.min(1400,placed):placed);   // ultra: none; mobile: fewer
   scene.add(tufts);
   /* --- ZONE BEAUTIFICATION pass 1 (town ring / start meadow / river banks):
       wildflower scatter so the lived-in areas read lush, like the concept art.
@@ -1277,7 +1279,7 @@ const Mcloth=(c,o={})=>PBR(c,Object.assign({map:TEX.fabric,roughness:0.9},o));
     flowers.setColorAt(fp, fc);
     fp++;
   }
-  flowers.count=isMobileGPU?Math.min(400,fp):fp;   // mobile: fewer flowers
+  flowers.count=ULTRA?0:(isMobileGPU?Math.min(400,fp):fp);   // ultra: none; mobile: fewer
   if(flowers.instanceColor) flowers.instanceColor.needsUpdate=true;
   scene.add(flowers);
 })();
@@ -1644,6 +1646,7 @@ function buildPine(t){ // highland pine (Sagada): tall slim trunk + stacked coni
   return g;
 }
 for(const t of trees){
+  if(ULTRA) continue;   // ultra-light: no trees (biggest object count)
   const zn=zoneGrid[clamp(Math.floor(t.z/TILE),0,MAP_H-1)*MAP_W+clamp(Math.floor(t.x/TILE),0,MAP_W-1)];
   let g;
   if(SAG || t.family==='pine'){ g=buildPine(t); }   // pine country (Sagada) / Cloudridge highland (V2 family)
@@ -5457,6 +5460,9 @@ function showWelcome(){
     setMode(mode);
   }
   langEl.onchange=()=>{ lang=langEl.value; localStorage.setItem('agimat_lang',lang); applyLang(); };
+  /* ---- ultra-light graphics toggle (for weak devices/browsers) ---- */
+  { const uc=$('ultra-chk'); if(uc){ try{ uc.checked=localStorage.getItem('agimat_ultralight')==='1'; }catch(e){}
+    uc.onchange=()=>{ try{ localStorage.setItem('agimat_ultralight', uc.checked?'1':'0'); }catch(e){} location.reload(); }; } }
   /* ---- start (new character) ---- */
   $('btn-start').onclick=()=>{
     enterImmersive();
