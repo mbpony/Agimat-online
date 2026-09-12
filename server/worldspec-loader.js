@@ -92,7 +92,9 @@ function worldSpecToAgimat(spec, opts){
 
   // main.json-compatible fields so the existing game pipeline can load a World-Spec map safely
   const stx = playerSpawn.tx, sty = playerSpawn.ty;
-  const townRect = { x0:Math.max(0,stx-5), x1:Math.min(gridW-1,stx+5), y0:Math.max(0,sty-5), y1:Math.min(gridH-1,sty+5), z0:Math.max(0,sty-5), z1:Math.min(gridH-1,sty+5) };
+  // The engine builds the wall/plaza/tent/shops at tiles 58-75 x 37-50, so the wall must use that rect
+  // (a spawn±5 rect drifts and puts the town outside its own wall).
+  const townRect = { x0:58, x1:75, y0:37, y1:50, z0:37, z1:50 };
 
   return {
     source:'worldspec', name:(spec.world&&spec.world.name)||'WorldSpec Map',
