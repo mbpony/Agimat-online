@@ -680,7 +680,7 @@ function isRiver(tx,ty){ return tx>=0&&ty>=0&&tx<MAIN_W&&ty<MAP_H&&riverMask[ty*
     if(x<2||y<2) grid[y*MAP_W+x]=4;
   }
   /* ---- GRAND TIANGGE v2: the town now sits at the HEART of the mainland ---- */
-  for(let y=37;y<=50;y++)for(let x=58;x<=75;x++) grid[y*MAP_W+x]=3;  // central plaza (expanded)
+  { const _tr=(MAPCFG.town)||{x0:58,x1:75,y0:37,y1:50}; for(let y=_tr.y0;y<=_tr.y1;y++)for(let x=_tr.x0;x<=_tr.x1;x++) grid[y*MAP_W+x]=3; }  // central plaza at the map's town (user-provided)
   /* grand crossroads: four clear paved roads run from the plaza to the four world gates */
   for(let y=2;y<=36;y++){ for(const x of [65,66,67,68]){ if(grid[y*MAP_W+x]!==2&&grid[y*MAP_W+x]!==4) grid[y*MAP_W+x]=3; } }  // NORTH gate (→ Sagada)
   for(let y=51;y<=SEA_Y-2;y++){ for(const x of [65,66,67,68]){ if(grid[y*MAP_W+x]!==2&&grid[y*MAP_W+x]!==4) grid[y*MAP_W+x]=3; } } // SOUTH gate (→ Pinatubo)
@@ -909,7 +909,7 @@ function groundY(wx,wz){
 }
 
 /* static objects */
-const TENT = {x:66.5*TILE, z:41.6*TILE};
+const TENT = {x:(TOWN.x0+TOWN.x1)/2, z:(TOWN.z0+TOWN.z1)/2};  // tent/plaza at the map's town centre (follows user town)
 const trees=[];
 (function placeTrees(){
   /* V2 design layer (worldgen.js): deterministic vegetation points + per-zone
@@ -1685,7 +1685,7 @@ for(const t of trees){
 
 /* ---- per-zone landmark props (each zone reads distinct); chunk-culled; skipped in ultra-light ---- */
 (function buildProps(){
-  if(ULTRA||WS_MAP) return;   // World-Spec maps render their own placed landmarks (buildWSProps below)
+  if(ULTRA) return;   // rocks/props scatter on World-Spec maps too (game supplies rocks; the user supplies buildings)
   const jr=mulberry32(777);
   const sh=!isMobileGPU;
   let placed=0;

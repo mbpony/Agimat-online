@@ -92,9 +92,15 @@ function worldSpecToAgimat(spec, opts){
 
   // main.json-compatible fields so the existing game pipeline can load a World-Spec map safely
   const stx = playerSpawn.tx, sty = playerSpawn.ty;
-  // The engine builds the wall/plaza/tent/shops at tiles 58-75 x 37-50, so the wall must use that rect
-  // (a spawn±5 rect drifts and puts the town outside its own wall).
-  const townRect = { x0:58, x1:75, y0:37, y1:50, z0:37, z1:50 };
+  // Town: prefer a 'town'/'settlement' marker or the centroid of the user's placed buildings, so the engine
+  // builds the wall/plaza/tent around YOUR town. Else the canonical Banaue rect.
+  let townRect = { x0:58, x1:75, y0:37, y1:50, z0:37, z1:50 };
+  const townMk = markers.find(m=>m.type==='town'||m.type==='settlement');
+  const blds = (spec.instances||[]).filter(i=>/^(house|chapel|tavern|tower|watch)/.test(i.assetId||''));
+  if(townMk){ const tx=w2tx(townMk.position.x), ty=w2ty(townMk.position.z);
+    townRect={x0:Math.max(0,tx-9),x1:Math.min(gridW-1,tx+9),y0:Math.max(0,ty-7),y1:Math.min(gridH-1,ty+7),z0:Math.max(0,ty-7),z1:Math.min(gridH-1,ty+7)}; }
+  else if(blds.length>=3){ let sx=0,sy=0; for(const b of blds){ sx+=w2tx(b.transform.position.x); sy+=w2ty(b.transform.position.z);} sx=Math.round(sx/blds.length); sy=Math.round(sy/blds.length);
+    townRect={x0:Math.max(0,sx-9),x1:Math.min(gridW-1,sx+9),y0:Math.max(0,sy-7),y1:Math.min(gridH-1,sy+7),z0:Math.max(0,sy-7),z1:Math.min(gridH-1,sy+7)}; }
 
   return {
     source:'worldspec', name:(spec.world&&spec.world.name)||'WorldSpec Map',
